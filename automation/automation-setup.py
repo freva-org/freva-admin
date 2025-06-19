@@ -332,7 +332,11 @@ class PrefectServer:
             raise FailedRun(f"{' '.join(cmd)} exited: {proc.returncode}")
 
     def __init__(
-        self, log_dir: Path, api_port: int, endpoint: Optional[str] = None
+        self,
+        log_dir: Path,
+        api_port: int,
+        web_port: Optional[int] = None,
+        endpoint: Optional[str] = None,
     ) -> None:
 
         self.caddy_bin = shutil.which(
@@ -347,9 +351,12 @@ class PrefectServer:
 
         if not self.caddy_bin:
             raise SystemExit("Caddy bin not found.")
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind(("", 0))
-            self.port = s.getsockname()[1]
+        if web_port is None:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("", 0))
+                self.port = s.getsockname()[1]
+        else:
+            self.port = web_port
         self.api_port = api_port
         log_dir.mkdir(exist_ok=True, parents=True)
 
@@ -360,15 +367,14 @@ class PrefectServer:
         self.caddy_log = (log_dir / "caddy.log").open("w")
         self.env = os.environ.copy()
         self.caddy_host = f"{socket.gethostname()}:{self.api_port}"
+        self.prefect_api_url = f"http://127.0.0.1:{self.port}/api"
+        self.env["PREFECT_API_URL"] = self.prefect_api_url
         if endpoint:
-            self.prefect_api_url = f"http://127.0.0.1:{self.port}/{endpoint}/api"
             self.env["PREFECT_UI_API_URL"] = (
                 f"https://{self.caddy_host}/{endpoint}/api"
             )
         else:
             self.env["PREFECT_UI_API_URL"] = f"https://{self.caddy_host}/api"
-            self.prefect_api_url = f"http://127.0.0.1:{self.port}/api"
-        self.env["PREFECT_API_URL"] = self.prefect_api_url
 
     def linger(self) -> None:
         """Wait unitl the server gets terminated."""
@@ -707,6 +713,13 @@ def main():
         help="Path to the web server private key file.",
     )
     parser.add_argument(
+        "--web-port",
+        type=int,
+        default=os.getenv("FREVA_AUTOMATION_WEB_PORT") or None,
+        help="Port the web app should be running on. This is useful if you "
+        "don't want to spawn a revers porxy but use an existing one.",
+    )
+    parser.add_argument(
         "--no-reverse-proxy",
         action="store_true",
         help="Do not start a caddy reverse proxy.",
@@ -765,7 +778,9 @@ def main():
             Path(temp_f.name).write_text(
                 "\n".join(f"{e}={v}" for e, v in os.environ.items())
             )
-            ps = PrefectServer(log_dir, port)
+            ps = PrefectServer(
+                log_dir, port, web_port=args.web_port, endpoint=args.endpoint
+            )
             ps.prep_server(args.script_directory.expanduser(), args.user)
             ps.start_prefect()
             register_prefect_deployment(
