@@ -7,7 +7,7 @@ Type=simple
 PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
-ExecStart={{conda_path}}/bin/start-freva-service -s redis
+ExecStart={{ bash_cmd }} -c "{{conda_path}}/bin/start-freva-service -s redis"
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal
 StandardError=journal

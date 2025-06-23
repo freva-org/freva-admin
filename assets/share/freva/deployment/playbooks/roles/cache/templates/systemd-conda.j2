@@ -7,7 +7,7 @@ Type=simple
 PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
-ExecStart={{conda_path}}/bin/start-freva-service -s redis
+ExecStart={{ bash_cmd }} -c "{{conda_path}}/bin/start-freva-service -s redis"
 {% if (ansible_become == true and ansible_become_user == 'root') or ansible_user == 'root' %}
 ProtectHome=true
 ProtectSystem=full

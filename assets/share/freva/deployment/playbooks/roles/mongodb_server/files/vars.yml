@@ -5,12 +5,12 @@ ansible_become: "{{ mongodb_server_ansible_become_user is defined and mongodb_se
 ansible_become_user: "{{ mongodb_server_ansible_become_user | default('root') }}"
 ansible_python_interpreter: "{{ mongodb_server_ansible_python_interpreter }}"
 admin_user: "{{ mongodb_server_admin_user | default('') }}"
-conda_path: '{{mongodb_server_data_path|regex_replace("^~", ansible_env.HOME)}}/{{ project_name }}/conda'
+base_path: '{{mongodb_server_data_path| regex_replace("^~", ansible_env.HOME)}}'
+conda_path: '{{ base_path }}/{{ project_name }}/services/{{ service }}/conda'
 systemd_unit_dir: "{{ '/etc/systemd/system' if  db_ansible_become_user is defined and db_ansible_become_user != '' else ansible_env.HOME + '/.config/systemd/user' }}"
 mongo_name: "{{ project_name }}-mongo"
 compose_file: '{{mongodb_server_data_path|regex_replace("^~", ansible_env.HOME)}}/{{project_name}}/compose_services/{{mongo_name}}-compose.yml'
 old_compose_dir: '{{mongodb_server_data_path|regex_replace("^~", ansible_env.HOME)}}/compose_services'
-base_path: '{{mongodb_server_data_path| regex_replace("^~", ansible_env.HOME)}}'
 data_dir: "{{ base_path }}/{{ project_name }}/services/{{service}}"
 conda_packages:
   - pymongo

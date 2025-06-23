@@ -40,33 +40,6 @@
   register: redis_port_result
   changed_when: false
 
-- name: Creating environment file for proxy
-  template:
-    src: "service.env.j2"
-    dest: "{{ data_dir }}/config/service-nginx.env"
-    owner: "{{ uid }}"
-    group: "{{ gid }}"
-  vars:
-    service_name: "{{ web_proxy_name }}"
-    env_vars:
-      API_LOG_DIR: "{{ data_dir }}/logs"
-      API_CONFIG_DIR: "{{ conda_path }}/share/freva-rest-server/nginx"
-      CHATBOT_HOST: '{{ web_chatbot_host.replace("http://", "") }}'
-      CONDA_PREFIX: "{{ conda_path }}"
-      FILL_COLOR: "{{ web_main_color }}"
-      FREVA_REST_HOST: '{{ web_freva_rest_host.replace("http://", "") }}'
-      PORT_HTTPSD: "{{ web_port_httpsd }}"
-      PROJECT_NAME: "{{ project_name }}"
-      PROXY_USER: "{{ admin_user }}"
-      PROXY_GROUP: "{{ admin_group }}"
-      SERVER_CERT: "{{ web_cert_content }}"
-      SERVER_KEY: "{{ web_key_content }}"
-      SERVER_ROOT: "{{ data_dir }}/app/static"
-      VAULT_HOST: '{{ web_vault_host.replace("http://", "") }}:5002'
-      WEB_SERVER_NAME: "localhost"
-      WEB_SERVER_PORT: "8000"
-
-
 - name: Creating environment file for redis
   template:
     src: "service.env.j2"
@@ -86,7 +59,7 @@
 - name: Creating environment file for web app
   template:
     src: "service.env.j2"
-    dest: "{{ data_dir }}/config/service-django.env"
+    dest: "{{ data_dir }}/config/service-web.env"
     owner: "{{ uid }}"
     group: "{{ gid }}"
   vars:
@@ -94,6 +67,7 @@
     env_vars:
       ALLOWED_HOSTS: "{{web_allowed_hosts | join(',')}}"
       API_LOG_DIR: "{{ data_dir }}/logs"
+      API_CONFIG_DIR: "{{ conda_path }}/share/freva-rest-server/nginx"
       CHATBOT_HOST: '{{ web_chatbot_host.replace("http://", "") }}'
       COLUMNS: "140"
       CONDA_PREFIX: "{{ conda_path }}"
@@ -101,10 +75,11 @@
       DJANGO_SUPERUSER_EMAIL: "freva@dkrz.de"
       DJANGO_SUPERUSER_PASSWORD: "{{ root_passwd }}"
       EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+      FREVA_REST_HOST: '{{ web_freva_rest_host.replace("http://", "") }}'
+      FILL_COLOR: "{{ web_main_color }}"
       FREVA_REST_URL: 'http://{{ web_freva_rest_host.replace("http://", "") }}'
       FREVA_BIN: "{{ web_freva_bin }}"
       FREVA_WEB_CONFIG_FILE: "{{ web_config_file }}"
-      SCHEDULER_HOST: "{{ web_scheduler_host | join(',') }}"
       REDIS_HOST: "localhost"
       REDIS_PASSWD: "{{ web_redis_password }}"
       REDIS_USER: "{{ web_redis_username }}"
@@ -112,6 +87,19 @@
       OIDC_DISCOVERY_URL: "{{ web_oidc_url }}"
       OIDC_CLIENT_SECRET: "{{ web_oidc_client_secret }}"
       OIDC_CLIENT_ID: "{{ web_oidc_client }}"
+      PORT_HTTPSD: "{{ web_port_httpsd }}"
+      PROJECT_NAME: "{{ project_name }}"
+      PROXY_GROUP: "{{ admin_group }}"
+      PROXY_HOST_NAME: "{{ web_host }}"
+      PROXY_USER: "{{ admin_user }}"
+      SCHEDULER_HOST: "{{ web_scheduler_host | join(',') }}"
+      SERVER_CERT: "{{ web_cert_content }}"
+      SERVER_KEY: "{{ web_key_content }}"
+      SERVER_ROOT: "{{ data_dir }}/app/static"
+      VAULT_HOST: '{{ web_vault_host.replace("http://", "") }}:5002'
+      WEB_SERVER_NAME: "localhost"
+      WEB_SERVER_PORT: "8000"
+
 
 - name: Create systemd services
   template:

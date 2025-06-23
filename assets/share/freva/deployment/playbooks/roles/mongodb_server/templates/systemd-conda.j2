@@ -8,7 +8,7 @@ PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
 ExecStartPre=/bin/sh -c "rm -fr /tmp/mongo*"
-ExecStart={{ conda_path }}/bin/start-freva-service -s mongo
+ExecStart={{ bash_cmd }} -c "{{ conda_path }}/bin/start-freva-service -s mongo"
 EnvironmentFile={{ data_dir }}/config/service.env
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal

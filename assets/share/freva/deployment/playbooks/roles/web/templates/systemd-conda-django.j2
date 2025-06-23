@@ -8,9 +8,9 @@ Type=simple
 PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
-ExecStart=/bin/sh init_django.sh
+ExecStart={{ bash_cmd }} init_django.sh
 WorkingDirectory={{ data_dir }}/app
-EnvironmentFile={{ data_dir }}/config/service-django.env
+EnvironmentFile={{ data_dir }}/config/service-web.env
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal
 StandardError=journal

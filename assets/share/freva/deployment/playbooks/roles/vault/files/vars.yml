@@ -5,7 +5,7 @@ ansible_python_interpreter: "{{ vault_ansible_python_interpreter }}"
 ansible_become_user: "{{ vault_ansible_become_user | default('root') }}"
 admin_user: "{{ vault_admin_user | default('') }}"
 base_path: '{{vault_data_path | regex_replace("^~", ansible_env.HOME)}}'
-conda_path: '{{ base_path }}/{{ project_name }}/conda'
+conda_path: '{{ base_path }}/{{ project_name }}/services/{{ service }}/conda'
 data_dir: '{{ base_path }}/{{ project_name }}/services/{{service}}'
 systemd_unit_dir: "{{ '/etc/systemd/system' if  vault_ansible_become_user is defined and vault_ansible_become_user != '' else ansible_env.HOME + '/.config/systemd/user' }}"
 vault_name: "{{ project_name }}-vault"

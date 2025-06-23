@@ -6,12 +6,11 @@ After=network.target
 Type=simple
 NoNewPrivileges=true
 KillSignal=SIGTERM
-ExecStartPre=/bin/sh -c "PATH={{ conda_path }}/bin:$PATH \
+ExecStartPre={{ bash_cmd }} -c "PATH={{ conda_path }}/bin:$PATH \
     {{ conda_path }}/bin/python\
     {{ conda_path }}/libexec/freva-rest-server/vault/runserver.py \
     -c {{ conda_path }}/libexec/freva-rest-server/vault/vault-server-tls.hcl"
-ExecStart=/bin/sh -c "PATH={{ conda_path }}/bin:$PATH \
-    {{conda_path}}/bin/uvicorn --workers 2 --app-dir \
+ExecStart={{ bash_cmd }} -c "{{conda_path}}/bin/uvicorn --workers 2 --app-dir \
     {{ conda_path }}/libexec/freva-rest-server/vault \
     --host 0.0.0.0 --port 5002 runserver:app"
 EnvironmentFile={{ data_dir }}/config/service.env
@@ -24,9 +23,9 @@ StartLimitBurst=5
 UMask=007
 ReadWritePaths={{conda_path }}
 {% if (ansible_become == true and ansible_become_user == 'root') or ansible_user == 'root' %}
+PermissionsStartOnly=false
 ProtectHome=true
 ProtectSystem=full
-PermissionsStartOnly=false
 User={{uid}}
 Group={{gid}}
 {% endif %}

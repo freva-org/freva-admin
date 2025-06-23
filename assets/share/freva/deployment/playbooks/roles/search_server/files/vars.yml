@@ -1,17 +1,17 @@
 ---
+search_server_service: "solr"
 ansible_become: "{{ search_server_ansible_become_user is defined and search_server_ansible_become_user != '' }}"
 ansible_become_user: "{{ search_server_ansible_become_user | default('root') }}"
 ansible_python_interpreter: "{{ search_server_ansible_python_interpreter }}"
 admin_user: "{{ search_server_admin_user | default('') }}"
-conda_path: '{{search_server_data_path|regex_replace("^~", ansible_env.HOME)}}/{{ project_name }}/conda'
+base_path: '{{search_server_data_path| regex_replace("^~", ansible_env.HOME)}}'
+conda_path: '{{ base_path }}/{{ project_name }}/services/{{ search_server_name }}/conda'
 systemd_unit_dir: "{{ '/etc/systemd/system' if  db_ansible_become_user is defined and db_ansible_become_user != '' else ansible_env.HOME + '/.config/systemd/user' }}"
 compose_file: '{{search_server_data_path|regex_replace("^~", ansible_env.HOME)}}/{{project_name}}/compose_services/{{search_server_name}}-compose.yml'
 old_compose_dir: '{{search_server_data_path|regex_replace("^~", ansible_env.HOME)}}/compose_services'
-base_path: '{{search_server_data_path| regex_replace("^~", ansible_env.HOME)}}'
 conda_packages:
   - apache-solr
 
-search_server_service: "solr"
 service: "{{ search_server_service }}"
 data_dir: '{{search_server_data_path|regex_replace("^~", ansible_env.HOME)}}/{{ project_name }}/services/{{service}}'
 search_server_name: "{{ project_name }}-{{ search_server_service }}"

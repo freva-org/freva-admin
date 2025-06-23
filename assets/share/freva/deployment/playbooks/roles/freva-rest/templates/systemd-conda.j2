@@ -9,9 +9,9 @@ PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
 {% if debug | default(false) %}
-ExecStart={{ conda_path }}/bin/freva-rest-server {{ freva_rest_services }} --dev
+ExecStart={{ bash_cmd }} -c "{{ conda_path }}/bin/freva-rest-server {{ freva_rest_services }} --dev"
 {% else %}
-ExecStart={{ conda_path }}/bin/freva-rest-server {{ freva_rest_services }}
+ExecStart={{bash_cmd }} -c "{{ conda_path }}/bin/freva-rest-server {{ freva_rest_services }}"
 {% endif %}
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 EnvironmentFile={{ data_dir }}/config/service.env

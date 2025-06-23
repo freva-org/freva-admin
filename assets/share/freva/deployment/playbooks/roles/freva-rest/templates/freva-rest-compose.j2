@@ -37,6 +37,7 @@ services:
     command:  {{freva_rest_services}}
     tty: true
     volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - logs:/tmp/logs:z
 
 

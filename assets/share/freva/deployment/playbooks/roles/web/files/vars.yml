@@ -21,6 +21,8 @@ conda_packages:
   - nginx
   - mamba
   - libxcrypt1
+  - webpack-cli
+  - nodejs
   - openssl
 
 pip_packages:
