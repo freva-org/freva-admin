@@ -1,38 +1,16 @@
 ---
-- name: Deploy Vault resources to Kubernetes
+- name: Deploy resources to Kubernetes
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
     definition: "{{ lookup('template', 'vault-k8s.yaml.j2') | from_yaml_all }}"
 
 - name: Set up reverse proxy if configured
-  when: vault_expose_method == 'reverse_proxy'
-  block:
-    - name: Install nginx
-      ansible.builtin.package:
-        name: nginx
-        state: present
-
-    - name: Configure nginx for vault reverse proxy
-      ansible.builtin.template:
-        src: vault-reverse-proxy.conf.j2
-        dest: /etc/nginx/conf.d/vault.conf
-
-    - name: Restart nginx
-      ansible.builtin.service:
-        name: nginx
-        state: restarted
-        enabled: true
-
-    - name: Open firewall port for reverse proxy
-      ansible.builtin.firewalld:
-        port: 5002/tcp
-        permanent: true
-        state: enabled
-        immediate: true
+  include_tasks: "k8s-reverse-proxy.yml"
+  when: expose_method == 'reverse_proxy'
 
 - name: Get NodePort for vault service
-  when: vault_expose_method == 'reverse_proxy'
+  when: expose_method == 'reverse_proxy'
   kubernetes.core.k8s_info:
     kubeconfig: "{{ kubeconfig_path }}"
     kind: Service
@@ -41,6 +19,6 @@
   register: vault_service
 
 - name: Set fact for dynamic vault nodePort
-  when: vault_expose_method == 'reverse_proxy'
+  when: expose_method == 'reverse_proxy'
   set_fact:
     vault_nodeport: "{{ vault_service.resources[0].spec.ports[0].nodePort }}"
