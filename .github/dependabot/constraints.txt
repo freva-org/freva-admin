@@ -2,7 +2,7 @@ PyMySQL==1.1.1
 PyYAML==6.0.1
 appdirs==1.4.4
 npyscreen==4.10.5
-rich==13.9.4
+rich==14.0.0
 requests==2.32.3
 toml==0.10.2
 tomlkit==0.13.0

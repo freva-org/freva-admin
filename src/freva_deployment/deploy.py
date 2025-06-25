@@ -588,6 +588,12 @@ class DeployFactory:
             "vault_host"
         ) or self.cfg["db"].get("db_host", "localhost")
         self.cfg["web"]["chatbot_host"] = chatbot_host
+        if self._random_key.check_cert_key_pair(
+            self.public_key_file, self.private_key_file
+        ):
+            self.cfg["web"]["chatbot_rest_api_url"] = f"https://{web_host}"
+        else:
+            self.cfg["web"]["chatbot_rest_api_url"] = f"http://{freva_rest_host}"
         self.cfg["web"]["redis_username"] = namegenerator.gen()
         self.cfg["web"]["redis_password"] = self._create_random_passwd()
 

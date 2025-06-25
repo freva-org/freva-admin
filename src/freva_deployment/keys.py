@@ -10,7 +10,12 @@ try:
     from cryptography import x509
     from cryptography.hazmat.backends import default_backend
     from cryptography.hazmat.primitives import hashes, serialization
-    from cryptography.hazmat.primitives.asymmetric import rsa
+    from cryptography.hazmat.primitives.asymmetric import (
+        ec,
+        ed25519,
+        padding,
+        rsa,
+    )
     from cryptography.x509.oid import NameOID
 except ImportError:
     _CRYPTO = False
@@ -34,12 +39,86 @@ class RandomKeys:
         self._private_key: Optional["rsa.RSAPrivateKey"] = None
         self._temp_dir = TemporaryDirectory("random_keys")
 
-    def _check_crypto(self) -> None:
+    @staticmethod
+    def _check_crypto() -> None:
         if not _CRYPTO:
             raise ImportError(
                 "Please install the `cryptography` python module."
                 " in order to generate certificates."
             )
+
+    def check_cert_key_pair(self, cert_path: str, key_path: str) -> bool:
+        """Validate a certificate/key pair by checking:
+            - The certificate is currently valid (not expired).
+            - The certificate and private key match.
+        Parameters
+        ----------
+        cert_path : str
+            Path to the PEM-encoded certificate file.
+        key_path : str
+            Path to the PEM-encoded private key file.
+        allow_self_signed : bool, optional
+            Whether to consider self-signed certificates as valid, by default False.
+
+        Returns
+        -------
+        bool
+            True if the certificate/key pair is valid, matching, and trusted
+            False otherwise.
+        """
+        self._check_crypto()
+        try:
+            with open(cert_path, "rb") as f:
+                cert_data = f.read()
+            cert = x509.load_pem_x509_certificate(cert_data, default_backend())
+
+            with open(key_path, "rb") as f:
+                key_data = f.read()
+            private_key = serialization.load_pem_private_key(
+                key_data, password=None, backend=default_backend()
+            )
+            public_key = cert.public_key()
+        except Exception:
+            return False
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if not (cert.not_valid_before_utc <= now <= cert.not_valid_after_utc):
+            return False
+        if cert.issuer == cert.subject:
+            return False
+
+        message = b"test"
+        try:
+            if isinstance(private_key, rsa.RSAPrivateKey) and isinstance(
+                public_key, rsa.RSAPublicKey
+            ):
+                signature = private_key.sign(
+                    message, padding.PKCS1v15(), hashes.SHA256()
+                )
+                public_key.verify(
+                    signature, message, padding.PKCS1v15(), hashes.SHA256()
+                )
+                return True
+
+            elif isinstance(
+                private_key, ec.EllipticCurvePrivateKey
+            ) and isinstance(public_key, ec.EllipticCurvePublicKey):
+                signature = private_key.sign(message, ec.ECDSA(hashes.SHA256()))
+                public_key.verify(signature, message, ec.ECDSA(hashes.SHA256()))
+                return True
+
+            elif isinstance(
+                private_key, ed25519.Ed25519PrivateKey
+            ) and isinstance(public_key, ed25519.Ed25519PublicKey):
+                signature = private_key.sign(message)
+                public_key.verify(signature, message)
+                return True
+
+            else:
+                return False
+
+        except Exception:
+            return False
 
     @property
     def private_key(self) -> "rsa.RSAPrivateKey":

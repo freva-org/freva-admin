@@ -59,6 +59,9 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
         return _versions[0]
     version_file = Path(user_cache_dir("freva-deployment")) / "versions.json"
     now = datetime.now()
+    service_version = json.loads(
+        (Path(__file__).parent / "versions.json").read_text()
+    )
     if (
         version_file.exists()
         and (
@@ -66,7 +69,9 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
         ).total_seconds()
         < 3600 * 1000
     ):
-        _versions.append(json.loads(version_file.read_text()))
+        versions = json.loads(version_file.read_text())
+        versions.update(service_version)
+        _versions.append(versions)
         return _versions[0]
     version_file.parent.mkdir(exist_ok=True, parents=True)
     _versions.append(

@@ -32,7 +32,9 @@ logger = logging.getLogger("create-release")
 class Release:
     """Abstract class for defining release jobs."""
 
-    version_pattern: str = r'__version__\s*=\s*["\'](\d+\.\d+\.\d+)["\']'
+    version_pattern: str = (
+        r"__version__\s*=\s*['\"](\d+(\.\d+)*(-[a-zA-Z0-9]+)?)[\"']"
+    )
 
     @abc.abstractmethod
     def __init__(
@@ -95,9 +97,7 @@ def cli(temp_dir: str) -> "Release":
         kwargs = {s: v for (s, v) in args.services or ()}
     if args.verbose:
         logger.setLevel(logging.DEBUG)
-    return args.apply_func(
-        args.name, temp_dir, args.branch, args.path, **kwargs
-    )
+    return args.apply_func(args.name, temp_dir, args.branch, args.path, **kwargs)
 
 
 class Exit(Exception):
@@ -317,9 +317,7 @@ class Tag(Release):
         try:
             # Get the latest tag on the main branch
             return Version(
-                repo.git.describe("--tags", "--abbrev=0", self.branch).lstrip(
-                    "v"
-                )
+                repo.git.describe("--tags", "--abbrev=0", self.branch).lstrip("v")
             )
         except git.exc.GitCommandError:
             logger.debug("No tag found")
@@ -331,13 +329,9 @@ class Tag(Release):
     def version(self) -> Version:
         """Get the version of the current software."""
         logger.debug("Searching for software version.")
-        pck_dirs = Path(self.search_path) / Path(
-            "src"
-        ) / self.package_name, Path(self.search_path) / Path(
-            "src"
-        ) / self.package_name.replace(
-            "-", "_"
-        )
+        pck_dirs = Path(self.search_path) / Path("src") / self.package_name, Path(
+            self.search_path
+        ) / Path("src") / self.package_name.replace("-", "_")
         files = [
             self.repo_dir / f[1] / f[0]
             for f in product(("_version.py", "__init__.py"), pck_dirs)
@@ -358,7 +352,7 @@ class Tag(Release):
                         return Version(content["version"])
                 elif file.suffix == ".toml":
                     content = tomli.loads(file.read_text())
-                    if "project" in content:
+                    if "project" in content and "version" in content["project"]:
                         return Version(content["project"]["version"])
         raise ValueError("Could not find version")
 
@@ -375,16 +369,20 @@ class Tag(Release):
     def _check_change_log_file(self) -> None:
         """Check if the current version was added to the change log file."""
         logger.debug("Checking for change log file.")
+        version = self.version
+        dev_rc_keywords = ["dev", "rc", "alpha", "beta"]
+        if any(keyword in str(version) for keyword in dev_rc_keywords):
+            return
         if not self._change_log_file.is_file():
             raise Exit(
                 "Could not find change log file. "
                 f"Create one first and push it to the {self.branch} branch."
             )
-        if f"v{self.version}" not in self._change_log_file.read_text("utf-8"):
+        if f"v{version}" not in self._change_log_file.read_text("utf-8"):
             raise Exit(
                 "You need to add the version v{} to the {} change log file "
                 "and push the update to the {} branch".format(
-                    self.version,
+                    version,
                     self._change_log_file.relative_to(self.repo_dir),
                     self.branch,
                 )
@@ -429,9 +427,7 @@ class Tag(Release):
         head = cloned_repo.head.reference
         message = f"Create a release for v{self.version}"
         try:
-            cloned_repo.create_tag(
-                f"v{self.version}", ref=head, message=message
-            )
+            cloned_repo.create_tag(f"v{self.version}", ref=head, message=message)
             cloned_repo.git.push("--tags")
         except git.GitCommandError as error:
             raise Exit("Could not create tag: {}".format(error))

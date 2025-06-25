@@ -142,6 +142,9 @@ def get_container_cmd(args: str) -> Tuple[str, str]:
             stderr=subprocess.PIPE,
             check=False,
         )
+        if "podman" in container_cmd:
+            container_cmd = "podman-compose"
+            args_list = [a for a in args_list if a != "compose"]
         if proc.returncode != 0:
             _ = args_list.pop(args_list.index("compose"))
             compose_cmd = f"{container_cmd}-compose"
