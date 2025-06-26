@@ -8,6 +8,7 @@ permissions:
   packages: write
 
 on:
+  workflow_dispatch:
   pull_request:
     types: [closed]
     branches:
@@ -66,8 +67,8 @@ jobs:
           push: true
           build-args: VERSION=${{steps.repository.outputs.tag}}
           tags: |
-            ghcr.io/freva-clint/freva-deployment:${{ steps.repository.outputs.tag }}
-            ghcr.io/freva-clint/freva-deployment:latest
+            ghcr.io/freva-org/freva-deployment:${{ steps.repository.outputs.tag }}
+            ghcr.io/freva-org/freva-deployment:latest
           platforms: linux/amd64,linux/arm64,linux/ppc64le
 
   build-and-push-vault-image:
@@ -124,5 +125,5 @@ jobs:
           push: true
           build-args: VERSION=${{steps.repository.outputs.tag}}
           tags: |
-            ghcr.io/freva-clint/freva-vault:${{ steps.repository.outputs.tag }}
-            ghcr.io/freva-clint/freva-vault:latest
+            ghcr.io/freva-org/freva-vault:${{ steps.repository.outputs.tag }}
+            ghcr.io/freva-org/freva-vault:latest

@@ -7,6 +7,10 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2505.0.1
+~~~~~~~~~
+* Move source code.
+
 v2505.0.0
 ~~~~~~~~~
 * Introduced ``conda-forge`` based deployment.

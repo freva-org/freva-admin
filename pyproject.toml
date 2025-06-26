@@ -43,6 +43,7 @@ unix = ["cryptography", "pyinstaller", "mock"]
 doc = ["pydata-sphinx-theme",
        "sphinx",
        "sphinx-copybutton",
+       "sphinxext-opengraph",
        "recommonmark",
        "linkify",
        "linkify-it-py",
@@ -55,10 +56,10 @@ doc = ["pydata-sphinx-theme",
 ]
 
 [project.urls]
-Documentation = "https://freva-deployment.readthedocs.io/en/latest/"
-Issues = "https://github.com/FREVA-CLINT/freva-deployment/issues"
-Source = "https://github.com/FREVA-CLINT/freva-deployment"
-Home = "https://freva-deployment.readthedocs.io/en/latest"
+Documentation = "https://github.com/freva-org/freva-admin"
+Issues = "https://github.com/freva-org/freva-admin/issues"
+Source = "https://github.com/freva-org/freva-admin"
+Home = "https://github.com/freva-org/freva-admin"
 
 [project.scripts]
 deploy-freva-cmd = "freva_deployment.cli:deploy"

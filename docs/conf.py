@@ -67,6 +67,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "sphinx_togglebutton",
+    "sphinx-social-previews",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -92,8 +93,8 @@ html_favicon = "_static/freva_owl.svg"
 html_sidebars = {"pagename": []}
 html_static_path = ["_static"]
 html_context = {
-    "github_user": "FREVA-CLINT",
-    "github_repo": "freva",
+    "github_user": "freva-org",
+    "github_repo": "freva-admin",
     "github_version": "main",
     "doc_path": "docs",
 }
@@ -108,7 +109,7 @@ html_theme_options = {
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/FREVA-CLINT/freva-deployment",
+            "url": "https://github.com/freva-org/freva-admin",
             "icon": "fa-brands fa-github",
         },
         {
@@ -125,8 +126,30 @@ html_theme_options = {
     "secondary_sidebar_items": ["page-toc"],
 }
 html_sidebars = {"**": ["sidebar-nav-bs", "sidebar-ethical-ads"]}
+html_meta = {
+    "description": "Admin guide for freva.",
+    "keywords": "freva, climate, data analysis, evaluation, framework, climate science",
+    "author": "Freva Team",
+    "og:title": "Freva – Free Evaluation System Framework",
+    "og:description": "Admin guide for Freva.",
+    "og:type": "website",
+    "og:url": "https://freva-org.github.io/freva-admin/",
+    "og:image": "https://freva-org.github.io/freva-admin/_images/freva_flowchart-new.png",
+    "twitter:card": "summary_large_image",
+    "twitter:title": "Freva – Evaluation System Framework",
+    "twitter:description": "Search, analyse and evaluate climate model data.",
+    "twitter:image": "https://freva-org.github.io/freva-admin/_images/freva_flowchart-new.png",
+}
 
-
+ogp_site_url = "https://freva-org.github.io/freva-admin"
+opg_image = (
+    "https://freva-org.github.io/freva-admin/_images/freva_flowchart-new.png",
+)
+ogp_type = "website"
+ogp_custom_meta_tags = [
+    '<meta name="twitter:card" content="summary_large_image">',
+    '<meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">',
+]
 # -- MyST options ------------------------------------------------------------
 
 # This allows us to use ::: to denote directives, useful for admonitions
@@ -142,8 +165,8 @@ myst_substitutions = {
 myst_url_schemes = {
     "http": None,
     "https": None,
-    "release": f"https://github.com/FREVA-CLINT/freva-deployment/releases/tag/v{release}",
-    "exe": f"https://github.com/FREVA-CLINT/freva-deployment/releases/download/v{release}/deploy-freva-v{release}-{{{{path}}}}",
+    "release": f"https://github.com/freva-org/freva-admin/releases/tag/v{release}",
+    "exe": f"https://github.com/freva-org/freva-admin/releases/download/v{release}/deploy-freva-v{release}-{{{{path}}}}",
 }
 # Substitutions
 rst_prolog = """
