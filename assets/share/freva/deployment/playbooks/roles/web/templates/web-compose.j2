@@ -1,7 +1,7 @@
 version: '3'
 services:
   {{web_cache_name}}:
-    image: ghcr.io/freva-clint/freva-redis:latest
+    image: ghcr.io/freva-org/freva-redis:latest
 {% if (ansible_become == true and ansible_become_user == 'root') or ansible_user == 'root' %}
     user: {{ uid }}:{{ gid }}
 {% else %}
@@ -18,7 +18,7 @@ services:
 
   {{web_name}}:
     user: root:0
-    image: ghcr.io/freva-clint/freva-web:{{web_version}}
+    image: ghcr.io/freva-org/freva-web:{{web_version}}
     container_name: {{ web_name }}
     hostname: {{ web_name }}
     environment:
@@ -51,7 +51,7 @@ services:
 
   {{web_proxy_name}}:
     user: root:0
-    image: ghcr.io/freva-clint/freva-nginx:{{ proxy_version or "latest" }}
+    image: ghcr.io/freva-org/freva-nginx:{{ proxy_version or "latest" }}
     container_name: {{web_proxy_name}}
     hostname: {{web_proxy_name}}
     volumes:

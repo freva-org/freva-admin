@@ -49,7 +49,7 @@
 - name: Getting service startup scripts
   shell: >
     {{ data_dir }}/bin/micromamba run -p {{ conda_path }} curl
-    https://raw.githubusercontent.com/FREVA-CLINT/freva-service-config/refs/heads/main/conda-services/create.sh
+    https://raw.githubusercontent.com/freva-org/freva-service-config/refs/heads/main/conda-services/create.sh
     | bash
   environment:
     CONDA_PREFIX: "{{ conda_path }}"

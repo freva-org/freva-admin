@@ -2,7 +2,7 @@ version: '3'
 services:
   {{vault_name}}:
     user: root:0
-    image: ghcr.io/freva-clint/freva-vault:{{vault_version}}
+    image: ghcr.io/freva-org/freva-vault:{{vault_version}}
     hostname: {{vault_name}}
     cap_add:
       - IPC_LOCK

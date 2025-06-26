@@ -6,7 +6,7 @@ services:
 {% else %}
     user: root:0
 {% endif %}
-    image: ghcr.io/freva-clint/freva-rest-api:{{freva_rest_version}}
+    image: ghcr.io/freva-org/freva-rest-api:{{freva_rest_version}}
     hostname: {{freva_rest_name}}
     environment:
       - API_SOLR_CORE=files

@@ -1,7 +1,7 @@
 ---
 - hosts: freva_rest
   vars:
-    image: "ghcr.io/freva-clint/freva-rest-api"
+    image: "ghcr.io/freva-org/freva-rest-api"
     service_command: "freva-rest-server -V | awk '{print $NF}'"
     role: "freva-rest"
     ansible_become_user: "{{ freva_rest_ansible_become_user }}"
@@ -39,7 +39,7 @@
   vars:
     ansible_become_user: "{{ web_ansible_become_user }}"
     ansible_user: "{{ web_ansible_user }}"
-    image: "ghcr.io/freva-clint/freva-web"
+    image: "ghcr.io/freva-org/freva-web"
     service_command: >
       {{ansible_python_interpreter}} -c
       "import json; print(json.load(open('{{data_dir}}/app/package.json')).get('version', '0.0.0'))"

@@ -7,10 +7,10 @@
   loop:
     - "stop {{ web_name }} {{ web_cache_name }} {{web_proxy_name}}"
     - "rm -f {{ web_name }} {{ web_cache_name }} {{web_cache_name}}"
-    - "rmi -f  ghcr.io/freva-clint/freva-web:{{ web_version }}"
-    - "rmi -f  ghcr.io/freva-clint/freva-nginx"
-    - "pull ghcr.io/freva-clint/freva-web:{{ web_version }}"
-    - "pull ghcr.io/freva-clint/freva-nginx:{{ proxy_version or 'latest'}}"
+    - "rmi -f  ghcr.io/freva-org/freva-web:{{ web_version }}"
+    - "rmi -f  ghcr.io/freva-org/freva-nginx"
+    - "pull ghcr.io/freva-org/freva-web:{{ web_version }}"
+    - "pull ghcr.io/freva-org/freva-nginx:{{ proxy_version or 'latest'}}"
   changed_when: true
 
 - name: Creating volumes

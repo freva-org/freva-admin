@@ -9,8 +9,8 @@ Make sure you have the following prerequisites installed:
 - Make
 
 ```console
-git clone https://github.com/FREVA-CLINT/freva-deployment.git
-cd freva-deployment.git
+git clone https://github.com/freva-org/freva-admin.git
+cd freva-admin.git
 make
 ```
 

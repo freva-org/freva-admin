@@ -72,7 +72,7 @@ python3 -m pip install libselinux-python3
 A pre-built docker image is available to run the deployment
 
 ```console
-docker run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-clint/freva-deployment
+docker run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-org/freva-deployment
 ```
 The `-it` flags are important in order to interact with the program. To use
 and save existing configurations you can mount the directories of the config

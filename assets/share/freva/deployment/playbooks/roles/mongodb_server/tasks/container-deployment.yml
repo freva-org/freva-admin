@@ -7,8 +7,8 @@
   loop:
     - "stop {{ mongo_name }}"
     - "rm -f {{ mongo_name }}"
-    - "rmi -f ghcr.io/freva-clint/freva-mongo"
-    - "pull ghcr.io/freva-clint/freva-mongo:{{mongodb_server_version}}"
+    - "rmi -f ghcr.io/freva-org/freva-mongo"
+    - "pull ghcr.io/freva-org/freva-mongo:{{mongodb_server_version}}"
   changed_when: true
 
 

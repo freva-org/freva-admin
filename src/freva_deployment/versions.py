@@ -78,7 +78,7 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
         json.loads((Path(__file__).parent / "versions.json").read_text())
     )
     url = (
-        "https://raw.githubusercontent.com/FREVA-CLINT/freva-service-config"
+        "https://raw.githubusercontent.com/freva-org/freva-service-config"
         "/refs/heads/main/{service}/requirements.txt"
     )
 

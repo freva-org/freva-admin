@@ -6,7 +6,7 @@ services:
 {% else %}
     user: root:0
 {% endif %}
-    image: ghcr.io/freva-clint/freva-solr:{{solr_version}}
+    image: ghcr.io/freva-org/freva-solr:{{solr_version}}
     hostname: {{search_server_name}}
     environment:
       - API_SOLR_PORT=8983

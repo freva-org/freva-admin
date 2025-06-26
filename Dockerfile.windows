@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/windows/servercore:ltsc2022
 ARG VERSION
 LABEL org.opencontainers.image.authors="DRKZ-CLINT"
-LABEL org.opencontainers.image.source="https://github.com/FREVA-CLINT/freva-deployment.git"
+LABEL org.opencontainers.image.source="https://github.com/freva-org/freva-deployment.git"
 LABEL org.opencontainers.image.version="$VERSION"
 RUN powershell -NoProfile -ExecutionPolicy Bypass -Command " \
     Set-ExecutionPolicy Bypass -Scope Process -Force; \

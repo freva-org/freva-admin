@@ -13,7 +13,7 @@ To bootstrap the automation stack, run:
 .. code-block:: bash
 
    export FREVA_AUTOMATION_PREFIX_DIR=automation
-   curl -sSL https://raw.githubusercontent.com/FREVA-CLINT/freva-deployment/refs/heads/main/automation/automation-setup.py | python
+   curl -sSL https://raw.githubusercontent.com/freva-org/freva-admin/refs/heads/main/automation/automation-setup.py | python
 
 .. note::
    You need **Python ≥ 3.10** available on the system.

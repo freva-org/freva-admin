@@ -28,7 +28,7 @@ FROM docker.io/mambaorg/micromamba
 ARG VERSION
 USER root
 LABEL org.opencontainers.image.authors="DRKZ-CLINT"
-LABEL org.opencontainers.image.source="https://github.com/FREVA-CLINT/freva-deployment.git"
+LABEL org.opencontainers.image.source="https://github.com/freva-org/freva-deployment.git"
 LABEL org.opencontainers.image.version="$VERSION"
 
 ENV VAULT_ADDR='http://127.0.0.1:8200'

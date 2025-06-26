@@ -6,7 +6,7 @@ services:
 {% else %}
     user: root:0
 {% endif %}
-    image: ghcr.io/freva-clint/freva-mysql:{{db_version}}
+    image: ghcr.io/freva-org/freva-mysql:{{db_version}}
     hostname: {{db_name}}
     environment:
       - ROOT_PW={{ root_passwd }}

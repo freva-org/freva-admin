@@ -9,9 +9,9 @@ environments. The general strategy is to split the deployment into
 - Deploy a Hashicorp Vault service for storing and retrieving passwords
   and other sensitive data via docker
   (this step get automatically activated once the MariaDB service is set)
-- Deploy [Databrowser API](https://github.com/FREVA-CLINT/databrowserAPI) service via docker
-- Deploy command line interface backend ([evaluation_system](https://github.com/FREVA-CLINT/freva))
-- Deploy web front end ([freva_web](https://github.com/FREVA-CLINT/freva-web))
+- Deploy [Databrowser API](https://github.com/freva-org/freva-netxgen) service via docker
+- Deploy command line interface backend ([evaluation_system](https://github.com/freva-org/freva))
+- Deploy web front end ([freva_web](https://github.com/freva-org/freva-web))
 
 
 > ``💡`` A vault server is auto deployed once the mariadb server is deployed.
@@ -37,7 +37,7 @@ computer (like a Mac-book). You do not need to run the deployment on the
 machines where things get installed. The only requirement is
 you can establish ssh connections to the servers via openSSH.
 
-> ``💡`` In most cases openSSH clients should be available on your local machine. 
+> ``💡`` In most cases openSSH clients should be available on your local machine.
 > Windows users may refer to the
 > [openSSH install page](https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_install_firstuse?tabs=gui)
 > for setting up openSSH on windows.
@@ -49,7 +49,7 @@ There are different option to install the deployment software.
 
 ## 1. Using pre-built binaries.
 You can download the pre-built binaries for your specific OS and architecture
-from the [release page]((https://github.com/FREVA-CLINT/freva-deployment/releases).
+from the [release page]((https://github.com/freva-org/freva-deployment/releases).
 
 ### Available Binaries
 
@@ -108,7 +108,7 @@ python3 -m pip install libselinux-python3
 A pre-built docker image is available to run the deployment
 
 ```console
-docker run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-clint/freva-deployment
+docker run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-org/freva-deployment
 ```
 The `-it` flags are important in order to interact with the program. To use
 and save existing configurations you can mount the directories of the config
@@ -301,7 +301,7 @@ Make sure you have the following prerequisites installed:
 - Make
 
 ```console
-git clone https://github.com/FREVA-CLINT/freva-deployment.git
+git clone https://github.com/freva-org/freva-deployment.git
 cd freva-deployment.git
 make
 ```

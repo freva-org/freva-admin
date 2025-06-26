@@ -67,7 +67,7 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinx_copybutton",
     "sphinx_togglebutton",
-    "sphinx-social-previews",
+    "sphinxext.opengraph",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

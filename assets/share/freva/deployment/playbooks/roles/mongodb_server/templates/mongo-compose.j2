@@ -6,7 +6,7 @@ services:
 {% else %}
     user: root:0
 {% endif %}
-    image: ghcr.io/freva-clint/freva-mongo:{{ mongodb_server_version }}
+    image: ghcr.io/freva-org/freva-mongo:{{ mongodb_server_version }}
     hostname: {{mongo_name}}
     environment:
       - API_MONGO_PASSWORD={{mongodb_server_db_passwd}}

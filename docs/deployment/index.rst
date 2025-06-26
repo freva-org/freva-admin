@@ -6,7 +6,7 @@ The general strategy is to split the deployment into different steps, these are 
 - Deploy a MySQL DB server
 - Deploy a HashiCorp Vault service for storing and retrieving passwords and
 other sensitive data  (this step get automatically activated once the MySQL DB service is set)
-- Deploy the `Freva-Rest Server <https://github.com/FREVA-CLINT/freva-nextgen>`_
+- Deploy the `Freva-Rest Server <https://github.com/freva-org/freva-nextgen>`_
 The Freva Rest deployment consists of three mandatory and two optional parts:
 
   - The actual databrowser rest API
@@ -15,8 +15,8 @@ The Freva Rest deployment consists of three mandatory and two optional parts:
   - Redis server acting as broker (optional)
   - Data-Loader server that provisions data (netCDF, grb, HDF5 etc) via zarr streams over http (optional)
 
-- Deploy command line interface and python library (`freva <https://github.com/FREVA-CLINT/freva>`_)
-- Deploy web front end (`freva_web <https://github.com/FREVA-CLINT/freva-web>`_)
+- Deploy command line interface and python library (`freva <https://github.com/freva-org/freva>`_)
+- Deploy web front end (`freva_web <https://github.com/freva-org/freva-web>`_)
   The web front end deployment is sub divided into three parts:
 
   - Deployment of the django web application

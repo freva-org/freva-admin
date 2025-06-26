@@ -7,8 +7,8 @@
   loop:
     - "stop {{ db_name }}"
     - "rm -f {{ db_name }}"
-    - "rmi -f ghcr.io/freva-clint/freva-mysql"
-    - "pull ghcr.io/freva-clint/freva-mysql:{{db_version}}"
+    - "rmi -f ghcr.io/freva-org/freva-mysql"
+    - "pull ghcr.io/freva-org/freva-mysql:{{db_version}}"
   changed_when: true
 
 - name: Creating volumes

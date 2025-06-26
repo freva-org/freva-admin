@@ -124,7 +124,7 @@ class Exit(Exception):
 class Bump(Release):
     """Bump the version."""
 
-    url = "https://api.github.com/repos/FREVA-CLINT/freva-deployment/pulls"
+    url = "https://api.github.com/repos/freva-org/freva-admin/pulls"
 
     def __init__(
         self,
@@ -141,9 +141,7 @@ class Bump(Release):
         self.package_name = package_name
         self.repo_dir = Path(repo_dir)
         self.search_path = search_path
-        self.repo_url = (
-            f"https://{token}@github.com/FREVA-CLINT/freva-deployment.git"
-        )
+        self.repo_url = f"https://{token}@github.com/freva-org/freva-admin.git"
         logger.debug(
             "Cloning repository from %s with branch %s to %s",
             self.repo_url,

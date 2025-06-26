@@ -51,7 +51,7 @@ services:
 {% else %}
     user: root:0
 {% endif %}
-    image: ghcr.io/freva-clint/freva-web:{{web_version}}
+    image: ghcr.io/freva-org/freva-web:{{web_version}}
     container_name: {{web_name}}
     hostname: {{web_name}}
 {% if debug %}

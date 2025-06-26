@@ -4,7 +4,7 @@
 
 - name: Get the web app
   unarchive:
-    src: https://github.com/FREVA-CLINT/freva-web/releases/download/{{ web_version }}/freva-web-bundle.tar.gz
+    src: https://github.com/freva-org/freva-web/releases/download/{{ web_version }}/freva-web-bundle.tar.gz
     dest: "{{ data_dir }}/app"
     remote_src: true
     keep_newer: false

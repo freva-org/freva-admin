@@ -2,7 +2,7 @@ FROM debian:bullseye-20240904
 
 ARG VERSION
 LABEL org.opencontainers.image.authors="DRKZ-CLINT"
-LABEL org.opencontainers.image.source="https://github.com/FREVA-CLINT/freva-deployment.git"
+LABEL org.opencontainers.image.source="https://github.com/freva-org/freva-deployment.git"
 LABEL org.opencontainers.image.version="$VERSION"
 
 # Install required packages including locales
