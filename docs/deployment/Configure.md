@@ -35,6 +35,25 @@ the ``deployment_method=podman`` (or ``docker``) option. This ensures that all
 persistent service data is migrated before  switching to the Conda environment.
 :::
 
+## Inspecting and adjusting the config
+With help of the `deploy-freva config` you can inspect and adjust configuration
+values.
+
+{{ cli_config }}
+
+If you want to set config that aren't simply string, bool, int or float
+you must follow [toml syntax](https://toml.io/en/)
+
+:::{tip}
+To create a new config from the config template you can use the
+`deploy-freva config get -r` command and pipe the output into a file:
+
+```console
+deploy-freva config get -r > my-new-config.toml
+```
+:::
+
+
 ## Running the deployment
 The command `deploy-freva` opens a text user interface (tui) that will walk
 you through the setup of the deployment.

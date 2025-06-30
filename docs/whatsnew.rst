@@ -7,14 +7,19 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
-v2505.0.1
+v2505.1.0
+~~~~~~~~~
+* Fix CSRF issues
+* Update docs
+
+v2505.0.3
 ~~~~~~~~~
 * Move source code.
 
 v2505.0.0
 ~~~~~~~~~
 * Introduced ``conda-forge`` based deployment.
-  Instead of soley relying on deploying the micro-services within 
+  Instead of soley relying on deploying the micro-services within
   docker containers. The servers can be set up with help of conda-forge
   environments.
 * More flexibility for setting up micro-services.

@@ -7,21 +7,6 @@ RUN set -eux && \
     micromamba install -q -y -c conda-forge --override-channels go curl jq\
     && micromamba clean -a -y
 
-# Set working directory
-WORKDIR /build
-
-# Fetch latest Vault source code
-RUN curl -sSL $(curl -s https://api.github.com/repos/hashicorp/vault/releases/latest | jq -r '.tarball_url') | tar xz --strip-components=1
-
-# Build Vault
-RUN set -eux \
-    && mkdir -p /vault-bin \
-    && CGO_ENABLED=0 GO111MODULE=on go build \
-    -buildmode=pie \
-    -trimpath \
-    -modcacherw \
-    -o /vault-bin/vault \
-    -ldflags="-s -w"
 
 
 FROM docker.io/mambaorg/micromamba
@@ -36,7 +21,6 @@ ENV VAULT_ADDR='http://127.0.0.1:8200'
 WORKDIR /opt/vault
 
 COPY runserver.py /bin/runserver.py
-COPY --from=vault-builder /vault-bin/vault /bin/vault
 COPY add-vault-secret /bin/add-vault-secret
 COPY vault-server-tls.hcl /opt/vault/
 COPY policy-file.hcl /opt/vault/
@@ -44,7 +28,7 @@ COPY policy-file.hcl /opt/vault/
 RUN set -eux \
  && chmod +x /bin/runserver.py /bin/add-vault-secret \
  && mkdir -p /vault/file \
- && micromamba install -y -c conda-forge --override-channels fastapi pyopenssl uvicorn requests hvac \
+ && micromamba install -y -c conda-forge --override-channels vault>=1.19 fastapi pyopenssl uvicorn requests hvac \
  && micromamba clean -a -y \
  && chmod -R 1777 /vault && ln -s /opt/bin/python /bin/python
 

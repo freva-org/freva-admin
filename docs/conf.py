@@ -17,6 +17,8 @@ import sys
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import date
 
+from pathlib import Path
+
 # from recommonmark.parser import CommonMarkParser
 
 sys.path.insert(0, os.path.abspath("."))
@@ -24,14 +26,26 @@ sys.path.insert(0, os.path.abspath("../../src"))
 
 from freva_deployment import __version__
 from freva_deployment.cli import main_cli
+from freva_deployment.utils import config_dir
+
+toml_config_file = (
+    Path(__file__).parent.parent
+    / "assets"
+    / "share"
+    / "freva"
+    / "deployment"
+    / "config"
+    / "inventory.toml"
+)
+toml_config = toml_config_file.read_text()
 
 
-def get_cli_output(sub_cmd=""):
-    if sub_cmd:
-        cmd = [sub_cmd, "--help"]
+def get_cli_output(*args):
+    if args:
+        cmd = list(args) + ["--help"]
     else:
         cmd = ["--help"]
-    command = f"deploy-freva {sub_cmd} --help"
+    command = f"deploy-freva {' '.join(args)} --help"
     buf = io.StringIO()
     try:
         with redirect_stderr(buf), redirect_stdout(buf):
@@ -45,6 +59,7 @@ def get_cli_output(sub_cmd=""):
 cli_tui = get_cli_output()
 cli_cmd = get_cli_output("cmd")
 cli_mig = get_cli_output("migrate")
+cli_config = get_cli_output("config")
 # -- Project information -----------------------------------------------------
 
 project = "freva-deployment"
@@ -161,6 +176,10 @@ myst_substitutions = {
     "cli_tui": cli_tui,
     "cli_cmd": cli_cmd,
     "cli_mig": cli_mig,
+    "cli_config": cli_config,
+    "cli_config_get": get_cli_output("config", "get"),
+    "cli_config_set": get_cli_output("config", "get"),
+    "toml_config": f"```toml\n{toml_config}\n```",
 }
 myst_url_schemes = {
     "http": None,

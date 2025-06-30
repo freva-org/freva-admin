@@ -23,10 +23,32 @@ The Freva Rest deployment consists of three mandatory and two optional parts:
   - Deployment of a redis instance acting as database cache
   - Deployment as a apache httpd service as a reverse proxy server for connections from the client to the django web application.
 
-.. note::
 
-    The vault server is auto deployed once the database server is deployed.
-    The vault centrally stores all passwords and other sensitive data.
+TLDR; Quickstart Guide
+----------------------
+
+If you just want to try out **Freva** or experiment with the ``freva-deployment``
+tooling, you can install it via ``pip``:
+
+.. code-block:: console
+
+    python -m pip install freva-deployment
+
+To deploy a self-contained version of Freva on your local machine, use the
+``deploy-freva cmd`` command with the ``--local`` flag:
+
+.. code-block:: console
+
+    deploy-freva cmd --local
+
+To customise the configuration, generate a new config file and modify it using
+the ``deploy-freva config`` subcommands:
+
+.. code-block:: console
+
+    deploy-freva cmd config get -r > freva.toml
+    deploy-freva cmd config set project_name clex -c freva.toml
+    deploy-freva cmd -c freva.toml --local -g
 
 .. toctree::
    :maxdepth: 2

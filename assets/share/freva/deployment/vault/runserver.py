@@ -65,7 +65,7 @@ metadata_tags = [
     }
 ]
 
-VERSION = "2505.0.0"
+VERSION = "2505.0.3"
 
 app = FastAPI(
     title="freva-vault",

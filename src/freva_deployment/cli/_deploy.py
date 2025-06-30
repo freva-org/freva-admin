@@ -37,7 +37,7 @@ class BatchParser:
             "-c",
             type=Path,
             help="Path to ansible inventory file.",
-            default=config_dir / "inventory.toml",
+            default=config_dir / "config" / "inventory.toml",
         )
         self.parser.add_argument(
             "--steps",
