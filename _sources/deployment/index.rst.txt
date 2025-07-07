@@ -46,8 +46,8 @@ the ``deploy-freva config`` subcommands:
 
 .. code-block:: console
 
-    deploy-freva config get -r > freva.toml
-    deploy-freva config set project_name clex -c freva.toml
+    deploy-freva cmd config get -r > freva.toml
+    deploy-freva cmd config set project_name clex -c freva.toml
     deploy-freva cmd -c freva.toml --local -g
 
 .. toctree::
