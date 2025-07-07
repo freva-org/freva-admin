@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from getpass import getuser
 from pathlib import Path
-from typing import List, cast
+from typing import Any, List, cast
 
 import npyscreen
 from freva_deployment import AVAILABLE_CONDA_ARCHS
@@ -11,7 +11,7 @@ from freva_deployment.utils import get_current_file_dir
 from .base import BaseForm, CheckboxInfo, ComboInfo, DictInfo, FileInfo, TextInfo
 
 DEPLOYMENT_METHODS = ["docker", "podman", "conda", "k8s"]
-EXPOSE_METHODS = ["ingress", "hostport", "reverse_proxy"]
+EXPOSE_METHODS = ["op-lb", "saas-lb", "hostport"]
 
 
 def get_index(values: list[str], target: str, default: int = 0) -> int:
@@ -274,25 +274,6 @@ class WebScreen(BaseForm):
                 ),
                 True,
             ),
-            expose_method=(
-                self.add_widget_intelligent(
-                    ComboInfo,
-                    key="expose_method",
-                    name=f"{self.num}K8s Expose Method",
-                    value=get_index(
-                        EXPOSE_METHODS,
-                        cast(
-                            str,
-                            cfg.get(
-                                "expose_method",
-                                "ingress",
-                            ),
-                        ),
-                    ),
-                    values=EXPOSE_METHODS,
-                ),
-                True,
-            ),
             chatbot_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -529,25 +510,6 @@ class DBScreen(BaseForm):
                 ),
                 True,
             ),
-            expose_method=(
-                self.add_widget_intelligent(
-                    ComboInfo,
-                    key="expose_method",
-                    name=f"{self.num}K8s Expose Method",
-                    value=get_index(
-                        EXPOSE_METHODS,
-                        cast(
-                            str,
-                            cfg.get(
-                                "expose_method",
-                                "ingress",
-                            ),
-                        ),
-                    ),
-                    values=EXPOSE_METHODS,
-                ),
-                True,
-            ),
             wipe=(
                 self.add_widget_intelligent(
                     CheckboxInfo,
@@ -723,25 +685,6 @@ class FrevaRestScreen(BaseForm):
                     ),
                 ),
                 False,
-            ),
-            expose_method=(
-                self.add_widget_intelligent(
-                    ComboInfo,
-                    key="expose_method",
-                    name=f"{self.num}K8s Expose Method",
-                    value=get_index(
-                        EXPOSE_METHODS,
-                        cast(
-                            str,
-                            cfg.get(
-                                "expose_method",
-                                "ingress",
-                            ),
-                        ),
-                    ),
-                    values=EXPOSE_METHODS,
-                ),
-                True,
             ),
             wipe=(
                 self.add_widget_intelligent(
@@ -981,7 +924,15 @@ class RunForm(npyscreen.FormMultiPageAction):
         self.how_exited_handers[npyscreen.wgwidget.EXITED_ESCAPE] = (
             self.parentApp.exit_application
         )
+        self.add_handlers({"^F": self.show_info})
         self._add_widgets()
+
+    def show_info(self, *args: Any, **kwargs: Any) -> None:
+        """Display an info if present."""
+        if isinstance(self.current_info, str):
+            npyscreen.notify_confirm(
+                self.current_info, title="Detailed Information"
+            )
 
     def _add_widgets(self) -> None:
         """Add the widgets to the form."""
@@ -1035,6 +986,31 @@ class RunForm(npyscreen.FormMultiPageAction):
             max_height=2,
             value=self.parentApp._read_cache("gen_keys", False),
             name=f"{self.num}Generate a pair web certificates, debugging",
+        )
+        self.k8s_deploy_host = self.add_widget_intelligent(
+            TextInfo,
+            key="deploy_host",
+            section="kubernetes",
+            name=f"{self.num}Set a deploy host",
+            value=self.parentApp.config.get("kubernetes", {}).get("deploy_host"),
+        )
+
+        self.k8s_expose_method = self.add_widget_intelligent(
+            ComboInfo,
+            key="expose_method",
+            section="kubernetes",
+            name=f"{self.num}K8s Expose Method",
+            value=get_index(
+                EXPOSE_METHODS,
+                cast(
+                    str,
+                    self.parentApp.config.get("kubernetes", {}).get(
+                        "expose_method",
+                        "op-lb",
+                    ),
+                ),
+            ),
+            values=EXPOSE_METHODS,
         )
         self.use_ssh_pw = self.add_widget_intelligent(
             npyscreen.RoundCheckBox,

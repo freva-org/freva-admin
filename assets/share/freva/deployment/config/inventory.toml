@@ -8,6 +8,20 @@ project_name = "freva"
 ## Chosse between: "docker", "podman", "conda", "k8s"
 deployment_method = "podman"
 
+## Kubernetes deployment settings
+[kubernetes]
+## Set the hostname from where you are going to spin up the kubernetes cluster
+## if the deployment method was set to "k8s". This can either be your local
+## computer or a server.
+deploy_host = "localhost"
+
+## The `expose_method` defines how a service is made accessible externally.
+## Options: hostport or op-lb (default) saas-lb.
+## hostport binds directly to the node port,
+## op-lb (on premise load balancer) and saas-lb (software as a service load balancer)
+## require load balancer to be configured.
+expose_method = "op-lb"
+
 
 ## Specify the path to the SSL certificate files used for secure connections
 ## to the vault server or as web certificates.
@@ -33,12 +47,6 @@ db_host = "localhost"
 ## where this server should be running. If you don't set it (default)
 ## the vault server will be deployed on the database host.
 vault_host = ""
-
-# The `expose_method` defines how a service is made accessible externally.
-# Options: hostport reverse_proxy, or ingress (default).
-# hostport binds directly to the node port, reverse_proxy uses NGINX,
-# ingress requires an ingress controller and routes by hostname.
-expose_method = "ingress"
 
 ## The database runs in a Docker container. You can change the port
 ## that is exposed to the external network. Every DB connection from
@@ -109,12 +117,6 @@ redis_host = ""
 ### scheduler and the consecutive ones as workers. If you leave this blank
 ## then the service will be disabled.
 data_loader_portal_hosts = ""
-
-# The `expose_method` defines how a service is made accessible externally.
-# Options: hostport reverse_proxy, or ingress (default).
-# hostport binds directly to the node port, reverse_proxy uses NGINX,
-# ingress requires an ingress controller and routes by hostname.
-expose_method = "ingress"
 
 ## Set the amount of memory allocated to the search engine (Solr).
 solr_mem = "4g"
@@ -271,12 +273,6 @@ project_website = "www.freva.dkrz.de"
 ## you can set the <HOSTNAME>:<PORT> of this service - if configured.
 ## if you leave this blank, the website will not provid the chat interface.
 chatbot_host=""
-
-# The `expose_method` defines how a service is made accessible externally.
-# Options: hostport reverse_proxy, or ingress (default).
-# hostport binds directly to the node port, reverse_proxy uses NGINX,
-# ingress requires an ingress controller and routes by hostname.
-expose_method = "ingress"
 
 ## Ansible needs a Python 3 interpreter on the target server. This interpreter
 ## can be set for custom Python 3 instances. By default, Ansible will try

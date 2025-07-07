@@ -16,3 +16,14 @@ compose_file: '{{base_path}}/{{service}}/compose_services/{{service}}-compose.ym
 old_compose_dir: ""
 conda_packages:
   - redis-server
+
+service_port: 6379
+image: "ghcr.io/freva-org/freva-redis:{{ redis_version }}"
+
+env_vars:
+  CONFIG_CONTENT: "{{ redis_information }}"
+
+volumes:
+  cache-logs:
+    pvc: "cache-logs"
+    mountPath: "/data/logs"

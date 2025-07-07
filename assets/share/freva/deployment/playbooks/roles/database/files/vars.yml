@@ -20,3 +20,22 @@ volume_names:
 conda_packages:
   - 'mysql-server={{ db_version }}'
   - 'mysql-client={{ db_version }}'
+
+service_port: 3306
+image: "ghcr.io/freva-org/freva-mysql:{{ db_version }}"
+env_vars:
+  ROOT_PW: "{{ root_passwd }}"
+  HOST: "{{ db_host }}"
+  PROJECT: "{{ project_name }}"
+  MYSQL_USER: "{{ db_user }}"
+  MYSQL_PASSWORD: "{{ db_passwd }}"
+  MYSQL_DATABASE: "{{ db }}"
+  MYSQL_ROOT_PASSWORD: "{{ root_passwd }}"
+
+volumes:
+  db-data:
+    pvc: "db-data"
+    mountPath: "/data/db"
+  db-logs:
+    pvc: "db-logs"
+    mountPath: "/data/logs"

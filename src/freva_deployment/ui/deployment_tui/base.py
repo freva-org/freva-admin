@@ -10,9 +10,8 @@ from typing import Any, Optional, cast
 
 import npyscreen
 import tomlkit
-from npyscreen.wgwidget import Widget
-
 from freva_deployment.utils import AD, asset_dir, config_file
+from npyscreen.wgwidget import Widget
 
 logging.basicConfig(level=logging.DEBUG)
 logger: logging.Logger = logging.getLogger("deploy-freva-tui")
@@ -30,7 +29,7 @@ class InfoMixin(Widget):
         **kwargs: Any,
     ) -> None:
         name = kwargs.get("name", "Select")
-        kwargs["name"] = f"{name}. Press Strg+F for more info."
+        kwargs["name"] = f"{name}. Press Ctrl+F for more info."
         self.info = info or AD.get_config_info(section, key)
         super().__init__(*args, **kwargs)
 
@@ -56,7 +55,7 @@ class DictInfo(npyscreen.TitleText):
         **kwargs: Any,
     ) -> None:
         name = kwargs.get("name", "Select")
-        kwargs["name"] = f"{name}. Press Strg+F for more info."
+        kwargs["name"] = f"{name}. Press Ctrl+F for more info."
         self.info = info or AD.get_config_info(section, key)
         try:
             value_str = tomlkit.dumps(value or {}).strip().replace('"', "")

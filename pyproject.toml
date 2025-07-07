@@ -37,7 +37,8 @@ dependencies = [ "appdirs",
              "requests",
 ]
 [project.optional-dependencies]
-dev = ["flit", "tox"]
+dev = ["flit", "tox", "kubernetes"]
+k8s = ["kubernetes"]
 win = ["cryptography", "windows-curses", "pyinstaller", "mock", "pywin32"]
 unix = ["cryptography", "pyinstaller", "mock"]
 doc = ["pydata-sphinx-theme",

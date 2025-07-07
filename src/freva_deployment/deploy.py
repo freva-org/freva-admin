@@ -804,7 +804,27 @@ class DeployFactory:
         logger.info("Parsing configurations")
         self._check_config()
         _ = [getattr(self, f"_prep_{step}")() for step in self.steps]
-        config: dict[str, ConfigType] = {}
+        kube_conf = self.cfg.get("kubernetes", {})
+        config: dict[str, ConfigType] = {
+            "kubernetes": {
+                "hosts": kube_conf.get("deploy_host", "localhost"),
+                "vars": {
+                    "expose_method": kube_conf.get("expose_method", "op-lb"),
+                    "project_name": self.project_name,
+                    "ansible_become_user": self.cfg["freva_rest"].get(
+                        "become_user"
+                    )
+                    or "root",
+                    "ansible_user": self.cfg["freva_rest"].get("ansible_user")
+                    or getuser(),
+                    "base_path": self.cfg["freva_rest"].get("data_path")
+                    or "/opt/freva",
+                    "deployment_method": "k8s",
+                    "service": "",
+                },
+            }
+        }
+
         playbooks = "\n".join(
             [
                 a.read_text()
@@ -820,7 +840,7 @@ class DeployFactory:
             for tag in entry.get("tags", []):
                 if tag in self.steps + ["vault"]:
                     tags.append(entry["hosts"])
-        no_prepend = ("root_passwd", "deployment_method")
+        no_prepend = ("root_passwd", "deployment_method", "expose_method")
         for step in set(self._config_keys):
             config[step] = {}
             if self.cfg.get(step, {}).get(f"{step}_host"):
@@ -846,6 +866,9 @@ class DeployFactory:
             config[step]["vars"]["deployment_method"] = self.cfg.get(
                 "deployment_method", "docker"
             )
+            config[step]["vars"]["expose_method"] = self.cfg.get(
+                "kubernetes", {}
+            ).get("expose_method", "op-lb")
             if step in versions:
                 config[step]["vars"][f"{step.replace('-', '_')}_version"] = (
                     versions[step]
@@ -901,15 +924,24 @@ class DeployFactory:
         """Set all the deployment steps."""
         return [s for s in self.step_order if s in self._steps]
 
-    def _set_deployment_methods(self) -> None:
+    def _set_deployment_methods(self) -> str:
         """Check the deployment methods."""
         valid_deployment_methods = ("podman", "docker", "conda", "k8s")
-        deployment_method = self.cfg.get("deployment_method")
+        deployment_method = self.cfg.get("deployment_method", "")
         if deployment_method not in valid_deployment_methods:
             raise ConfigurationError(
                 f"Deployment method: {deployment_method} is invalid, should be"
                 f"one of {', '.join(valid_deployment_methods)}"
             )
+        if deployment_method == "k8s":
+            for step in self.steps:
+                if step != "core":
+                    for key in self.cfg[step]:
+                        if "_host" in key:
+                            self.cfg[step][key] = self.cfg["kubernetes"][
+                                "deploy_host"
+                            ]
+        return deployment_method
 
     def create_eval_config(self) -> None:
         """Create and dump the evaluation_system.config."""
@@ -1142,9 +1174,11 @@ class DeployFactory:
 
         self.passwords = self.get_ansible_password(ask_pass)
         steps = [s for s in self.steps]
-
-        self._set_deployment_methods()
-        if skip_version_check is False:
+        tags = [t for t in tags or steps]
+        deployment_method = self._set_deployment_methods()
+        if deployment_method == "k8s":
+            tags += ["kubernetes"]
+        elif skip_version_check is False:
             steps = list(
                 set(
                     steps
@@ -1174,7 +1208,7 @@ class DeployFactory:
             playbook=asset_dir / "playbooks" / "main-deployment.yml",
             inventory=inventory,
             envvars=envvars,
-            tags=tags or steps,
+            tags=list(set(tags)),
             passwords=self.passwords,
             extravars=extravars,
             verbosity=verbosity,

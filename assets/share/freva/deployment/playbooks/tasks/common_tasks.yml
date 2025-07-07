@@ -54,7 +54,7 @@
   loop:
     - "{{ old_compose_dir }}"
     - "{{ base_path }}/freva-service-config"
-  when: base_path | length > 0 and old_compose_dir | length > 0
+  when: base_path is defined and old_compose_dir is defined
 
 - name: Registering systemctl path
   stat:
@@ -70,7 +70,7 @@
   file:
     state: absent
     path: "{{ base_path }}/freva-service-config"
-  when: base_path | length > 0
+  when: base_path | default('') | length > 0
 
 - name: Migrating volume directories
   script: >
@@ -82,4 +82,4 @@
   register: migration_result
   failed_when: migration_result.rc not in [0, 3]
   changed_when: migration_result.rc == 3
-  when: service | length > 0 and base_path | length > 0
+  when: service is defined and base_path is defined and deployment_method != "k8s"

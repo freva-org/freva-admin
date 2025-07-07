@@ -13,7 +13,6 @@ from typing import Any, Dict, List, cast
 import appdirs
 import npyscreen
 import tomlkit
-
 from freva_deployment.utils import asset_dir, config_dir, load_config
 
 from .base import BaseForm, selectFile
@@ -227,6 +226,11 @@ class MainApp(npyscreen.NPSAppManaged):
         deployment_method = self._setup_form.deployment_method.values[
             self._setup_form.deployment_method.value
         ]
+        expose_method = self._setup_form.k8s_expose_method.values[
+            self._setup_form.k8s_expose_method.value
+        ]
+        deploy_host = self._setup_form.k8s_deploy_host.value
+
         bools = {}
         for key, value in (
             ("ssh_pw", self._setup_form.use_ssh_pw.value),
@@ -241,9 +245,13 @@ class MainApp(npyscreen.NPSAppManaged):
             ssh_port = int(self._setup_form.ssh_port.value)
         except ValueError:
             ssh_port = 22
+        self.config.setdefault("kubernetes", {})
         self.config["certificates"] = cert_files
         self.config["project_name"] = project_name or ""
         self.config["deployment_method"] = deployment_method
+        self.config["deployment_method"] = deployment_method
+        self.config["kubernetes"]["expose_method"] = expose_method
+        self.config["kubernetes"]["deploy_host"] = deploy_host
         config = {
             **bools,
             **{
@@ -266,8 +274,15 @@ class MainApp(npyscreen.NPSAppManaged):
         config_tmpl["certificates"] = cert_files
         config_tmpl["project_name"] = project_name
         config_tmpl["deployment_method"] = deployment_method
+        config_tmpl["kubernetes"]["deploy_host"] = deploy_host
+        config_tmpl["kubernetes"]["expose_method"] = expose_method
         for step, settings in self.config.items():
-            if step in ("certificates", "project_name", "deployment_method"):
+            if step in (
+                "certificates",
+                "project_name",
+                "deployment_method",
+                "kubernetes",
+            ):
                 continue
             for key, config in settings.items():
                 if isinstance(config, dict):
