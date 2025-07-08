@@ -7,6 +7,11 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2507.2.0
+~~~~~~~~~
+* Do not install freva via pip
+
+
 v2507.1.0
 ~~~~~~~~~
 * Bump core, rest-api, web versions
