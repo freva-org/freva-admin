@@ -7,6 +7,11 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2507.1.0
+~~~~~~~~~
+* Bump core, rest-api, web versions
+* Enable stac api
+
 v2507.0.0
 ~~~~~~~~~
 * Fix CSRF issues
