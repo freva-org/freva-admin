@@ -387,7 +387,7 @@ class DeployFactory:
         self.cfg["freva_rest"]["db_host"] = freva_rest_host
         self.cfg["freva_rest"]["db_user"] = namegenerator.gen()
         self.cfg["freva_rest"].pop("core", None)
-        services = ["databrowser"]
+        services = ["databrowser", "stacapi"]
         if self.cfg["freva_rest"].get("data_loader_portal_hosts", "").strip():
             services.append("zarr-stream")
             self.cfg["freva_rest"]["data_loader"] = True
