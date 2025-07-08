@@ -142,11 +142,12 @@
 
     - name: Installing additional python packages
       command:
-        cmd: "{{ conda_bin }}/python -m pip install {{item}}"
+        cmd: "{{ conda_bin }}/python -m pip install -U {{item}}"
         creates: "{{ conda_bin }}/{{ item }}"
       with_items:
         - "jupyter-kernel-install"
         - "metadata-inspector"
+        - "freva-client"
 
     - name: Installing metadata-crawler
       script: >
