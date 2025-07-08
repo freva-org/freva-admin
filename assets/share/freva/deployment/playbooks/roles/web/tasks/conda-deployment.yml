@@ -96,6 +96,7 @@
       SERVER_CERT: "{{ web_cert_content }}"
       SERVER_KEY: "{{ web_key_content }}"
       SERVER_ROOT: "{{ data_dir }}/app/static"
+      STAC_BROWSER: "1"
       VAULT_HOST: '{{ web_vault_host.replace("http://", "") }}:5002'
       WEB_SERVER_NAME: "localhost"
       WEB_SERVER_PORT: "8000"
