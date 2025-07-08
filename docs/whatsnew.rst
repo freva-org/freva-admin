@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2507.1.0
+~~~~~~~~
+* Bumped version of freva_rest to 2507.0.0
+
+
+
 v2507.0.0
 ~~~~~~~~~
 * Fix CSRF issues
