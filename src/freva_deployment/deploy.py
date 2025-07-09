@@ -421,7 +421,7 @@ class DeployFactory:
             self.cfg["freva_rest"]["oidc_token_claims"] = ",".join(
                 token_claims_str
             )
-        self.cfg["freva_rest"]["services"] = "-s " + " -s ".join(services)
+        self.cfg["freva_rest"]["services"] = ",".join(services)
         if prep_web:
             self._prep_web(False)
         for key in ("mongodb_server", "search_server"):

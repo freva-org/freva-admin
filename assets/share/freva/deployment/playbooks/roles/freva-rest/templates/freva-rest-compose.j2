@@ -31,10 +31,10 @@ services:
       - API_MONGO_HOST={{ freva_rest_mongodb_server_host }}:27017
       - API_MONGO_PASSWORD={{freva_rest_db_passwd}}
       - API_MONGO_DB=search_stats
+      - API_SERVICES={{ freva_rest_services }}
     ports:
       - {{freva_rest_port}}:{{freva_rest_port}}
     container_name: {{freva_rest_name}}
-    command:  {{freva_rest_services}}
     tty: true
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
