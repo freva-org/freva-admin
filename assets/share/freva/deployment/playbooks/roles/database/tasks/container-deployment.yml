@@ -92,10 +92,3 @@
     -f {{compose_file}} up --remove-orphans
   environment:
     PREFER: "{{deployment_method }}"
-
-- pause: seconds=15
-
-- name: health check
-  shell: >
-    {{ docker_bin }} exec {{ db_name }}
-    sh -c 'healthchecks -s mysql'

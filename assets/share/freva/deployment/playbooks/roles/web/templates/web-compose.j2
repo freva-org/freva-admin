@@ -38,6 +38,7 @@ services:
       - OIDC_CLIENT_SECRET={{ web_oidc_client_secret }}
       - OIDC_CLIENT_ID={{ web_oidc_client }}
       - CHATBOT_HOST={{ web_chatbot_host.replace("http://", "") }}
+      - STAC_BROWSER=1
 
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro

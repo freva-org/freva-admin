@@ -38,6 +38,7 @@
       API_MONGO_DB: "search_stats"
       API_MONGO_USER: "{{ freva_rest_db_user }}"
       API_OIDC_TOKEN_CLAIMS: "{{ freva_rest_oidc_token_claims }}"
+      API_SERVICES: "{{ freva_rest_services }}"
       CONDA_PREFIX: "{{ conda_path }}"
     redis_env_vars: >-
       {{
