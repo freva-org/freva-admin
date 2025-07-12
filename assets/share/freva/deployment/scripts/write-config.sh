@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
+set -xe
 
-CONFIG_DIR=${CONFIG_DIR:-/config}
+CONFIG_DIR=${FREVA_CONFIG:-/config}
 
 mkdir -p $CONFIG_DIR
 if [ ! -f /config/evaluation_system.conf ]; then
