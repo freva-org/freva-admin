@@ -1,4 +1,5 @@
 ansible/*
+docs/_generated/*
 *.img
 *.spec
 *.toml

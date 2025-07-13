@@ -16,7 +16,6 @@ import os
 import sys
 from contextlib import redirect_stderr, redirect_stdout
 from datetime import date
-
 from pathlib import Path
 
 # from recommonmark.parser import CommonMarkParser
@@ -40,7 +39,7 @@ toml_config_file = (
 toml_config = toml_config_file.read_text()
 
 
-def get_cli_output(*args):
+def get_cli_output(*args, format="md"):
     if args:
         cmd = list(args) + ["--help"]
     else:
@@ -53,7 +52,10 @@ def get_cli_output(*args):
     except SystemExit:
         pass
     output = buf.getvalue()
-    return f"```console\n{command}\n{output}```"
+    if format == "md":
+        return f"```console\n{command}\n{output}```"
+    else:
+        return f"{command}\n{output}\n"
 
 
 cli_tui = get_cli_output()
@@ -176,6 +178,7 @@ myst_substitutions = {
     "cli_tui": cli_tui,
     "cli_cmd": cli_cmd,
     "cli_mig": cli_mig,
+    "cli_compose": get_cli_output("compose"),
     "cli_config": cli_config,
     "cli_config_get": get_cli_output("config", "get"),
     "cli_config_set": get_cli_output("config", "get"),
@@ -193,6 +196,14 @@ rst_prolog = """
 """.format(
     version=__version__,
 )
+
+cli_output_dir = Path(__file__).parent / "_generated"
+cli_output_dir.mkdir(exist_ok=True, parents=True)
+
+(cli_output_dir / "compose.txt").write_text(
+    get_cli_output("compose", format="rst")
+)
+
 
 # ReadTheDocs has its own way of generating sitemaps, etc.
 if not os.environ.get("READTHEDOCS"):

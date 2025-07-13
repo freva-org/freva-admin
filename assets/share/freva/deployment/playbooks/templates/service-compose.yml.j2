@@ -1,0 +1,289 @@
+---
+services:
+  database-server:
+    user: {{uid}}
+    image: ghcr.io/freva-org/freva-mysql:{{db_version}}
+    hostname: databse-server
+    networks:
+      - {{ project_name }}
+    environment:
+      - ROOT_PW={{ root_passwd }}
+      - HOST={{ db_host }}
+      - PROJECT={{ project_name }}
+      - MYSQL_USER={{db_user}}
+      - MYSQL_PASSWORD={{db_passwd}}
+      - MYSQL_DATABASE={{db}}
+      - MYSQL_ROOT_PASSWORD={{ root_passwd }}
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - db_data:/data/db:z
+      - db_logs:/data/logs:z
+    container_name: database-server
+    tty: true
+    ports:
+      - {{db_port}}:3306
+    healthcheck:
+      test: ["CMD-SHELL","for i in $(seq 1 30); do </dev/tcp/localhost/3306 && exit 0; sleep 1; done; exit 1"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
+
+  vault-server:
+    user: root
+    image: ghcr.io/freva-org/freva-vault:{{vault_version}}
+    hostname: vault-server
+    networks:
+      - {{ project_name }}
+    cap_add:
+      - IPC_LOCK
+      - SYS_NICE
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    environment:
+      - ROOT_PW={{ root_passwd }}
+      - KEY_FILE=/vault/file/keys
+      - VAULT_ADD_VAR_MONGO_USER={{freva_rest_db_user}}
+      - VAULT_ADD_VAR_MONGO_HOST={{ freva_rest_mongodb_server_host }}:27017
+      - VAULT_ADD_VAR_MONGO_PASSWORD={{freva_rest_db_passwd}}
+      - VAULT_ADD_VAR_MONGO_DB=search_stats
+      - VAULT_ADD_VAR_MONGO_URL="mongodb://{{freva_rest_db_user}}:{{freva_rest_db_passwd}}@{{freva_rest_db_host}}:27017?timeoutMS=2000"
+      - VAULT_ADD_VAR_DB_USER={{db_user}}
+      - VAULT_ADD_VAR_DB_PASSWD={{db_passwd}}
+      - VAULT_ADD_VAR_DB_DB={{ db }}
+      - VAULT_ADD_VAR_DB_HOST={{ db_host }}
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - vault_data:/vault:z
+    container_name: vault-server
+    tty: true
+    ports:
+      - 5002:5002
+
+  cache-server:
+    user: {{uid}}
+    image: ghcr.io/freva-org/freva-redis:{{redis_version}}
+    hostname: cache-server
+    networks:
+      - {{ project_name }}
+    container_name: cache-server
+    tty: true
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_USERNAME={{ redis_username }}
+      - REDIS_PASSWORD={{ redis_password }}
+
+  data-loader-server:
+    user: {{uid}}
+    image: ghcr.io/freva-org/freva-data-loader:latest
+    hostname: data-loader-server
+    networks:
+      - {{ project_name }}
+    container_name: data-loader-server
+    tty: true
+    environment:
+      - API_CONFIG=/tmp/data-loader.conf
+      - API_LOGDIR=/tmp/data-loader.logs
+      - API_REDIS_USER={{ redis_username }}
+      - API_REDIS_PASSWORD={{ redis_password }}
+      - API_REDIS_HOST=cache-server
+    command: ["bash", "-c", "sleep 20 && python3 -m data_portal_worker"]
+
+  mongo-server:
+    user: {{uid}}
+    image: ghcr.io/freva-org/freva-mongo:{{ mongodb_server_version }}
+    hostname: mongo-server
+    networks:
+      - {{ project_name }}
+    environment:
+      - API_MONGO_PASSWORD={{mongodb_server_db_passwd}}
+      - API_MONGO_DB=search_stats
+      - API_MONGO_USER={{mongodb_server_db_user}}
+    ports:
+      - 27017:27017
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - mongo_data:/data/db:z
+      - mongo_logs:/data/logs:z
+    container_name: mongo-server
+    tty: true
+
+  search-server:
+    user: {{uid}}
+    image: ghcr.io/freva-org/freva-solr:{{solr_version}}
+    hostname: search-server
+    networks:
+      - {{ project_name }}
+    environment:
+      - API_SOLR_PORT=8983
+      - API_SOLR_HEAP={{search_server_solr_mem}}
+    ports:
+      - 8983:8983
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - solr_data:/data/db:z
+      - solr_logs:/data/logs:z
+    container_name: search-server
+    tty: true
+
+  freva-rest-server:
+    user: {{uid}}
+    image: ghcr.io/freva-org/freva-rest-api:{{freva_rest_version}}
+    hostname: freva-rest-server
+    networks:
+      - {{ project_name }}
+    environment:
+      - API_SOLR_CORE=files
+      - API_PORT={{freva_rest_port}}
+      - API_PROXY={{freva_rest_proxy_url}}
+      - COLUMNS=140
+      - API_OIDC_CLIENT_ID={{freva_rest_oidc_client}}
+      - API_OIDC_DISCOVERY_URL={{freva_rest_oidc_url}}
+      - API_OIDC_CLIENT_SECRET={{freva_rest_oidc_client_secret}}
+      - API_OIDC_TOKEN_CLAIMS={{ freva_rest_oidc_token_claims }}
+      - API_REDIS_USER={{ redis_username }}
+      - API_REDIS_PASSWORD={{ redis_password }}
+      - API_REDIS_HOST=cache-server
+      - API_LOGDIR=/tmp/logs
+      - API_SOLR_HOST=search-server:8983
+      - API_MONGO_USER={{freva_rest_db_user}}
+      - API_MONGO_HOST=mongo-server:27017
+      - API_MONGO_PASSWORD={{freva_rest_db_passwd}}
+      - API_MONGO_DB=search_stats
+      - API_SERVICES={{ freva_rest_services }}
+    ports:
+      - {{freva_rest_port}}:{{freva_rest_port}}
+    container_name: freva-rest-server
+    tty: true
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - freva-rest_logs:/tmp/logs:z
+    depends_on:
+      - mongo-server
+      - search-server
+
+  web-prep:
+    image: quay.io/curl/curl:latest
+    user: root:0
+    environment:
+      - VAR1_B64={{ eval_config_content }}
+      - VAR2_B64={{ web_config_content }}
+      - FREVA_CONFIG=/config
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - web_config:/config:rw
+    entrypoint: ["sh", "-c",
+                 "curl -Ssl https://raw.githubusercontent.com/freva-org/freva-admin/refs/heads/main/assets/share/freva/deployment/scripts/write-config.sh| sh"
+    ]
+
+  web-app:
+    user: root:0
+    image: ghcr.io/freva-org/freva-web:{{web_version}}
+    container_name: web-app
+    hostname: web-app
+    networks:
+      - {{ project_name }}
+    environment:
+{% if use_core is true %}
+      - EVALUATION_SYSTEM_CONFIG_FILE={{ core_root_dir }}/freva/evaluation_system.conf
+{% else %}
+      - EVALUATION_SYSTEM_CONFIG_FILE=/data/config/evaluation_system.conf
+{% endif %}
+      - DJANGO_SUPERUSER_PASSWORD={{ root_passwd }}
+      - ALLOWED_HOSTS={{web_allowed_hosts | join(',')}}
+      - FREVA_WEB_CONFIG_FILE=/data/config/web/freva_web.toml
+      - SCHEDULER_HOST={{ web_scheduler_host | join(',') }}
+      - CSRF_TRUSTED_ORIGINS={{ web_csrf_trusted_origins | join(',') }}
+      - FREVA_BIN={{ web_freva_bin }}
+      - COLUMNS=140
+      - REDIS_HOST=cache-server
+      - FREVA_REST_URL=http://freva-rest-server:7777
+      - REDIS_PASSWD={{ redis_password }}
+      - REDIS_USER={{ redis_username }}
+      - OIDC_DISCOVERY_URL={{ web_oidc_url }}
+      - OIDC_CLIENT_SECRET={{ web_oidc_client_secret }}
+      - OIDC_CLIENT_ID={{ web_oidc_client }}
+      - CHATBOT_HOST={{ web_chatbot_host.replace("http://", "") }}
+      - STAC_BROWSER=1
+      - DB_USER={{ db_user }}
+      - DB_PASSWD={{ db_passwd }}
+      - DB_NAME={{ db }}
+      - DB_HOST=database-server
+      - VAULT_URL=http://vault-server:5002
+    command: ["bash", "-c", "sleep 20 && ./init_django.sh"]
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+{% if use_core is true %}
+      - {{ core_root_dir }}:{{ core_root_dir }}:ro
+      - {{ core_scheduler_output_dir }}:{{ core_scheduler_output_dir }}:ro
+{% endif %}
+      - web_django-static:/opt/freva_web/static:z
+      - web_config:/data/config:z
+      - web_logs:/data/logs:z
+    tty: true
+    depends_on:
+      - cache-server
+      - web-prep
+      - database-server
+      - vault-server
+      - freva-rest-server
+
+  web-reverse-proxy:
+    user: root:0
+    image: ghcr.io/freva-org/freva-nginx:{{ proxy_version or "latest" }}
+    container_name: web-reverse-proxy
+    hostname: web-reverse-proxy
+    networks:
+      - {{ project_name }}
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - web_django-static:/srv/static:z
+      - web_proxy-logs:/data/logs:z
+{% if use_core is true %}
+      - {{ core_preview_path | regex_replace('^~', ansible_env.HOME)}}:/srv/static/preview:ro
+{% endif %}
+    environment:
+      - SERVER_ROOT=/srv/static
+      - VAULT_HOST={{ vault_host.replace("http://", "") }}:5002
+      - FREVA_REST_HOST=freva-rest-server:7777
+{% if use_core is true %}
+      - EVALUATION_SYSTEM_CONFIG_FILE={{ core_root_dir }}/freva/evaluation_system.conf
+{% endif %}
+      - CHATBOT_HOST={{ web_chatbot_host.replace("http://", "") }}
+      - WEB_SERVER_NAME=web-app
+      - WEB_SERVER_PORT=8000
+      - SERVER_CERT={{ web_cert_content }}
+      - SERVER_KEY={{ web_key_content }}
+      - REST_PROXY_HOST_NAME={{ web_chatbot_rest_api_url }}
+      - FILL_COLOR={{ web_main_color }}
+      - PROXY_USER=nobody
+      - PROJECT_NAME={{ project_name }}
+      - PORT_HTTPSD=443
+      - PORT_HTTPD=80
+      - WEB_HOST={{ web_project_website.replace("http://", "").replace("https://", "").replace("www.","")  }}
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - web-app
+
+networks:
+  {{ project_name }}:
+    driver: bridge
+
+volumes:
+  web_django-static:
+  web_proxy-logs:
+  web_config:
+  web_logs:
+  db_logs:
+  db_data:
+  vault_data:
+  freva-rest_logs:
+  mongo_data:
+  mongo_logs:
+  solr_data:
+  solr_logs:
