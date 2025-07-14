@@ -7,10 +7,15 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2507.3.0
+~~~~~~~~~
+* Enable sub command that creats a single docker-compose file for deployment
+
+
 v2507.2.0
 ~~~~~~~~~
 * Do not install freva via pip
-
+* Enable stac
 
 v2507.1.0
 ~~~~~~~~~
