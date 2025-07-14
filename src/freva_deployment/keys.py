@@ -227,6 +227,8 @@ class RandomKeys:
             [
                 x509.DNSName(f"{self.common_name}"),
                 x509.DNSName(f"www.{self.common_name}"),
+                x509.DNSName("web-reverse-proxy"),
+                x509.DNSName("www.web-reverse-proxy"),
             ]
         )
         certificate = (

@@ -54,6 +54,37 @@ deploy-freva config get -r > my-new-config.toml
 :::
 
 
+## Creating a Compose file ready to go
+
+If you are fine with setting up *all* services on one machine and using
+*docker-compose* or *podman-compose* you can create a complete compose file
+that contains all the services with help of the compose sub command:
+
+{{cli_compose }}
+
+You can edit and copy the resulting *compose* file and
+*systemd service unit* to the target machine, and start it.
+This will bring up all micro services necessary to start the freva components.
+
+:::{note}
+The `compose` sub command will not log on to any remote machines nor
+set up anything else than a docker compose file and if chosen, a systemd
+unit file to start the compose service. If you want to use freva core
+library with data analysis plugins you will have to install `freva`
+from conda-forge:
+
+```console
+conda install -c conda-forge freva
+```
+
+Once you have installed the core library you will have to adjust the volumes
+and ``EVALUATION_SYSTEM_CONFIG_FILE`` environment variable in the ``web-app``
+section of your compose file.
+
+:::
+
+
+
 ## Running the deployment
 The command `deploy-freva` opens a text user interface (tui) that will walk
 you through the setup of the deployment.

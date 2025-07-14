@@ -421,7 +421,7 @@ class DeployFactory:
             self.cfg["freva_rest"]["oidc_token_claims"] = ",".join(
                 token_claims_str
             )
-        self.cfg["freva_rest"]["services"] = "-s " + " -s ".join(services)
+        self.cfg["freva_rest"]["services"] = ",".join(services)
         if prep_web:
             self._prep_web(False)
         for key in ("mongodb_server", "search_server"):
@@ -536,8 +536,11 @@ class DeployFactory:
                 _webserver_items["about_us_text"] = f_obj.read()
         except (FileNotFoundError, IOError, KeyError):
             pass
-        self.web_conf_file.write_text(tomlkit.dumps(_webserver_items))
-
+        web_config = tomlkit.dumps(_webserver_items)
+        self.web_conf_file.write_text(web_config)
+        self.cfg["web"]["config_content"] = b64encode(
+            web_config.encode()
+        ).decode()
         server_name = self.cfg["web"].pop("server_name", [])
         if isinstance(server_name, str):
             server_name = server_name.split(",")
@@ -550,17 +553,17 @@ class DeployFactory:
             web_host = "localhost"
         self.cfg["web"]["host"] = web_host
         self.cfg["web"]["csrf_trusted_origins"] = []
-        for url in (server_name, self.cfg["web"]["project_website"]):
-            trusted_origin = urlparse(url)
+        for url in [server_name] + self.cfg["web"]["project_website"].split(","):
+            trusted_origin = urlparse(url.strip())
 
             if trusted_origin.scheme:
-                self.cfg["web"]["csrf_trusted_origins"].append(
-                    f"https://{trusted_origin.netloc}"
-                )
+                netloc = trusted_origin.netloc.removeprefix("www.")
             else:
-                self.cfg["web"]["csrf_trusted_origins"].append(
-                    f"https://{trusted_origin.path}"
-                )
+                netloc = trusted_origin.path.removeprefix("www.")
+            for prefix in ("www.", ""):
+                uri = f"https://{prefix}{netloc}"
+                self.cfg["web"]["csrf_trusted_origins"].append(uri)
+
         self.cfg["web"]["csrf_trusted_origins"] = list(
             set(self.cfg["web"]["csrf_trusted_origins"])
         )
@@ -787,7 +790,7 @@ class DeployFactory:
         if dump_file:
             config[step]["vars"][f"{step}_dump"] = str(dump_file)
 
-    def parse_config(self, steps: list[str]) -> Optional[str]:
+    def parse_config(self, steps: list[str], **extra: str) -> Optional[str]:
         """Create config files for ansible and evaluation_system.conf."""
         versions = get_versions()
         additional_steps = set(steps) - set(self.steps)
@@ -853,6 +856,8 @@ class DeployFactory:
             config[step]["vars"]["debug"] = self.local_debug
             # Add additional keys
             self._set_additional_config_values(step, config)
+            for k, v in extra.items():
+                config[step]["vars"][k] = v
         max_width = int(max(shutil.get_terminal_size().columns * 0.75, 25))
         if "search_server" in config:
             config["search_server"]["vars"]["solr_version"] = versions["solr"]
@@ -911,7 +916,7 @@ class DeployFactory:
                 f"one of {', '.join(valid_deployment_methods)}"
             )
 
-    def create_eval_config(self) -> None:
+    def create_eval_config(self) -> Optional[Path]:
         """Create and dump the evaluation_system.config."""
         logger.info("Creating evaluation_system.conf")
         keys = (
@@ -954,6 +959,7 @@ class DeployFactory:
         if dump_file:
             with dump_file.open("w") as f_obj:
                 f_obj.write("".join(lines))
+        return dump_file
 
     def get_ansible_password(self, ask_pass: bool = False) -> dict[str, str]:
         """The passwords for the ansible environments."""

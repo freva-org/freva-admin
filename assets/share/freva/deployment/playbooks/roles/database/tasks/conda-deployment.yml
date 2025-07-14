@@ -54,12 +54,3 @@
     state: started
     enabled: true
     scope: "{{ 'system' if ansible_become is true else 'user'}}"
-
-- pause: seconds=15
-
-- name: DB health check
-  shell: >
-    {{ conda_path }}/bin/mysql -u root -p${MYSQL_ROOT_PASSWORD}
-    -e "SHOW GLOBAL STATUS LIKE 'Threads_connected';"
-  environment:
-    MYSQL_ROOT_PASSWORD: "{{ root_passwd }}"
