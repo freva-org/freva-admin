@@ -11,8 +11,9 @@ from typing import Optional
 
 import namegenerator
 import yaml
-from freva_deployment import __version__
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
+
+from freva_deployment import __version__
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -182,7 +183,7 @@ def create_compose(args: argparse.Namespace) -> None:
 
 def compose_parser(
     epilog: str = "", parser: Optional[argparse.ArgumentParser] = None
-) -> argparse.ArgumentParser:
+) -> None:
     """Construct command line argument parser."""
     parser = parser or argparse.ArgumentParser(
         prog="deploy-freva-compose",

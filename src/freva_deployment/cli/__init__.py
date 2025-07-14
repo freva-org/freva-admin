@@ -10,10 +10,11 @@ os.environ["ANSIBLE_COW_PATH"] = os.getenv(
     "ANSIBLE_COW_PATH", shutil.which("cowsay") or ""
 )
 
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
+
 from freva_deployment import __version__
 from freva_deployment.ui.deployment_tui import tui
 from freva_deployment.versions import VersionAction, display_versions
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ._compose import compose_parser
 from ._config import config_parser

@@ -916,7 +916,7 @@ class DeployFactory:
                 f"one of {', '.join(valid_deployment_methods)}"
             )
 
-    def create_eval_config(self) -> Path:
+    def create_eval_config(self) -> Optional[Path]:
         """Create and dump the evaluation_system.config."""
         logger.info("Creating evaluation_system.conf")
         keys = (
