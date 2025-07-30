@@ -134,7 +134,7 @@ class Bump(Release):
         search_path: str = ".",
         **kwargs: str,
     ) -> None:
-        self.extra_packages = kwargs
+        self.extra_packages = {}
         self.version = os.environ.get("REPO_VERSION", "").strip("v")
         token = os.environ.get("GITHUB_TOKEN", "")
         self.branch = branch
@@ -214,7 +214,6 @@ class Bump(Release):
         file.write_text(file_content)
         versions = json.loads(service_file.read_text())
         versions[self.package_name] = self.version
-        versions["vault"] = self.deploy_version.public
         for service, vers in self.extra_packages.items():
             versions[service] = vers
         service_file.write_text(json.dumps(versions, indent=3))
