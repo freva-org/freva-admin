@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2507.4.0
+~~~~~~~~~
+* Bump freva-rest version to 2507.0.0
+* Bump freva-web version to 2507.0.0
+
+
 v2507.3.0
 ~~~~~~~~~
 * Enable sub command that creats a single docker-compose file for deployment
