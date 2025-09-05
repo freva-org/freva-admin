@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     python3-rich \
     python3-paramiko \
     python3-pymysql \
+    python3-full \
     ansible \
     python3-mock \
     mysql-common && \
