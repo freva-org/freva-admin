@@ -69,7 +69,7 @@ jobs:
           tags: |
             ghcr.io/freva-org/freva-deployment:${{ steps.repository.outputs.tag }}
             ghcr.io/freva-org/freva-deployment:latest
-          platforms: linux/amd64,linux/arm64,linux/ppc64le
+          platforms: linux/amd64,linux/arm64
 
   build-and-push-vault-image:
     runs-on: ubuntu-latest
