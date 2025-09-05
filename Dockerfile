@@ -34,8 +34,10 @@ RUN apt-get update && apt-get install -y \
     rm -rf /var/lib/apt/lists/*
 
 # Set environment variables for locale
-ENV LANG=en_US.UTF-8
-ENV LC_ALL=en_US.UTF-8
+ENV PYTHONIOENCODING=utf-8
+ENV LANG=C.UTF-8
+ENV LC_ALL=C.UTF-8
+ENV LANGUAGE=C.UTF-8
 
 # Set up work directories
 RUN mkdir -p /opt/freva-deployment /tmp/deployment /src
