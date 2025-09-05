@@ -1,4 +1,4 @@
-FROM debian:bullseye-20240904
+FROM debian:stable-backports
 
 ARG VERSION
 LABEL org.opencontainers.image.authors="DRKZ-CLINT"
