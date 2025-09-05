@@ -5,6 +5,9 @@ LABEL org.opencontainers.image.authors="DRKZ-CLINT"
 LABEL org.opencontainers.image.source="https://github.com/freva-org/freva-deployment.git"
 LABEL org.opencontainers.image.version="$VERSION"
 
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_ROOT_USER_ACTION=ignore
+
 # Install required packages including locales
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -44,8 +47,8 @@ COPY . .
 
 # Install Python dependencies
 RUN python3 src/freva_deployment/__init__.py && \
-    python3 -m pip install pyinstaller appdirs rich-argparse namegenerator npyscreen && \
-    python3 -m pip install --no-deps . &&\
+    python3 -m pip install --break-system-packages pyinstaller appdirs rich-argparse namegenerator npyscreen && \
+    python3 -m pip install --break-system-packages --no-deps . &&\
     rm -rf /root/.cache/pip && \
     rm -rf /root/build-deps && \
     rm -rf /tmp/deployment
