@@ -16,7 +16,6 @@ RUN apt-get update && apt-get install -y \
     sshpass \
     git \
     binutils \
-    python3-appdirs \
     python3-mysqldb \
     python3-yaml \
     python3-toml \
@@ -44,7 +43,7 @@ COPY . .
 
 # Install Python dependencies
 RUN python3 src/freva_deployment/__init__.py && \
-    python3 -m pip install pyinstaller rich-argparse namegenerator npyscreen && \
+    python3 -m pip install pyinstaller appdirs rich-argparse namegenerator npyscreen && \
     python3 -m pip install --no-deps . &&\
     rm -rf /root/.cache/pip && \
     rm -rf /root/build-deps && \
