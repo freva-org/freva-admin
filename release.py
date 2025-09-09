@@ -141,9 +141,7 @@ class Bump(Release):
         self.package_name = package_name
         self.repo_dir = Path(repo_dir)
         self.search_path = search_path
-        self.repo_url = (
-            f"https://x-access-token:{token}@github.com/freva-org/freva-admin.git"
-        )
+        self.repo_url = f"https://{token}@github.com/freva-org/freva-admin.git"
         logger.debug(
             "Cloning repository from %s with branch %s to %s",
             self.repo_url,
@@ -251,8 +249,6 @@ class Bump(Release):
         """Submit a PR on the deployment repo."""
 
         # Data for the pull request
-        token = os.environ.get("GITHUB_TOKEN", "")
-
         data = {
             "title": f"Bump {self.package_name} version to {self.version}",
             "head": branch,  # Source branch
