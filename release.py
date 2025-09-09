@@ -141,7 +141,9 @@ class Bump(Release):
         self.package_name = package_name
         self.repo_dir = Path(repo_dir)
         self.search_path = search_path
-        self.repo_url = f"https://{token}@github.com/freva-org/freva-admin.git"
+        self.repo_url = (
+            f"https://x-access-token:{token}@github.com/freva-org/freva-admin.git"
+        )
         logger.debug(
             "Cloning repository from %s with branch %s to %s",
             self.repo_url,
@@ -151,6 +153,21 @@ class Bump(Release):
         self.repo = git.Repo.clone_from(
             self.repo_url, self.repo_dir, branch=branch
         )
+        # Ensure commits are authored by the bot identity
+        with self.repo.config_writer() as cw:
+            cw.set_value(
+                "user",
+                "name",
+                os.getenv("BOT_COMMIT_NAME", "github-actions[bot]"),
+            )
+            cw.set_value(
+                "user",
+                "email",
+                os.getenv(
+                    "BOT_COMMIT_EMAIL",
+                    "41898282+github-actions[bot]@users.noreply.github.com",
+                ),
+            )
 
     @property
     def repo_name(self) -> str:
@@ -234,6 +251,8 @@ class Bump(Release):
         """Submit a PR on the deployment repo."""
 
         # Data for the pull request
+        token = os.environ.get("GITHUB_TOKEN", "")
+
         data = {
             "title": f"Bump {self.package_name} version to {self.version}",
             "head": branch,  # Source branch
@@ -257,7 +276,7 @@ class Bump(Release):
         if response.status_code == 201:
             logger.debug("Pull request created successfully!")
         else:
-            raise Exit("Failed to create pull request:%s", response.text)
+            raise Exit("Failed to create pull request: {response.text}", code=0)
 
 
 class Tag(Release):
