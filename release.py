@@ -141,9 +141,7 @@ class Bump(Release):
         self.package_name = package_name
         self.repo_dir = Path(repo_dir)
         self.search_path = search_path
-        self.repo_url = (
-            f"https://x-access-token:{token}@github.com/freva-org/freva-admin.git"
-        )
+        self.repo_url = f"https://{token}@github.com/freva-org/freva-admin.git"
         logger.debug(
             "Cloning repository from %s with branch %s to %s",
             self.repo_url,
