@@ -1,5 +1,5 @@
 PyMySQL==1.1.2
-PyYAML==6.0.1
+PyYAML==6.0.3
 appdirs==1.4.4
 npyscreen==4.10.5
 rich==14.1.0
