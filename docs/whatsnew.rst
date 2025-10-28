@@ -7,6 +7,56 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2510.1.0
+~~~~~~~~
+* Bumped version of freva-web to 2510.1.0
+
+
+
+v2510.0.0
+~~~~~~~~
+* Bumped version of freva_rest to 2510.0.0
+
+
+
+v2509.2.0
+~~~~~~~~
+* Bumped version of freva_rest to 2509.0.0
+
+
+
+v2509.1.0
+~~~~~~~~
+* Bumped version of freva-web to 2509.0.0
+
+v2509.0.0
+~~~~~~~~
+* Bumped version of freva_rest to 2509.0.0
+
+
+
+v2508.0.0
+~~~~~~~~
+* Bumped version of freva-web to 2507.0.0
+
+
+
+v2507.4.0
+~~~~~~~~~
+* Bump freva-rest version to 2507.0.0
+* Bump freva-web version to 2507.0.0
+
+
+v2507.3.0
+~~~~~~~~~
+* Enable sub command that creats a single docker-compose file for deployment
+
+
+v2507.2.0
+~~~~~~~~~
+* Do not install freva via pip
+* Enable stac
+
 v2507.1.0
 ~~~~~~~~~
 * Bump core, rest-api, web versions

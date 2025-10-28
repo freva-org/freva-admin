@@ -36,12 +36,6 @@
         -p {{ core_install_dir }} -c conda-forge --override-channels
         -y {{ conda_pkgs | join(' ') }}
 
-    - name: Installing freva - {{ core_version }}
-      shell: >
-        {{ tempdir.path }}/bin/micromamba run
-        -p {{ core_install_dir }} python -m pip install -U --no-deps
-        freva=={{ core_version }}
-
     - name: Creating conda dir
       file:
         path: "{{ core_install_dir }}"

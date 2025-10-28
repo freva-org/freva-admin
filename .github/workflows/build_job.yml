@@ -165,11 +165,9 @@ jobs:
           - arch: linux/arm/v6
             target: linux-armvl6
           - arch: linux/ppc64le
-            target: linux-ppc64
+            target: linux-ppc64le
           - arch: linux/s390x
             target: linux-s390x
-          - arch: linux/i386
-            target: linux-i386
 
     steps:
 
@@ -209,7 +207,7 @@ jobs:
       - name: Run PyInstaller in Docker
         run: >
           docker run --rm -v $PWD:/src -w /src --platform ${{ matrix.arch }}
-          -e PYTHONIOENCODING=utf-8 -e LANG=C pyinstaller:${{ matrix.target }}
+          -e PYTHONIOENCODING=utf-8 -e LANG=C.UTF-8 pyinstaller:${{ matrix.target }}
           pyinstaller --noconfirm deploy-freva-all.spec
 
       - name: Test built bindary

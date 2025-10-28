@@ -34,21 +34,23 @@ tooling, you can install it via ``pip``:
 
     python -m pip install freva-deployment
 
-To deploy a self-contained version of Freva on your local machine, use the
-``deploy-freva cmd`` command with the ``--local`` flag:
-
-.. code-block:: console
-
-    deploy-freva cmd --local
-
 To customise the configuration, generate a new config file and modify it using
 the ``deploy-freva config`` subcommands:
 
 .. code-block:: console
 
-    deploy-freva cmd config get -r > freva.toml
-    deploy-freva cmd config set project_name clex -c freva.toml
-    deploy-freva cmd -c freva.toml --local -g
+    deploy-freva config get -r > freva.toml
+    deploy-freva config set project_name clex -c freva.toml
+
+
+If you are fine with setting up *all* services on one machine and using
+*docker-compose* or *podman-compose* you can create a complete compose file
+that contains all the services with help of the compose sub command:
+
+.. literalinclude:: ../_generated/compose.txt
+   :language: console
+
+
 
 .. toctree::
    :maxdepth: 2

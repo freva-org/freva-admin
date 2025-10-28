@@ -134,7 +134,7 @@ class Bump(Release):
         search_path: str = ".",
         **kwargs: str,
     ) -> None:
-        self.extra_packages = kwargs
+        self.extra_packages = {}
         self.version = os.environ.get("REPO_VERSION", "").strip("v")
         token = os.environ.get("GITHUB_TOKEN", "")
         self.branch = branch
@@ -151,6 +151,21 @@ class Bump(Release):
         self.repo = git.Repo.clone_from(
             self.repo_url, self.repo_dir, branch=branch
         )
+        # Ensure commits are authored by the bot identity
+        with self.repo.config_writer() as cw:
+            cw.set_value(
+                "user",
+                "name",
+                os.getenv("BOT_COMMIT_NAME", "github-actions[bot]"),
+            )
+            cw.set_value(
+                "user",
+                "email",
+                os.getenv(
+                    "BOT_COMMIT_EMAIL",
+                    "41898282+github-actions[bot]@users.noreply.github.com",
+                ),
+            )
 
     @property
     def repo_name(self) -> str:
@@ -214,7 +229,6 @@ class Bump(Release):
         file.write_text(file_content)
         versions = json.loads(service_file.read_text())
         versions[self.package_name] = self.version
-        versions["vault"] = self.deploy_version.public
         for service, vers in self.extra_packages.items():
             versions[service] = vers
         service_file.write_text(json.dumps(versions, indent=3))
@@ -258,7 +272,7 @@ class Bump(Release):
         if response.status_code == 201:
             logger.debug("Pull request created successfully!")
         else:
-            raise Exit("Failed to create pull request:%s", response.text)
+            raise Exit("Failed to create pull request: {response.text}", code=0)
 
 
 class Tag(Release):

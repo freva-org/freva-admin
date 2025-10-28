@@ -125,7 +125,12 @@ class VaultClient:
     keys: KeyType = {"token": "", "keys": []}
 
     def __init__(self) -> None:
-        pass
+        prefix = "VAULT_ADD_VAR_"
+        self.add_keys = {}
+        for key, value in os.environ.items():
+            if key.startswith(prefix):
+                k = key.removeprefix(prefix).lower().replace("_", ".")
+                self.add_keys[k] = value
 
     def _auth_vault(self) -> None:
         if not self.client.is_authenticated():
@@ -322,4 +327,7 @@ async def read_secret(
 if __name__ == "__main__":
 
     Popen(["vault", "server", "-config", cli()])
-    Vault.unseal()
+    key = Vault.unseal()
+    if key.get("token") and Vault.add_keys:
+        print(Vault.add_keys)
+        Vault.update_secret("data", **Vault.add_keys)
