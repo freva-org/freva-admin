@@ -1,0 +1,15 @@
+[Unit]
+Description=NGINX reverse proxy for {{ service }}
+After=network.target
+
+[Service]
+ExecStart=/usr/sbin/nginx -g 'daemon off;' -c  {{ nginx_config_path }}
+ExecReload=/bin/kill -s HUP $MAINPID
+ExecStop=/bin/kill -s TERM $MAINPID
+Restart=always
+RestartSec=5
+TimeoutStopSec=10
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target

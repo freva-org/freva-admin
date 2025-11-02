@@ -302,7 +302,6 @@ class RunnerDir(TemporaryDirectory):
         # Prepare the command
 
         command = ["ansible-playbook", playbook_path, "-i", inventory_path]
-
         # Set environment variables
         for tag in tags:
             command += ["-t", tag]

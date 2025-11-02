@@ -1,0 +1,187 @@
+{# ---- variables & defaults ---- #}
+{% set svc = project_name ~ '-' ~ (service | replace('_','-')) %}
+{% set volumes = volumes | default({}) %}
+{% set service_port = service_port | default(0) %}
+{% set expose_method = expose_method | default('nodeport') %}
+{% set probes_enabled = probes_enabled | default(true) %}
+{% set probe_kind = probe_kind | default('tcp') %} {# 'tcp' or 'http' #}
+{% set probe_path = probe_path | default('/') %}
+{% set probe_port = probe_port | default(service_port) %}
+{% set initial_readiness_delay = initial_readiness_delay | default(5) %}
+{% set initial_liveness_delay = initial_liveness_delay | default(15) %}
+{% set storage_class_name = storage_class_name | default(None) %}
+{% set resources = resources | default({'requests': {'cpu': '100m','memory':'128Mi'}, 'limits': {'cpu': '1','memory':'512Mi'}}) %}
+{% set security_context = security_context | default({'runAsNonRoot': True, 'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': False}) %}
+{% set secret_env_vars = secret_env_vars | default({}) %}
+
+{# ---- optional Secret for sensitive env vars ---- #}
+{% if secret_env_vars %}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ svc }}-env
+type: Opaque
+stringData:
+{% for k, v in secret_env_vars | dictsort %}
+  {{ k }}: "{{ v }}"
+{% endfor %}
+---
+{% endif %}
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ svc }}
+spec:
+  selector:
+    app: {{ svc }}
+{% if service_port|int > 0 %}
+  ports:
+    - port: {{ service_port }}
+      targetPort: {{ service_port }}
+{% endif %}
+  type:
+{% if expose_method == 'hostport' %}
+    ClusterIP
+{% elif expose_method == 'nodeport' %}
+    NodePort
+{% else %}
+    LoadBalancer
+{% endif %}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ svc }}
+  labels:
+    app.kubernetes.io/name: {{ service | replace('_','-') }}
+    app.kubernetes.io/instance: {{ svc }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: {{ svc }}
+  template:
+    metadata:
+      labels:
+        app: {{ svc }}
+        app.kubernetes.io/name: {{ service | replace('_','-') }}
+        app.kubernetes.io/instance: {{ svc }}
+    spec:
+{% if expose_method == 'hostport' %}
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+{% endif %}
+{% if pod_fs_group is defined %}
+      securityContext:
+        fsGroup: {{ pod_fs_group }}
+{% endif %}
+      containers:
+        - name: {{ service | replace('_','-') }}
+          image: {{ image }}
+{% if service_port|int > 0 %}
+          ports:
+            - containerPort: {{ service_port }}
+{% if expose_method == 'hostport' %}
+              hostPort: {{ service_port }}
+{% endif %}
+              name: {{ service | replace('_','-') }}
+{% endif %}
+
+{% if env_vars or secret_env_vars %}
+          env:
+{% for key, val in (env_vars | default({})) | dictsort %}
+            - name: {{ key }}
+              value: "{{ val }}"
+{% endfor %}
+{% for key, _ in secret_env_vars | dictsort %}
+            - name: {{ key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ svc }}-env
+                  key: {{ key }}
+{% endfor %}
+{% endif %}
+
+{% if probes_enabled and probe_port|int > 0 %}
+          readinessProbe:
+{% if probe_kind == 'http' %}
+            httpGet:
+              path: {{ probe_path }}
+              port: {{ probe_port }}
+{% else %}
+            tcpSocket:
+              port: {{ probe_port }}
+{% endif %}
+            initialDelaySeconds: {{ initial_readiness_delay }}
+            periodSeconds: 5
+          livenessProbe:
+{% if probe_kind == 'http' %}
+            httpGet:
+              path: {{ probe_path }}
+              port: {{ probe_port }}
+{% else %}
+            tcpSocket:
+              port: {{ probe_port }}
+{% endif %}
+            initialDelaySeconds: {{ initial_liveness_delay }}
+            periodSeconds: 10
+{% endif %}
+
+          resources:
+            requests:
+              cpu: "{{ resources.requests.cpu }}"
+              memory: "{{ resources.requests.memory }}"
+            limits:
+              cpu: "{{ resources.limits.cpu }}"
+              memory: "{{ resources.limits.memory }}"
+          securityContext:
+            runAsNonRoot: {{ security_context.runAsNonRoot | default(true) | tojson }}
+            allowPrivilegeEscalation: {{ security_context.allowPrivilegeEscalation | default(false) | tojson }}
+            readOnlyRootFilesystem: {{ security_context.readOnlyRootFilesystem | default(false) | tojson }}
+
+{% if volumes %}
+          volumeMounts:
+{% for name, cfg in volumes | dictsort %}
+            - name: {{ name | lower }}
+              mountPath: {{ cfg.mountPath }}
+{% endfor %}
+{% endif %}
+
+{% if volumes %}
+      volumes:
+{% for name, cfg in volumes | dictsort %}
+        - name: {{ name | lower }}
+{% if cfg.pvc is defined %}
+          persistentVolumeClaim:
+            claimName: {{ cfg.pvc }}
+{% elif cfg.hostPath is defined %}
+          hostPath:
+            path: {{ cfg.hostPath }}
+            type: DirectoryOrCreate
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if volumes %}
+# PVCs: apply once during initial setup; don’t try to mutate later
+{% for name, cfg in volumes | dictsort if cfg.pvc is defined %}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ name | lower }}
+spec:
+  accessModes:
+    - {{ (cfg.accessMode | default('ReadWriteOnce')) }}
+  resources:
+    requests:
+      storage: {{ (cfg.size | default('1Gi')) }}
+{% if storage_class_name %}
+  storageClassName: {{ storage_class_name }}
+{% endif %}
+{% endfor %}
+{% endif %}

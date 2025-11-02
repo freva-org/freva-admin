@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import os
 import re
 import shutil
+import socket
 import sys
 import sysconfig
 from pathlib import Path
@@ -172,6 +174,30 @@ config_file = AD.config_file
 is_bundeled = AD.is_bundeled
 
 
+def is_localhost(host: str) -> bool:
+    """Check if a given hostname is localhost."""
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        try:
+            ip = ipaddress.ip_address(socket.gethostbyname(host))
+        except socket.gaierror:
+            return False
+
+    local_addrs = set()
+    for addr_info in socket.getaddrinfo(socket.gethostname(), None):
+        local_addrs.add(addr_info[4][0])
+
+    # Add standard localhost addresses
+    local_addrs.update({"127.0.0.1", "::1"})
+    try:
+        for iface_info in socket.getaddrinfo(socket.getfqdn(), None):
+            local_addrs.add(iface_info[4][0])
+    except socket.gaierror:
+        pass
+    return str(ip) in local_addrs
+
+
 def get_cache_information(
     redis_host: Optional[str] = None,
     redis_port: Optional[str] = None,
@@ -299,10 +325,14 @@ def _create_new_config(inp_file: Path) -> Path:
             if key not in tomlkit.dumps(config):
                 config[section][key] = config_tmpl[section][key]
                 create_backup = True
-    for key in ("deployment_method",):
+    for key in ("deployment_method", "kubernetes"):
         if key not in config:
             create_backup = True
             config[key] = config_tmpl[key]
+    for key in config_tmpl["kubernetes"]:
+        if key not in config["kubernetes"]:
+            create_backup = True
+            config["kubernetes"][key] = config_tmpl["kubernetes"][key]
     if create_backup:
         backup_file = inp_file.with_suffix(inp_file.suffix + ".bck")
         logger.info(

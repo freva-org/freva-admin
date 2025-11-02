@@ -16,12 +16,15 @@ deployment_method = "podman"
 deploy_host = "localhost"
 
 ## The `expose_method` defines how a service is made accessible externally.
-## Options: hostport or op-lb (default) saas-lb.
+## Options: hostport, nodeport or lb (default).
 ## hostport binds directly to the node port,
-## op-lb (on premise load balancer) and saas-lb (software as a service load balancer)
-## require load balancer to be configured.
-expose_method = "op-lb"
+## lb requires a load balancer to be configured.
+expose_method = "lb"
 
+
+## Set the `config_only` flag to true in order to only create k8s configurations
+## but not start any services (default: false)
+config_only = false
 
 ## Specify the path to the SSL certificate files used for secure connections
 ## to the vault server or as web certificates.

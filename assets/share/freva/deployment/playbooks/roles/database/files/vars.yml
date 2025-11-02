@@ -39,3 +39,10 @@ volumes:
   db-logs:
     pvc: "db-logs"
     mountPath: "/data/logs"
+
+# pod_fs_group: 999
+security_context:
+  runAsUser: 0
+  runAsNonRoot: false
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false

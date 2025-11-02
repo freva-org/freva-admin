@@ -41,6 +41,7 @@ from .utils import (
     config_dir,
     get_cache_information,
     get_passwd,
+    is_localhost,
     load_config,
 )
 from .versions import get_steps_from_versions, get_versions
@@ -812,7 +813,8 @@ class DeployFactory:
             "kubernetes": {
                 "hosts": kube_conf.get("deploy_host", "localhost"),
                 "vars": {
-                    "expose_method": kube_conf.get("expose_method", "op-lb"),
+                    "expose_method": kube_conf.get("expose_method", "lb"),
+                    "config_only": kube_conf.get("config_only", False),
                     "project_name": self.project_name,
                     "ansible_become_user": self.cfg["freva_rest"].get(
                         "become_user"
@@ -1182,8 +1184,10 @@ class DeployFactory:
         steps = [s for s in self.steps]
         tags = [t for t in tags or steps]
         deployment_method = self._set_deployment_methods()
+        local_connection = self.local_debug
         if deployment_method == "k8s":
             tags += ["kubernetes"]
+            local_connection = is_localhost(self.cfg["kubernetes"]["deploy_host"])
         elif skip_version_check is False:
             steps = list(
                 set(
@@ -1196,13 +1200,14 @@ class DeployFactory:
                     )
                 )
             )
+        if local_connection:
+            extravars["ansible_connection"] = "local"
         inventory = self.parse_config(steps)
         if inventory is None:
             logger.info("Services up to date, nothing to do!")
             return None
         if self.local_debug:
             logger.info("Overriding configuration for local deployment!")
-            extravars["ansible_connection"] = "local"
         logger.debug(inventory)
         self.create_eval_config()
         RichConsole.rule(
