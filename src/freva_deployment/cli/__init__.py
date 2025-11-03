@@ -10,17 +10,16 @@ os.environ["ANSIBLE_COW_PATH"] = os.getenv(
     "ANSIBLE_COW_PATH", shutil.which("cowsay") or ""
 )
 
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
 from freva_deployment.ui.deployment_tui import tui
 from freva_deployment.versions import VersionAction, display_versions
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ._compose import compose_parser
 from ._config import config_parser
 from ._deploy import BatchParser
 from ._deploy import cli as deploy
-from ._helm import helm_parser
+from ._kubernets import kubernetes_parser
 from ._migrate import cli as migrate
 from ._migrate import create_parser as migrate_parser
 
@@ -82,10 +81,10 @@ def main_cli(argv: Optional[List[str]] = None) -> None:
             formatter_class=ArgumentDefaultsRichHelpFormatter,
         )
     )
-    helm_parser(
+    kubernetes_parser(
         parser=subparser.add_parser(
-            name="helm",
-            help="Create a helm chart for deployment.",
+            name="kubernetes",
+            help="Create a k8s manifests for deployment.",
             formatter_class=ArgumentDefaultsRichHelpFormatter,
         )
     )

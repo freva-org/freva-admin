@@ -1,4 +1,4 @@
-"""Command line interface for creating helm chart files."""
+"""Command line interface for creating k8s manifest files."""
 
 from __future__ import annotations
 
@@ -11,15 +11,14 @@ from typing import Optional
 
 import namegenerator
 import yaml
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
 from ..utils import RichConsole, asset_dir, config_dir
 
-HELM_TASK = """---
+TASK = """---
 - name: Render compose file locally only
   hosts: all
   connection: local
@@ -27,20 +26,14 @@ HELM_TASK = """---
 
   tasks:
 
-    - name: Make sure helm directory exists
-      file:
-        path: "{{{{ helm_dir }}}}"
-        state: directory
-        mode: "0755"
-
-    - name: Render helm charts
+    - name: Render k8s manifests
       with_fileglob:
           - "{asset_dir}/k8s-deployment/templates/*.yaml.j2"
       loop_control:
         loop_var: t
       template:
         src: "{{{{ t }}}}"
-        dest: "{{{{ helm_dir }}}}/{{{{ t | basename | regex_replace('\\\\.j2$', '') }}}}"
+        dest: "{{{{ out_dir }}}}/{{{{ t | basename | regex_replace('\\\\.j2$', '') }}}}"
 """
 
 
@@ -60,8 +53,8 @@ def comment_entries(toml_str, entries_to_comment):
     return "\n".join(result)
 
 
-def create_helm_chart(args: argparse.Namespace) -> None:
-    """Create the helm chart."""
+def create_manifest(args: argparse.Namespace) -> None:
+    """Create the k8s manifests."""
     set_log_level(args.verbose)
     with DeployFactory(
         steps=None,
@@ -69,7 +62,10 @@ def create_helm_chart(args: argparse.Namespace) -> None:
         local_debug=False,
         gen_keys=True,
     ) as DF:
-
+        out_dir = (
+            (args.output or Path.cwd() / DF.project_name).expanduser().absolute()
+        )
+        out_dir.mkdir(exist_ok=True, parents=True)
         eval_conf_enc = b64encode(
             DF.create_eval_config().read_text().encode()
         ).decode()
@@ -83,7 +79,7 @@ def create_helm_chart(args: argparse.Namespace) -> None:
                 "ingress_class_name": "nginx",
                 "ingress_tls_secret_name": "incommon-cert-tds",
                 "ingress_fqdns": [DF.cfg["web"]["project_website"]],
-                "helm_dir": str(Path.cwd() / DF.project_name / "helm"),
+                "out_dir": str(out_dir),
                 "image_pull_policy": "IfNotPresent",
             },
             **DF.cfg["kubernetes"],
@@ -117,7 +113,7 @@ def create_helm_chart(args: argparse.Namespace) -> None:
                 "container.\n"
             )
 
-        playbook = HELM_TASK.format(asset_dir=asset_dir)
+        playbook = TASK.format(asset_dir=asset_dir)
         web_conf = (
             Path(inventory["core"]["vars"]["core_root_dir"])
             / "share"
@@ -155,13 +151,13 @@ def create_helm_chart(args: argparse.Namespace) -> None:
         )
 
 
-def helm_parser(
+def kubernetes_parser(
     epilog: str = "", parser: Optional[argparse.ArgumentParser] = None
 ) -> None:
     """Construct command line argument parser."""
     parser = parser or argparse.ArgumentParser(
-        prog="deploy-freva-helm",
-        description="Creat and inspect helm charts for freva deployment.",
+        prog="deploy-freva-kubernetes",
+        description="Creat and inspect k8s manifests for freva deployment.",
         formatter_class=ArgumentDefaultsRichHelpFormatter,
         epilog=epilog,
     )
@@ -182,8 +178,15 @@ def helm_parser(
         default=config_dir / "config" / "inventory.toml",
     )
     parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output directory where the manifests should be located.",
+        default=None,
+    )
+    parser.add_argument(
         "--no-plugins",
         action="store_true",
         help="Do not setup core library to use plugins.",
     )
-    parser.set_defaults(cli=create_helm_chart)
+    parser.set_defaults(cli=create_manifest)
