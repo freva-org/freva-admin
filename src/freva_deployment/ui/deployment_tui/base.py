@@ -10,8 +10,9 @@ from typing import Any, Optional, cast
 
 import npyscreen
 import tomlkit
-from freva_deployment.utils import AD, asset_dir, config_file
 from npyscreen.wgwidget import Widget
+
+from freva_deployment.utils import AD, asset_dir, config_file
 
 logging.basicConfig(level=logging.DEBUG)
 logger: logging.Logger = logging.getLogger("deploy-freva-tui")

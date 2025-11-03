@@ -33,7 +33,7 @@ class RandomKeys:
         self, base_name: str = "freva", common_name: str = "localhost"
     ) -> None:
         self.base_name = base_name
-        self.common_name = common_name
+        self.common_name = common_name or "localhost"
         self._private_key_pem: Optional[bytes] = None
         self._public_key_pem: Optional[bytes] = None
         self._private_key: Optional["rsa.RSAPrivateKey"] = None

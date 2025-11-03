@@ -21,10 +21,29 @@ deploy_host = "localhost"
 ## lb requires a load balancer to be configured.
 expose_method = "lb"
 
-
 ## Set the `config_only` flag to true in order to only create k8s configurations
 ## but not start any services (default: false)
 config_only = false
+
+## Set the group ID for all volmes used by pods
+fs_group = 0
+
+## Set the user group
+run_as_group = 0
+
+## Set the user id
+run_as_user = 0
+
+## Set the sizes of the PVC volumes
+mysql_pvc_size = "20Gi"
+mysql_logs_pvc_size =  "2Gi"
+mongo_pvc_size = "20Gi"
+mongo_logs_pvc_size =  "2Gi"
+solr_pvc_size = "20Gi"
+solr_logs_pvc_size = "2Gi"
+web_logs_pvc_size = "2Gi"
+web_cfg_pvc_size = "100Mi"
+rest_logs_pvc_size = "2Gi"
 
 ## Specify the path to the SSL certificate files used for secure connections
 ## to the vault server or as web certificates.
@@ -84,7 +103,9 @@ ansible_python_interpreter = ""
 wipe = false
 
 ## Set the path where the permanent database data should be stored.
-## By default, this is set to /opt/freva/<project_name>/db_service.
+## By default, this is set to /opt/freva/.
+## NOTE: This directory will be used to store persisent data on conda based
+## deployments and creating docker-compose files.
 data_path = "/opt/freva"
 
 ## Set the username that will own all files created by the service such as
@@ -150,6 +171,8 @@ wipe = false
 
 ## Set the path where the permanent freva-rest data should be stored.
 ## By default, this is set to /opt/freva.
+## NOTE: This directory will be used to store persisent data on conda based
+## deployments and creating docker-compose files.
 data_path = "/opt/freva"
 
 ### Indicate whether or not the redis-caching services will be shared among
@@ -290,6 +313,8 @@ ansible_user = ""
 
 ## Set the path where the permanent web data should be stored.
 ## By default, this is set to /opt/freva.
+## NOTE: This directory will be used to store persisent data on conda based
+## deployments and creating docker-compose files.
 data_path = "/opt/freva"
 
 ## Set the main HTML color scheme.

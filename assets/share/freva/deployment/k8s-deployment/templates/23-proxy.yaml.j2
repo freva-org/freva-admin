@@ -1,0 +1,59 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata: { name: web-reverse-proxy, namespace: {{ ns }} }
+spec:
+  type: ClusterIP
+  selector: { app: web-reverse-proxy }
+  ports:
+    - { name: http, port: 80, targetPort: 80 }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: web-reverse-proxy, namespace: {{ ns }} }
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: web-reverse-proxy}}
+  template:
+    metadata: {labels: {app: web-reverse-proxy}}
+    spec:
+      securityContext: {fsGroup: {{ fs_group }}}
+      containers:
+        - name: nginx
+          image: ghcr.io/freva-org/freva-nginx:{{ proxy_version or 'latest' }}
+          imagePullPolicy: {{ image_pull_policy }}
+          env:
+            - {name: SERVER_ROOT, value: "/srv/static"}
+            - {name: VAULT_HOST, value: "{{ vault_host.replace('http://','') }}:5002"}
+            - {name: FREVA_REST_HOST, value: "freva-rest-server:{{ freva_rest_port }}"}
+{% if use_core %}
+            - {name: EVALUATION_SYSTEM_CONFIG_FILE, value: "{{ core_root_dir }}/freva/evaluation_system.conf"}
+{% endif %}
+            - {name: CHATBOT_HOST, value: "{{ web_chatbot_host.replace('http://','') }}"}
+            - {name: WEB_SERVER_NAME, value: "web-app"}
+            - {name: WEB_SERVER_PORT, value: "8000"}
+            - {name: REST_PROXY_HOST_NAME, value: "{{ web_chatbot_rest_api_url }}"}
+            - {name: FILL_COLOR, value: "{{ web_main_color }}"}
+            - {name: PROXY_USER, value: "nobody"}
+            - {name: PROJECT_NAME, value: "{{ project_name }}"}
+            - {name: PORT_HTTPSD, value: "443"}
+            - {name: PORT_HTTPD, value: "80"}
+            - {name: WEB_HOST, value: "{{ web_project_website.replace('http://','').replace('https://','').replace('www.','') }}"}
+          volumeMounts:
+            - {name: web-static, mountPath: /srv/static}
+            - {name: proxy-logs, mountPath: /data/logs}
+{% if use_core %}
+            - {name: core-preview, mountPath: /srv/static/preview, readOnly: true}
+{% endif %}
+      volumes:
+        - name: web-static
+          persistentVolumeClaim: {claimName: web-config}
+        - name: proxy-logs
+          emptyDir: {}
+{% if use_core %}
+        - name: core-preview
+          hostPath:
+            path: "{{ core_preview_path | regex_replace('^~', ansible_env.HOME) }}"
+            type: Directory
+{% endif %}

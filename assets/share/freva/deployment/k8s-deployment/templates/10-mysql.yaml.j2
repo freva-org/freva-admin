@@ -1,0 +1,47 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata: { name: database-server, namespace: {{ ns }} }
+spec:
+  type: ClusterIP
+  selector: { app: database-server }
+  ports: [{ port: 3306, targetPort: 3306, name: mysql }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: database-server, namespace: {{ ns }} }
+spec:
+  serviceName: database-server
+  replicas: 1
+  selector: { matchLabels: { app: database-server } }
+  template:
+    metadata: { labels: { app: database-server } }
+    spec:
+      securityContext: { fsGroup: {{ fs_group }} }
+      containers:
+        - name: mysql
+          image: ghcr.io/freva-org/freva-mysql:{{ db_version }}
+          imagePullPolicy: {{ image_pull_policy }}
+          ports: [{ containerPort: 3306, name: mysql }]
+          env:
+            - name: ROOT_PW
+              valueFrom: { secretKeyRef: { name: freva-secrets, key: MYSQL_ROOT_PASSWORD } }
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom: { secretKeyRef: { name: freva-secrets, key: MYSQL_ROOT_PASSWORD } }
+            - { name: MYSQL_USER, value: "{{ db_user }}" }
+            - name: MYSQL_PASSWORD
+              valueFrom: { secretKeyRef: { name: freva-secrets, key: MYSQL_PASSWORD } }
+            - { name: MYSQL_DATABASE, value: "{{ db }}" }
+            - { name: HOST, value: "{{ db_host }}" }
+            - { name: PROJECT, value: "{{ project_name }}" }
+          volumeMounts:
+            - { name: db-data, mountPath: /data/db }
+            - { name: db-logs, mountPath: /data/logs }
+          readinessProbe: { tcpSocket: { port: 3306 }, initialDelaySeconds: 5, periodSeconds: 5 }
+          livenessProbe:  { tcpSocket: { port: 3306 }, initialDelaySeconds: 10, periodSeconds: 10 }
+      volumes:
+        - name: db-data
+          persistentVolumeClaim: { claimName: db-data }
+        - name: db-logs
+          persistentVolumeClaim: { claimName: db-logs }

@@ -1,0 +1,37 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata: { name: search-server, namespace: {{ ns }} }
+spec:
+  type: ClusterIP
+  selector: { app: search-server }
+  ports: [{ port: 8983, targetPort: 8983, name: http }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: { name: search-server, namespace: {{ ns }} }
+spec:
+  serviceName: search-server
+  replicas: 1
+  selector: { matchLabels: { app: search-server } }
+  template:
+    metadata: { labels: { app: search-server } }
+    spec:
+      securityContext: { fsGroup: {{ fs_group }} }
+      containers:
+        - name: solr
+          image: ghcr.io/freva-org/freva-solr:{{ solr_version }}
+          imagePullPolicy: {{ image_pull_policy }}
+          ports: [{ containerPort: 8983, name: http }]
+          env:
+            - { name: API_SOLR_PORT, value: "8983" }
+            - { name: API_SOLR_HEAP, value: "{{ search_server_solr_mem }}" }
+          volumeMounts:
+            - { name: solr-data, mountPath: /data/db }
+            - { name: solr-logs, mountPath: /data/logs }
+      volumes:
+        - name: solr-data
+          persistentVolumeClaim: { claimName: solr-data }
+        - name: solr-logs
+          persistentVolumeClaim: { claimName: solr-logs }

@@ -5,10 +5,18 @@ from pathlib import Path
 from typing import Any, List, cast
 
 import npyscreen
+
 from freva_deployment import AVAILABLE_CONDA_ARCHS
 from freva_deployment.utils import get_current_file_dir
 
-from .base import BaseForm, CheckboxInfo, ComboInfo, DictInfo, FileInfo, TextInfo
+from .base import (
+    BaseForm,
+    CheckboxInfo,
+    ComboInfo,
+    DictInfo,
+    FileInfo,
+    TextInfo,
+)
 
 DEPLOYMENT_METHODS = ["docker", "podman", "conda", "k8s"]
 EXPOSE_METHODS = ["op-lb", "saas-lb", "hostport"]

@@ -1,4 +1,4 @@
-"""Command line interface for creating compose files."""
+"""Command line interface for creating helm chart files."""
 
 from __future__ import annotations
 
@@ -19,36 +19,28 @@ from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
 from ..utils import RichConsole, asset_dir, config_dir
 
-COMPOSE_TASK = """---
+HELM_TASK = """---
 - name: Render compose file locally only
   hosts: all
   connection: local
   gather_facts: no
 
   tasks:
-    - name: Template out docker-compose.yml
+
+    - name: Make sure helm directory exists
+      file:
+        path: "{{{{ helm_dir }}}}"
+        state: directory
+        mode: "0755"
+
+    - name: Render helm charts
+      with_fileglob:
+          - "{asset_dir}/k8s-deployment/templates/*.yaml.j2"
+      loop_control:
+        loop_var: t
       template:
-        src: {asset_dir}/playbooks/templates/service-compose.yml.j2
-        dest: {pwd}/{project_name}-compose.yml
-"""
-
-SYSTEMD_TMPL = """
-[Unit]
-Description=Start/Stop freva services containers
-After=network-online.target
-Wants=network-online.target
-[Service]
-TimeoutStartSec=35s
-TimeoutStopSec=35s
-ExecStartPre=/usr/bin/env sh -c "{engine} compose --project-name {project_name} -f <compose-dir>/{project_name}-compose.yml down --remove-orphans"
-ExecStart=/usr/bin/env sh -c "{engine} compose --project-name {project_name} -f <compose-dir>/{project_name}-compose.yml up --remove-orphans"
-ExecStop=/usr/bin/env sh -c "{engine} compose --project-name {project_name} -f <compose-dir>/{project_name}-compose.yml down --remove-orphans"
-Restart=on-failure
-RestartSec=5
-StartLimitBurst=5
-[Install]
-WantedBy=default.target
-
+        src: "{{{{ t }}}}"
+        dest: "{{{{ helm_dir }}}}/{{{{ t | basename | regex_replace('\\\\.j2$', '') }}}}"
 """
 
 
@@ -68,8 +60,8 @@ def comment_entries(toml_str, entries_to_comment):
     return "\n".join(result)
 
 
-def create_compose(args: argparse.Namespace) -> None:
-    """Create a compose file."""
+def create_helm_chart(args: argparse.Namespace) -> None:
+    """Create the helm chart."""
     set_log_level(args.verbose)
     with DeployFactory(
         steps=None,
@@ -82,11 +74,19 @@ def create_compose(args: argparse.Namespace) -> None:
             DF.create_eval_config().read_text().encode()
         ).decode()
         extra = {
-            "eval_config_content": eval_conf_enc,
-            "use_core": args.no_plugins is False,
-            "uid": args.user,
-            "redis_password": DF._create_random_passwd(30, 10),
-            "redis_username": namegenerator.gen(),
+            **{
+                "eval_config_content": eval_conf_enc,
+                "use_core": args.no_plugins is False,
+                "redis_password": DF._create_random_passwd(30, 10),
+                "redis_username": namegenerator.gen(),
+                "ingress_enabled": True,
+                "ingress_class_name": "nginx",
+                "ingress_tls_secret_name": "incommon-cert-tds",
+                "ingress_fqdns": [DF.cfg["web"]["project_website"]],
+                "helm_dir": str(Path.cwd() / DF.project_name / "helm"),
+                "image_pull_policy": "IfNotPresent",
+            },
+            **DF.cfg["kubernetes"],
         }
         logger.info("Parsing configurations")
         inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))
@@ -108,7 +108,7 @@ def create_compose(args: argparse.Namespace) -> None:
                 "  [b]python -m pip install freva-client freva[/b] (or) \n"
                 "  [b]conda -c conda-forge install freva-client freva [/b]\n\n"
                 "You should then set the "
-                "[b]EVALUATIO_SYSTEM_CONFIG_FILE[/b] env varaiable "
+                "[b]EVALUATION_SYSTEM_CONFIG_FILE[/b] env varaiable "
                 "for the [b]web-server[/b] section in the compose file to the "
                 "config file that was installed by conda/pip - e.g\n\n  "
                 "<base-path-to-python-env>/freva/"
@@ -117,9 +117,7 @@ def create_compose(args: argparse.Namespace) -> None:
                 "container.\n"
             )
 
-        playbook = COMPOSE_TASK.format(
-            pwd=Path.cwd(), project_name=DF.project_name, asset_dir=asset_dir
-        )
+        playbook = HELM_TASK.format(asset_dir=asset_dir)
         web_conf = (
             Path(inventory["core"]["vars"]["core_root_dir"])
             / "share"
@@ -138,8 +136,6 @@ def create_compose(args: argparse.Namespace) -> None:
             inventory=inventory,
             verbosity=args.verbose,
         )
-        yml_file = Path.cwd() / f"{DF.project_name}-compose.yml"
-        service_file = yml_file.with_suffix(".service")
         config_path = (
             Path(inventory["core"]["vars"]["core_root_dir"])
             / "freva"
@@ -150,42 +146,22 @@ def create_compose(args: argparse.Namespace) -> None:
         RichConsole.rule("")
         RichConsole.print(
             (
-                f"The compose file ({yml_file.name}) has been created. "
-                "You can copy the file to your server and start "
-                f"the compose command.\n\n{plugin_note}"
+                "The k8s directory has been created. "
+                f"\n\n{plugin_note}"
                 "The web config file will be located in the "
-                f"[b]{config_path}[/b] you can ajust it's settings there and"
-                " restart the compose."
-            )
-        )
-
-        if args.systemd_service:
-
-            service_file.write_text(
-                SYSTEMD_TMPL.format(
-                    project_name=DF.project_name, engine=args.container_engine
-                )
-            )
-        RichConsole.print(
-            (
-                "\n\nA systemd service file was created. Set the path"
-                " to the compose file on the server and place it "
-                f"into [b]/etc/systemd/system/{service_file.name}[/]"
-                "\n"
-                "then use:\n\n"
-                "  [b]sudo systemctl daemon-reload\n"
-                f"  sudo systemctl enable --now {service_file.name}[/b]\n"
+                f"[b]{config_path}[/b] you can adjust it's settings there and"
+                "restart the service."
             )
         )
 
 
-def compose_parser(
+def helm_parser(
     epilog: str = "", parser: Optional[argparse.ArgumentParser] = None
 ) -> None:
     """Construct command line argument parser."""
     parser = parser or argparse.ArgumentParser(
-        prog="deploy-freva-compose",
-        description="Create and inspect freva configuration.",
+        prog="deploy-freva-helm",
+        description="Creat and inspect helm charts for freva deployment.",
         formatter_class=ArgumentDefaultsRichHelpFormatter,
         epilog=epilog,
     )
@@ -206,34 +182,8 @@ def compose_parser(
         default=config_dir / "config" / "inventory.toml",
     )
     parser.add_argument(
-        "--host",
-        type=str,
-        help="Host name where the compose service should be running.",
-    )
-    parser.add_argument(
-        "-u",
-        "--user",
-        type=str,
-        help="User name that should run the services insight the container.",
-        default="root",
-    )
-    parser.add_argument(
         "--no-plugins",
         action="store_true",
         help="Do not setup core library to use plugins.",
     )
-    parser.add_argument(
-        "-e",
-        "--container-engine",
-        help="Create a compose file for docker or podman.",
-        default="docker",
-        choices=["docker", "podman"],
-        type=str,
-    )
-    parser.add_argument(
-        "-s",
-        "--systemd-service",
-        help="Create a systemd-service file.",
-        action="store_true",
-    )
-    parser.set_defaults(cli=create_compose)
+    parser.set_defaults(cli=create_helm_chart)
