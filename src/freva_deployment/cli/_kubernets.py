@@ -11,8 +11,9 @@ from typing import Optional
 
 import namegenerator
 import yaml
-from freva_deployment import __version__
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
+
+from freva_deployment import __version__
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -22,7 +23,7 @@ TASK = """---
 - name: Render compose file locally only
   hosts: all
   connection: local
-  gather_facts: no
+  gather_facts: yes
 
   tasks:
 
