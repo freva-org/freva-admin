@@ -8,9 +8,6 @@
   become: "{{ ansible_become_user is defined and ansible_become_user != '' }}"
   become_user: "{{ ansible_become_user | default('root') }}"
   tasks:
-    - name: Running common taks
-      include_tasks: "./tasks/common_tasks.yml"
-
     - name: Ensure Kubernetes Python client is installed
       pip:
         name: kubernetes
@@ -26,6 +23,27 @@
           metadata:
             name: "{{ project_name }}"
       when: not (config_only | default(false))
+
+    - name: Set admin user variable
+      set_fact:
+        admin_user: >
+          {{ admin_user | trim
+            if (admin_user is defined and admin_user | length > 0 and ansible_become | default(false) and ansible_become_user | default('root') == 'root')
+            else ansible_user | trim
+          }}
+
+    - name: Get UID
+      command: id -u {{ admin_user }}
+      register: uid_result
+
+    - name: Get GID
+      command: id -g {{ admin_user }}
+      register: gid_result
+
+    - name: Set UID and GID as facts
+      set_fact:
+        uid: "{{ uid_result.stdout }}"
+        gid: "{{ gid_result.stdout }}"
 
 - name: Deploy Freva Core Library
   hosts: core

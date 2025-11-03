@@ -48,6 +48,8 @@ secret_keys:
   - API_MONGO_PASSWORD
   - CACHE_CONFIG
 
+workload_kind: "deployment"
+
 volumes:
   sss-pipes:
     hostPath: "/var/lib/sss/pipes"

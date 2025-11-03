@@ -26,6 +26,8 @@ env_vars:
   API_SOLR_PORT: "{{ service_port }}"
   API_SOLR_HEAP: "{{ search_server_solr_mem }}"
 
+workload_kind: "deployment"
+
 volumes:
   search-api-data:
     pvc: "search-api-data"

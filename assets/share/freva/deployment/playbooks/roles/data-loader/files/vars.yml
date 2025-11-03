@@ -15,6 +15,8 @@ env_vars:
 secret_keys:
   - CACHE_CONFIG
 
+workload_kind: "deployment"
+
 volumes:
   data-loader-logs:
     pvc: "data-loader-logs"

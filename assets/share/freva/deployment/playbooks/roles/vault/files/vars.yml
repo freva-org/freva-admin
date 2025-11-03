@@ -23,6 +23,7 @@ conda_packages:
   - requests
   - hvac
 
+workload_kind: "statefulset"
 proxy_mode: "http"
 service_port: 5002
 image: "ghcr.io/freva-org/freva-vault:{{ vault_version }}"

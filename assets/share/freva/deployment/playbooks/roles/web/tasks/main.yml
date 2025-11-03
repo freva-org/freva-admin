@@ -22,3 +22,4 @@
     env_vars: "{{ svc.env_vars }}"
     image: "{{ svc.image }}"
     service_port: "{{ svc.service_port }}"
+    workload_kind: "{{ svc.workload_kind }}"

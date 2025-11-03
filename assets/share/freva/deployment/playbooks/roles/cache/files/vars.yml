@@ -23,6 +23,8 @@ image: "ghcr.io/freva-org/freva-redis:{{ redis_version }}"
 env_vars:
   CONFIG_CONTENT: "{{ redis_information }}"
 
+workload_kind: "statefulset"
+
 secret_keys:
   - CONFIG_CONTENT
 

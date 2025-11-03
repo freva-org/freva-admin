@@ -26,6 +26,8 @@ env_vars:
   API_MONGO_DB: "search_stats"
   API_MONGO_USER: "{{mongodb_server_db_user}}"
 
+workload_kind: "statefulset"
+
 secret_keys:
   - API_MONGO_PASSWORD
   - API_MONGO_DB
