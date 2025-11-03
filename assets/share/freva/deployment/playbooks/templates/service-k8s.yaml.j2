@@ -1,37 +1,55 @@
 {# ---- variables & defaults ---- #}
-{% set svc = project_name ~ '-' ~ (service | replace('_','-')) %}
-{% set volumes = volumes | default({}) %}
-{% set service_port = service_port | default(0) %}
-{% set expose_method = expose_method | default('nodeport') %}
-{% set probes_enabled = probes_enabled | default(true) %}
-{% set probe_kind = probe_kind | default('tcp') %} {# 'tcp' or 'http' #}
-{% set probe_path = probe_path | default('/') %}
-{% set probe_port = probe_port | default(service_port) %}
-{% set initial_readiness_delay = initial_readiness_delay | default(5) %}
-{% set initial_liveness_delay = initial_liveness_delay | default(15) %}
-{% set storage_class_name = storage_class_name | default(None) %}
-{% set resources = resources | default({'requests': {'cpu': '100m','memory':'128Mi'}, 'limits': {'cpu': '1','memory':'512Mi'}}) %}
-{% set security_context = security_context | default({'runAsNonRoot': True, 'allowPrivilegeEscalation': False, 'readOnlyRootFilesystem': False}) %}
-{% set secret_env_vars = secret_env_vars | default({}) %}
+{%- set svc = project_name ~ '-' ~ (service | replace('_','-')) -%}
+{%- set volumes = volumes | default({}) -%}
+{%- set service_port = service_port | default(0) -%}
+{%- set expose_method = expose_method | default('nodeport') -%}
+{%- set probes_enabled = probes_enabled | default(true) -%}
+{%- set probe_kind = probe_kind | default('tcp') -%} {# 'tcp' or 'http' #}
+{%- set probe_path = probe_path | default('/') -%}
+{%- set pod_fs_group = pod_fs_group | default(0) -%}
+{%- set probe_port = probe_port | default(service_port) -%}
+{%- set initial_readiness_delay = initial_readiness_delay | default(5) -%}
+{%- set initial_liveness_delay = initial_liveness_delay | default(15) -%}
+{%- set storage_class_name = storage_class_name | default(None) -%}
+{%- set resources = resources | default({'requests': {'cpu': '100m','memory':'128Mi'}, 'limits': {'cpu': '1','memory':'512Mi'}}) -%}
+{%- set security_context = security_context | default({
+  'runAsNonRoot': True,
+  'allowPrivilegeEscalation': False,
+  'readOnlyRootFilesystem': False,
+  'seccompProfile': {'type': 'RuntimeDefault'},
+  'capabilities': {'drop': ['ALL']}
+}) -%}
 
+{%- set secret_keys = (secret_keys | default([])) | select('in', env_vars.keys()) | list -%}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ project_name }}
+
+---
 {# ---- optional Secret for sensitive env vars ---- #}
-{% if secret_env_vars %}
+{% if secret_keys %}
 apiVersion: v1
 kind: Secret
 metadata:
   name: {{ svc }}-env
+  namespace: {{ project_name }}
 type: Opaque
 stringData:
-{% for k, v in secret_env_vars | dictsort %}
-  {{ k }}: "{{ v }}"
+{% for k in secret_keys | sort %}
+  {{ k }}: "{{ env_vars[k] }}"
 {% endfor %}
----
-{% endif %}
 
+{% endif %}
+---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ svc }}
+  namespace: {{ project_name }}
+  labels:
+    app.kubernetes.io/part-of: {{ project_name }}
 spec:
   selector:
     app: {{ svc }}
@@ -54,9 +72,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ svc }}
+  namespace: {{ project_name }}
   labels:
     app.kubernetes.io/name: {{ service | replace('_','-') }}
     app.kubernetes.io/instance: {{ svc }}
+    app.kubernetes.io/part-of: {{ project_name }}
 spec:
   replicas: 1
   strategy:
@@ -70,15 +90,14 @@ spec:
         app: {{ svc }}
         app.kubernetes.io/name: {{ service | replace('_','-') }}
         app.kubernetes.io/instance: {{ svc }}
+        app.kubernetes.io/part-of: {{ project_name }}
     spec:
 {% if expose_method == 'hostport' %}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
 {% endif %}
-{% if pod_fs_group is defined %}
       securityContext:
         fsGroup: {{ pod_fs_group }}
-{% endif %}
       containers:
         - name: {{ service | replace('_','-') }}
           image: {{ image }}
@@ -91,18 +110,19 @@ spec:
               name: {{ service | replace('_','-') }}
 {% endif %}
 
-{% if env_vars or secret_env_vars %}
+{% if env_vars %}
           env:
 {% for key, val in (env_vars | default({})) | dictsort %}
-            - name: {{ key }}
-              value: "{{ val }}"
-{% endfor %}
-{% for key, _ in secret_env_vars | dictsort %}
+{% if key in secret_keys %}
             - name: {{ key }}
               valueFrom:
                 secretKeyRef:
                   name: {{ svc }}-env
                   key: {{ key }}
+{% else %}
+            - name: {{ key }}
+              value: {{ val }}
+{% endif %}
 {% endfor %}
 {% endif %}
 
@@ -142,6 +162,8 @@ spec:
             runAsNonRoot: {{ security_context.runAsNonRoot | default(true) | tojson }}
             allowPrivilegeEscalation: {{ security_context.allowPrivilegeEscalation | default(false) | tojson }}
             readOnlyRootFilesystem: {{ security_context.readOnlyRootFilesystem | default(false) | tojson }}
+            {% if security_context.capabilities is defined %}capabilities: {{ security_context.capabilities | tojson }}{% endif %}
+            {% if security_context.seccompProfile is defined %}seccompProfile: {{ security_context.seccompProfile | tojson }}{% endif %}
 
 {% if volumes %}
           volumeMounts:
@@ -167,13 +189,13 @@ spec:
 {% endif %}
 
 {% if volumes %}
-# PVCs: apply once during initial setup; don’t try to mutate later
 {% for name, cfg in volumes | dictsort if cfg.pvc is defined %}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: {{ name | lower }}
+  namespace: {{ project_name }}
 spec:
   accessModes:
     - {{ (cfg.accessMode | default('ReadWriteOnce')) }}

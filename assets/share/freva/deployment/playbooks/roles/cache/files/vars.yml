@@ -23,6 +23,9 @@ image: "ghcr.io/freva-org/freva-redis:{{ redis_version }}"
 env_vars:
   CONFIG_CONTENT: "{{ redis_information }}"
 
+secret_keys:
+  - CONFIG_CONTENT
+
 volumes:
   cache-logs:
     pvc: "cache-logs"

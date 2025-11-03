@@ -12,6 +12,9 @@ env_vars:
   API_CONFIG: "/tmp/data-loader.conf"
   API_LOGDIR: "/tmp/data-loader-logs"
 
+secret_keys:
+  - CACHE_CONFIG
+
 volumes:
   data-loader-logs:
     pvc: "data-loader-logs"

@@ -14,15 +14,8 @@
     mode: "0644"
     owner: "{{ uid }}"
     group: "{{ gid }}"
-
-- name: Ensure namespace exists
-  kubernetes.core.k8s:
-    state: present
-    definition:
-      apiVersion: v1
-      kind: Namespace
-      metadata:
-        name: "{{ project_name }}"
+  vars:
+    ansible_managed: false
 
 - name: Deploy service
   when: not config_only

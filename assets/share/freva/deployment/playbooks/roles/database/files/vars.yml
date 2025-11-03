@@ -32,6 +32,13 @@ env_vars:
   MYSQL_DATABASE: "{{ db }}"
   MYSQL_ROOT_PASSWORD: "{{ root_passwd }}"
 
+secret_keys:
+  - ROOT_PW
+  - MYSQL_USER
+  - MYSQL_PASSWORD
+  - MYSQL_DATABASE
+  - MYSQL_ROOT_PASSWORD
+
 volumes:
   db-data:
     pvc: "db-data"

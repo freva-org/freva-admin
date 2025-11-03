@@ -475,7 +475,7 @@ class DeployFactory:
         self._config_keys.append("web")
 
         for key in "oidc_url", "oidc_client", "oidc_client_secret":
-            self.cfg["web"][key] = self.cfg["freva_rest"].get("oidc_url", "")
+            self.cfg["web"][key] = self.cfg["freva_rest"].get(key, "")
         self.cfg["web"].setdefault("ansible_become_user", "root")
         self._prep_core()
         freva_rest_host = (
@@ -943,8 +943,8 @@ class DeployFactory:
         if deployment_method == "k8s":
             for step in self.steps:
                 if step != "core":
-                    for key in self.cfg[step]:
-                        if "_host" in key:
+                    for key, val in self.cfg[step].items():
+                        if "_host" in key and isinstance(val, str):
                             self.cfg[step][key] = self.cfg["kubernetes"][
                                 "deploy_host"
                             ]
@@ -1181,12 +1181,15 @@ class DeployFactory:
         }
 
         self.passwords = self.get_ansible_password(ask_pass)
-        steps = [s for s in self.steps]
-        tags = [t for t in tags or steps]
         deployment_method = self._set_deployment_methods()
         local_connection = self.local_debug
+        if not tags and deployment_method == "k8s":
+            add = ["kubernetes"]
+        else:
+            add = []
+        steps = [s for s in self.steps]
+        tags = [t for t in tags or steps] + add
         if deployment_method == "k8s":
-            tags += ["kubernetes"]
             local_connection = is_localhost(self.cfg["kubernetes"]["deploy_host"])
         elif skip_version_check is False:
             steps = list(

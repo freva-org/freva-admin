@@ -26,6 +26,11 @@ env_vars:
   API_MONGO_DB: "search_stats"
   API_MONGO_USER: "{{mongodb_server_db_user}}"
 
+secret_keys:
+  - API_MONGO_PASSWORD
+  - API_MONGO_DB
+  - API_MONGO_USER
+
 volumes:
   mongo-data:
     pvc: "mongo-data"

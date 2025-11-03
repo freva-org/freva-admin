@@ -42,6 +42,11 @@ env_vars:
   CACHE_CONFIG: "{{ redis_information }}"
   COLUMNS: 140
 
+secret_keys:
+  - API_OIDC_CLIENT_SECRET
+  - API_MONGO_USER
+  - API_MONGO_PASSWORD
+  - CACHE_CONFIG
 
 volumes:
   sss-pipes:

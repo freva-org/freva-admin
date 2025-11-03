@@ -15,13 +15,17 @@
       pip:
         name: kubernetes
         state: present
+      when: not (config_only | default(false))
 
     - name: Ensure namespace exists
       kubernetes.core.k8s:
         state: present
-        kind: Namespace
-        name: "{{ project_name }}"
-
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ project_name }}"
+      when: not (config_only | default(false))
 
 - name: Deploy Freva Core Library
   hosts: core
@@ -191,7 +195,9 @@
     - db
   tasks:
     - name: POST request
-      when: deployment_method == "k8s"
+      when:
+        - deployment_method == "k8s"
+        - not (config_only | default(false))
       uri:
         url: "http://{{ db_vault_host }}:5002/vault/data"
         method: POST
@@ -230,3 +236,4 @@
         timeout: 3
         return_content: true
         status_code: 201
+      when: not (config_only | default(false))
