@@ -7,9 +7,8 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ..deploy import DeployFactory
 from ..error import DeploymentError
@@ -73,10 +72,17 @@ class BatchParser:
         self.parser.add_argument(
             "-l",
             "--local",
-            help="Deploy services on the local machine, debug purpose.",
+            help="Deploy services on the local machine.",
             action="store_true",
             default=False,
         )
+        self.parser.add_argument(
+            "--debug",
+            help="Deploy services on the local machine.",
+            action="store_true",
+            default=False,
+        )
+
         self.parser.add_argument(
             "-g",
             "--gen-keys",
@@ -141,7 +147,7 @@ class BatchParser:
         with DeployFactory(
             steps=steps,
             config_file=args.config,
-            local_debug=args.local,
+            local_debug=args.debug,
             gen_keys=args.gen_keys,
             _cowsay=args.cowsay,
         ) as DF:
@@ -152,6 +158,7 @@ class BatchParser:
                     ssh_port=args.ssh_port,
                     skip_version_check=args.skip_version_check,
                     tags=args.tags or None,
+                    local=args.local,
                 )
             except KeyboardInterrupt:
                 raise SystemExit(130)

@@ -1,0 +1,40 @@
+{%- set ns = project_name | default('freva') -%}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ ns }}-ingress
+  namespace: {{ ns }}
+  labels:
+    app.kubernetes.io/part-of: {{ ns }}
+    app.kubernetes.io/managed-by: ansible
+{% set ann = ingress.annotations | default({}, true) %}
+{% if ann %}
+  annotations:
+{% for k, v in ann | dictsort %}
+    {{ k }}: {{ v }}
+{% endfor %}
+{% endif %}
+spec:
+  ingressClassName: {{ ingress.class_name | default('nginx') }}
+{% if use_tls | default(false) %}
+  tls:
+    - hosts:
+{% for item in ingress_hosts %}
+        - {{ item.fqdn }}
+{% endfor %}
+      secretName: {{ tls_secret }}
+{% endif %}
+  rules:
+{% for item in ingress_hosts %}
+    - host: {{ item.fqdn }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ item.service }}
+                port:
+                  number: {{ item.port }}
+{% endfor %}

@@ -34,16 +34,86 @@ run_as_group = 0
 ## Set the user id
 run_as_user = 0
 
-## Set the sizes of the PVC volumes
-mysql_pvc_size = "20Gi"
-mysql_logs_pvc_size =  "2Gi"
-mongo_pvc_size = "20Gi"
-mongo_logs_pvc_size =  "2Gi"
-solr_pvc_size = "20Gi"
-solr_logs_pvc_size = "2Gi"
-web_logs_pvc_size = "2Gi"
-web_cfg_pvc_size = "100Mi"
-rest_logs_pvc_size = "2Gi"
+
+[kubernetes.ingress]
+## Specify the fully qualified domain host for ingress connections to the
+## cluster.
+fqdn = "localhost"
+
+## Set the ingress class name:
+class_name = "nginx"
+
+## Any ingress annotations that are needed
+annotations = {}
+
+## Set the resource allocation for each service.
+[kubernetes.resources.web.requests]
+cpu = "500m"
+memory = "1Gi"
+[kubernetes.resources.web.limits]
+cpu = 1
+memory = "4Gi"
+
+[kubernetes.resources.cache-server.requests]
+cpu = 2
+memory = "4Gi"
+[kubernetes.resources.cache-server.limits]
+cpu = 4
+memory = "12Gi"
+
+[kubernetes.resources.data-loader-server.requests]
+cpu = 2
+memory = "5Gi"
+[kubernetes.resources.data-loader-server.limits]
+cpu = 4
+memory = "10Gi"
+
+[kubernetes.resources.freva-rest-server.requests]
+cpu = "200m"
+memory = "256Mi"
+[kubernetes.resources.freva-rest-server.limits]
+cpu = "1"
+memory = "1Gi"
+
+[kubernetes.resources.databaser-server.requests]
+cpu = "200m"
+memory = "512Mi"
+[kubernetes.resources.database-server.limits]
+cpu = "1"
+memory = "2Gi"
+
+[kubernetes.resources.mongo-server.requests]
+cpu = "200m"
+memory = "512Mi"
+[kubernetes.resources.mongo-server.limits]
+cpu = "1"
+memory = "2Gi"
+
+[kubernetes.resources.search-server.requests]
+cpu = "500m"
+memory = "6Gi"
+[kubernetes.resources.search-server.limits]
+cpu = "2"
+memory = "6Gi"
+
+[kubernetes.resources.vault-server.requests]
+cpu = "100m"
+memory = "128Mi"
+[kubernetes.resources.vault-server.limits]
+cpu = "500m"
+memory = "512Mi"
+
+
+## Set the pvc resource allocation for each service.
+[kubernetes.pvc.mysl]
+data_size = "20Gi"
+[kubernetes.pvc.mongo]
+data_size = "20Gi"
+[kubernetes.pvc.solr]
+data_size = "20Gi"
+
+[kubernetes.pvc.web]
+data_size = "100Mi"
 
 ## Specify the path to the SSL certificate files used for secure connections
 ## to the vault server or as web certificates.

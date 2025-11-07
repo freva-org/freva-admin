@@ -1,64 +1,19 @@
 {%- set ns = project_name -%}
+{% for pvc in pvcs %}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
-metadata: { name: db-data, namespace: {{ ns }} }
+metadata:
+  name: "{{ pvc['name'] }}"
+  namespace: "{{ ns }}"
+  labels:
+    app.kubernetes.io/name: "{{ ns }}"
+    app.kubernetes.io/instance: "{{ pvc['instance'] }}"
+    app.kubernetes.io/component: "{{ pvc['component'] }}"
+    freva.org/tier: "{{ pvc['tier'] }}"
 spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ mysql_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: db-logs, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ mysql_logs_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: mongo-data, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ mongo_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: mongo-logs, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ mongo_logs_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: solr-data, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ solr_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: solr-logs, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ solr_logs_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: web-config, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ web_cfg_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: web-logs, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ web_logs_pvc_size | tojson }} } }
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata: { name: freva-rest-logs, namespace: {{ ns }} }
-spec:
-  accessModes: ["ReadWriteOnce"]
-  resources: { requests: { storage: {{ rest_logs_pvc_size | tojson }} } }
+  accessModes: ["{{ pvc['mode'] }}"]
+  resources:
+    requests:
+      storage: {{ pvc['storage'] | tojson }}
+{% endfor %}

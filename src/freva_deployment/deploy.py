@@ -575,7 +575,7 @@ class DeployFactory:
             self.cfg[key]["config_toml_file"] = str(self.web_conf_file)
         self._prep_vault()
         self.cfg["vault"]["ansible_python_interpreter"] = self.cfg["db"].get(
-            "ansible_python_interpreter", "/usr/bin/python3"
+            "ansible_python_interpreter",
         )
         self.cfg["web"]["root_passwd"] = self.master_pass
         self.cfg["web"]["private_keyfile"] = self.private_key_file
@@ -784,9 +784,12 @@ class DeployFactory:
         config[step]["vars"]["ansible_user"] = (
             self.cfg[step].get("ansible_user") or getuser()
         )
-        config[step]["vars"][f"{step}_ansible_python_interpreter"] = (
-            self.cfg[step].get("ansible_python_interpreter") or "/usr/bin/python3"
-        )
+        python_exe = self.cfg[step].get("ansible_python_interpreter", "")
+        if python_exe.strip():
+            config[step]["vars"][
+                f"{step}_ansible_python_interpreter"
+            ] = python_exe
+
         dump_file = self._get_files_copy(step)
         if dump_file:
             config[step]["vars"][f"{step}_dump"] = str(dump_file)
@@ -1026,6 +1029,7 @@ class DeployFactory:
         ssh_port: int = 22,
         skip_version_check: bool = False,
         tags: Optional[list[str]] = None,
+        local: bool = False
     ) -> None:
         """Play the ansible playbook.
 
@@ -1043,6 +1047,8 @@ class DeployFactory:
         tags: list[str], default: None
             Instead of running the steps, fine grain the deployment using this
             specific tasks.
+        local: bool, default: False
+            Use local connections only.
         """
         try:
             self._play(
@@ -1148,6 +1154,7 @@ class DeployFactory:
         ssh_port: int = 22,
         skip_version_check: bool = False,
         tags: Optional[list[str]] = None,
+        local: bool = False,
     ) -> None:
         plugin_path = Path(freva_deployment.callback_plugins.__file__).parent
         envvars: dict[str, str] = {
@@ -1182,14 +1189,16 @@ class DeployFactory:
 
         self.passwords = self.get_ansible_password(ask_pass)
         deployment_method = self._set_deployment_methods()
-        local_connection = self.local_debug
-        if not tags and deployment_method == "k8s":
+        local_connection = local or self.local_debug
+        if self.steps == ["core"] or tags == ["core"]:
+            add = []
+        elif not tags and deployment_method == "k8s":
             add = ["kubernetes"]
         else:
             add = []
         steps = [s for s in self.steps]
         tags = [t for t in tags or steps] + add
-        if deployment_method == "k8s":
+        if deployment_method == "k8s" and steps != ["core"]:
             local_connection = is_localhost(self.cfg["kubernetes"]["deploy_host"])
         elif skip_version_check is False:
             steps = list(

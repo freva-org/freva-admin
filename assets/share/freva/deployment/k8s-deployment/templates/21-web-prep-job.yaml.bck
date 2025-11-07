@@ -11,6 +11,7 @@ spec:
       containers:
         - name: curl-writer
           image: quay.io/curl/curl:latest
+          resources: {{ resources['web-server'] }}
           env:
             - { name: VAR1_B64, value: "{{ eval_config_content }}" }
             - { name: VAR2_B64, value: "{{ web_config_content }}" }

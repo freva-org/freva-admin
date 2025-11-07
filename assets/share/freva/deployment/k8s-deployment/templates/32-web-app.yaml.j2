@@ -2,15 +2,39 @@
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: web-app, namespace: {{ ns }} }
+metadata:
+  name: django-app
+  namespace: {{ ns }}
+  labels:
+    app: web-app
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: django-app
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ web_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'false'
+    freva.org/tier: frontend
 spec:
   type: ClusterIP
-  selector: { app: web-app }
+  selector: { app: django-app }
   ports: [{ port: 8000, targetPort: 8000, name: http }]
 ---
 apiVersion: v1
 kind: ConfigMap
-metadata: { name: wait-utils, namespace: {{ ns }} }
+metadata:
+  name: wait-utils
+  namespace: {{ ns }}
+  labels:
+    app: web-app
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: django-app
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ web_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'false'
+    freva.org/tier: frontend
 data:
   wait-for.sh: |
     #!/bin/sh
@@ -25,12 +49,36 @@ data:
 ---
 apiVersion: apps/v1
 kind: Deployment
-metadata: { name: web-app, namespace: {{ ns }} }
+metadata:
+  name: django-app
+  namespace: {{ ns }}
+  labels:
+    app: web-app
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: django-app
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ web_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'false'
+    freva.org/tier: frontend
 spec:
   replicas: 1
   selector: { matchLabels: { app: web-app } }
   template:
-    metadata: { labels: { app: web-app } }
+  metadata:
+    name: django-app
+      namespace: {{ ns }}
+      labels:
+        app: web-app
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: django-app
+        app.kubernetes.io/component: web-app
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ web_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: 'false'
+        freva.org/tier: frontend
     spec:
       securityContext: { fsGroup: {{ fs_group }} }
       initContainers:
@@ -43,6 +91,7 @@ spec:
         - name: web
           image: ghcr.io/freva-org/freva-web:{{ web_version }}
           imagePullPolicy: {{ image_pull_policy }}
+          resources: {{ resources['web'] }}
           env:
 {% if use_core %}
             - { name: EVALUATION_SYSTEM_CONFIG_FILE, value: "{{ core_root_dir }}/freva/evaluation_system.conf" }
@@ -51,10 +100,10 @@ spec:
 {% endif %}
             - name: DJANGO_SUPERUSER_PASSWORD
               valueFrom: { secretKeyRef: { name: freva-secrets, key: MYSQL_ROOT_PASSWORD } }
-            - { name: ALLOWED_HOSTS, value: "{{ web_allowed_hosts | join(',') }}" }
+            - { name: ALLOWED_HOSTS, value: "{{ web_allowed_hosts | join(',') | sort }}" }
             - { name: FREVA_WEB_CONFIG_FILE, value: "/data/config/web/freva_web.toml" }
-            - { name: SCHEDULER_HOST, value: "{{ web_scheduler_host | join(',') }}" }
-            - { name: CSRF_TRUSTED_ORIGINS, value: "{{ web_csrf_trusted_origins | join(',') }}" }
+            - { name: SCHEDULER_HOST, value: "{{ web_scheduler_host | join(',') | sort }}" }
+            - { name: CSRF_TRUSTED_ORIGINS, value: "{{ web_csrf_trusted_origins | join(',') | sort }}" }
             - { name: FREVA_BIN, value: "{{ web_freva_bin }}" }
             - { name: COLUMNS, value: "140" }
             - { name: REDIS_HOST, value: "cache-server" }

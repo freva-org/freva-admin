@@ -179,8 +179,8 @@
         mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
         group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
 
-  always:
-    - name: Deleting temporary files
-      file:
-        state: absent
-        path: "{{tempdir.path}}"
+  #always:
+    #- name: Deleting temporary files
+    #  file:
+    #    state: absent
+    #    path: "{{tempdir.path}}"

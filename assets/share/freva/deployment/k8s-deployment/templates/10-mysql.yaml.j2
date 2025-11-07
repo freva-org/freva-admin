@@ -2,7 +2,19 @@
 ---
 apiVersion: v1
 kind: Service
-metadata: { name: database-server, namespace: {{ ns }} }
+metadata:
+  name: database-server
+  namespace: {{ ns }}
+  labels:
+    app: database-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: database-server
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ db_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'true'
+    freva.org/tier: database
 spec:
   type: ClusterIP
   selector: { app: database-server }
@@ -10,13 +22,37 @@ spec:
 ---
 apiVersion: apps/v1
 kind: StatefulSet
-metadata: { name: database-server, namespace: {{ ns }} }
+metadata:
+  name: database-server
+  namespace: {{ ns }}
+  labels:
+    app: database-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: database-server
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ db_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'true'
+    freva.org/tier: database
 spec:
   serviceName: database-server
   replicas: 1
   selector: { matchLabels: { app: database-server } }
   template:
-    metadata: { labels: { app: database-server } }
+    metadata:
+      name: database-server
+      namespace: {{ ns }}
+      labels:
+        app: database-server
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: database-server
+        app.kubernetes.io/component: web-app
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ db_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: 'true'
+        freva.org/tier: database
     spec:
       securityContext: { fsGroup: {{ fs_group }} }
       containers:
@@ -24,6 +60,7 @@ spec:
           image: ghcr.io/freva-org/freva-mysql:{{ db_version }}
           imagePullPolicy: {{ image_pull_policy }}
           ports: [{ containerPort: 3306, name: mysql }]
+          resources: {{ resources['database-server'] }}
           env:
             - name: ROOT_PW
               valueFrom: { secretKeyRef: { name: freva-secrets, key: MYSQL_ROOT_PASSWORD } }

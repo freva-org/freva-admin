@@ -7,13 +7,12 @@ import base64
 import re
 from base64 import b64encode
 from pathlib import Path
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import namegenerator
 import yaml
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -28,14 +27,125 @@ TASK = """---
   tasks:
 
     - name: Render k8s manifests
-      with_fileglob:
-          - "{asset_dir}/k8s-deployment/templates/*.yaml.j2"
+      loop:
+        "{{{{ templates }}}}"
       loop_control:
         loop_var: t
       template:
-        src: "{{{{ t }}}}"
+        src: "{asset_dir}/k8s-deployment/templates/{{{{ t }}}}"
         dest: "{{{{ out_dir }}}}/{{{{ t | basename | regex_replace('\\\\.j2$', '') }}}}"
 """
+
+
+def get_ingress_hosts(
+    services: List[str],
+    domain: str,
+    config: Dict[str, Any],
+) -> List[Dict[str, str | int]]:
+    """Define the ingress hosts."""
+    lookup = {
+        "freva-rest": [
+            {
+                "fqdn": f"freva-api.{domain}",
+                "service": "freva-rest-server",
+                "port": config["freva_rest"]["freva_rest_port"],
+            },
+            {
+                "fqdn": f"freva-solr.{domain}",
+                "service": "search-server",
+                "port": 8983,
+            },
+        ],
+        "web": [
+            {
+                "fqdn": f"freva-vault.{domain}",
+                "service": "vault-server",
+                "port": 5002,
+            }
+        ],
+    }
+    fqdns: List[Dict[str, str | int]] = []
+    for service in services:
+        for cfg in lookup.get(service, []):
+            if cfg not in fqdns:
+                fqdns.append(cfg)
+    return fqdns
+
+
+def get_pvcs_from_services(
+    services: List[str], config: Dict[str, str]
+) -> List[Dict[str, str]]:
+    """Define the pvcs needed for each service."""
+    lookup = {
+        "freva-rest": [
+            {
+                "name": "solr-data",
+                "mode": "ReadWriteOnce",
+                "storage": config["solr"]["data_size"],
+                "instance": "rest-api",
+                "tier": "database",
+                "component": "data",
+            },
+            {
+                "name": "mongo-data",
+                "mode": "ReadWriteOnce",
+                "storage": config["mongo"]["data_size"],
+                "instance": "mongo-server",
+                "tier": "database",
+                "component": "data",
+            },
+        ],
+        "web": [
+            {
+                "name": "db-data",
+                "mode": "ReadWriteOnce",
+                "storage": config["mysql"]["data_size"],
+                "instance": "database-server",
+                "tier": "database",
+                "component": "data",
+            },
+            {
+                "name": "vault-data",
+                "mode": "ReadWriteOnce",
+                "storage": "500Mi",
+                "instance": "web-app",
+                "component": "data",
+                "tier": "backend",
+            },
+        ],
+    }
+    lookup["web"] += lookup["freva-rest"]
+    pvcs: List[Dict[str, str]] = []
+    for service in services:
+        for pvc_settings in lookup.get(service, []):
+            if pvc_settings not in pvcs:
+                pvcs.append(pvc_settings)
+    return pvcs
+
+
+def get_service_templates(services: List[str]) -> List[str]:
+    """Assignes the templates needed for each the services."""
+    lookup = {
+        "freva-rest": ["12-solr.yaml.j2", "14-mongo.yaml.j2", "20-rest.yaml.j2"],
+        "data-loader": ["11-redis.yaml.j2", "22-data-loader.yaml.j2"],
+    }
+    lookup["web"] = lookup["freva-rest"] + [
+        "10-mysql.yaml.j2",
+        "11-redis.yaml.j2",
+        "13-vault.yaml.j2",
+        "31-proxy.yaml.j2",
+        "32-web-app.yaml.j2",
+    ]
+    templates: List[str] = [
+        "00-namespace.yaml.j2",
+        "01-secrets.yaml.j2",
+        "02-pvcs.yaml.j2",
+        "30-ingress.yaml.j2",
+    ]
+    for service in services:
+        if service in lookup:
+            templates += lookup[service]
+    return sorted(set(templates))
 
 
 def comment_entries(toml_str, entries_to_comment):
@@ -57,6 +167,7 @@ def comment_entries(toml_str, entries_to_comment):
 def create_manifest(args: argparse.Namespace) -> None:
     """Create the k8s manifests."""
     set_log_level(args.verbose)
+    services = args.services
     with DeployFactory(
         steps=None,
         config_file=args.config_file,
@@ -77,15 +188,22 @@ def create_manifest(args: argparse.Namespace) -> None:
                 "redis_password": DF._create_random_passwd(30, 10),
                 "redis_username": namegenerator.gen(),
                 "ingress_enabled": True,
-                "ingress_class_name": "nginx",
-                "ingress_tls_secret_name": "incommon-cert-tds",
                 "ingress_fqdns": [DF.cfg["web"]["project_website"]],
                 "out_dir": str(out_dir),
                 "image_pull_policy": "IfNotPresent",
+                "templates": get_service_templates(services),
+                "pvcs": get_pvcs_from_services(
+                    services, DF.cfg["kubernetes"]["pvc"]
+                ),
+                "resources": DF.cfg["kubernetes"]["resources"],
+                "ingress_hosts": get_ingress_hosts(
+                    services, DF.cfg["kubernetes"]["ingress"]["fqdn"], DF.cfg
+                ),
             },
             **DF.cfg["kubernetes"],
         }
         logger.info("Parsing configurations")
+        logger.debug("Extra args for playbooks:\n%s", extra)
         inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))
         if args.no_plugins is True:
             web_config = base64.b64decode(
@@ -177,6 +295,14 @@ def kubernetes_parser(
         type=Path,
         help="Path to ansible inventory file.",
         default=config_dir / "config" / "inventory.toml",
+    )
+    parser.add_argument(
+        "-s",
+        "--services",
+        nargs="+",
+        default=["db", "freva-rest", "web", "data-loader"],
+        choices=["web", "db", "freva-rest", "data-loader"],
+        help="The services to be deployed.",
     )
     parser.add_argument(
         "-o",
