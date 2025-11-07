@@ -11,9 +11,8 @@ from typing import Any, Dict, List, Optional
 
 import namegenerator
 import yaml
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -55,6 +54,11 @@ def get_ingress_hosts(
                 "fqdn": f"freva-solr.{domain}",
                 "service": "search-server",
                 "port": 8983,
+            },
+            {
+                "fqdn": f"freva-db.{domain}",
+                "service": "database-server",
+                "port": 3306,
             },
         ],
         "web": [
