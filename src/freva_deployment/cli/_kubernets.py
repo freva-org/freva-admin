@@ -11,8 +11,9 @@ from typing import Any, Dict, List, Optional
 
 import namegenerator
 import yaml
-from freva_deployment import __version__
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
+
+from freva_deployment import __version__
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -73,7 +74,7 @@ def get_ingress_hosts(
 
 
 def get_pvcs_from_services(
-    services: List[str], config: Dict[str, str]
+    services: List[str], config: Dict[str, Any]
 ) -> List[Dict[str, str]]:
     """Define the pvcs needed for each service."""
     lookup = {

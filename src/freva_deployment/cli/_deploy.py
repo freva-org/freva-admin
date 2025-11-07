@@ -7,8 +7,9 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from freva_deployment import __version__
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
+
+from freva_deployment import __version__
 
 from ..deploy import DeployFactory
 from ..error import DeploymentError
