@@ -1,4 +1,17 @@
+{# --------------------------- #
+#  Variables & Preprocessing   #
+# --------------------------- #}
 {%- set ns = project_name | default('freva') -%}
+{%- set ann = ingress.annotations | default({}, true) -%}
+{# Filter ingress_hosts that have TLS enabled #}
+{%- set tls_hosts = ingress_hosts
+      | selectattr('tls', 'defined')
+      | selectattr('tls')
+      | list
+-%}
+{# Group TLS hosts by secret so you can have multiple certs #}
+{%- set tls_groups = tls_hosts | groupby('tls_secret') -%}
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -8,29 +21,33 @@ metadata:
   labels:
     app.kubernetes.io/part-of: {{ ns }}
     app.kubernetes.io/managed-by: ansible
-{% set ann = ingress.annotations | default({}, true) %}
 {% if ann %}
   annotations:
 {% for k, v in ann | dictsort %}
     {{ k }}: {{ v }}
 {% endfor %}
 {% endif %}
+
 spec:
   ingressClassName: {{ ingress.class_name | default('nginx') }}
-{% if use_tls | default(false) %}
+
+{% if tls_hosts %}
   tls:
-    - hosts:
-{% for item in ingress_hosts %}
+{%   for group in tls_groups %}
+    - secretName: {{ group.grouper | default(tls_secret) }}
+      hosts:
+{%     for item in group.list %}
         - {{ item.fqdn }}
-{% endfor %}
-      secretName: {{ tls_secret }}
+{%     endfor %}
+{%   endfor %}
 {% endif %}
+
   rules:
 {% for item in ingress_hosts %}
     - host: {{ item.fqdn }}
       http:
         paths:
-          - path: /
+          - path: {{ item.path | default('/') }}
             pathType: Prefix
             backend:
               service:

@@ -41,10 +41,29 @@ spec:
           imagePullPolicy: {{ image_pull_policy }}
           resources: {{ resources['data-loader-server'] }}
           env:
-            - { name: API_CONFIG, value: /tmp/data-loader.conf }
-            - { name: API_LOGDIR, value: /tmp/data-loader.logs }
+            - name: API_CONFIG,
+              value: /tmp/data-loader.conf
+            - name: API_LOGDIR
+              value: /tmp/data-loader.logs
             - name: API_REDIS_USER
-              valueFrom: { secretKeyRef: { name: freva-secrets, key: REDIS_USERNAME } }
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_USERNAME
             - name: API_REDIS_PASSWORD
-              valueFrom: { secretKeyRef: { name: freva-secrets, key: REDIS_PASSWORD } }
-            - { name: API_REDIS_HOST, value: cache-server }
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_PASSWORD
+            - name: API_REDIS_HOST
+              value: cache-server
+          volumeMounts:
+            - name: data
+              mountPath: {{ pvc['ext-data']['path'] }}
+              readOnly: true
+      volumes:
+        - name: data
+          {{ pv['ext-data']['driver'] }}:
+{% for key, val in pv['ext-data']['driver-options'] | dictsort %}
+            {{ key }}: {{ val }}
+{% endfor %}

@@ -103,17 +103,30 @@ memory = "128Mi"
 cpu = "500m"
 memory = "512Mi"
 
+## Set the PersistentVolume (for external resources.)
+[kubernetes.pv.web-ext]
+accessModes = "ReadWriteMany"
+persistentVolumeReclaimPolicy = "Retain"
+storageClassName = ""
+nfs = { server = "gladedm1.ucar.edu", "path" =  "/gpfs/csfs1/work/mbergemann/",  readOnly = true}
+
+
+[kubernetes.pv.ext-data]
+accessModes = "ReadWriteMany"
+persistentVolumeReclaimPolicy = "Retain"
+storageClassName = ""
+nfs = { server = "gladedm1.ucar.edu", "path" =  "/gpfs/csfs1/collections/rda", readOnly = true}
 
 ## Set the pvc resource allocation for each service.
-[kubernetes.pvc.mysl]
+[kubernetes.pvc.mysql]
 data_size = "20Gi"
 [kubernetes.pvc.mongo]
 data_size = "20Gi"
 [kubernetes.pvc.solr]
 data_size = "20Gi"
-
 [kubernetes.pvc.web]
-data_size = "100Mi"
+data_size = "5Gi"
+
 
 ## Specify the path to the SSL certificate files used for secure connections
 ## to the vault server or as web certificates.

@@ -13,12 +13,16 @@ metadata:
     app.kubernetes.io/part-of: freva
     app.kubernetes.io/version: {{ web_version }}
     app.kubernetes.io/managed-by: ansible
-    freva.org/stateful: 'false'
+    freva.org/stateful: "false"
     freva.org/tier: frontend
 spec:
   type: ClusterIP
-  selector: { app: django-app }
-  ports: [{ port: 8000, targetPort: 8000, name: http }]
+  selector:
+    app: web-app
+  ports:
+    - port: 8000
+      targetPort: 8000
+      name: http
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -33,7 +37,7 @@ metadata:
     app.kubernetes.io/part-of: freva
     app.kubernetes.io/version: {{ web_version }}
     app.kubernetes.io/managed-by: ansible
-    freva.org/stateful: 'false'
+    freva.org/stateful: "false"
     freva.org/tier: frontend
 data:
   wait-for.sh: |
@@ -41,7 +45,7 @@ data:
     set -e
     for host in database-server:3306 cache-server:6379 freva-rest-server:{{ freva_rest_port }}; do
       for i in $(seq 1 60); do
-        nc -z $(echo $host | cut -d: -f1) $(echo $host | cut -d: -f2) && break
+        nc -z "$(echo "$host" | cut -d: -f1)" "$(echo "$host" | cut -d: -f2)" && break
         sleep 1
       done
     done
@@ -60,15 +64,15 @@ metadata:
     app.kubernetes.io/part-of: freva
     app.kubernetes.io/version: {{ web_version }}
     app.kubernetes.io/managed-by: ansible
-    freva.org/stateful: 'false'
+    freva.org/stateful: "false"
     freva.org/tier: frontend
 spec:
   replicas: 1
-  selector: { matchLabels: { app: web-app } }
+  selector:
+    matchLabels:
+      app: web-app
   template:
-  metadata:
-    name: django-app
-      namespace: {{ ns }}
+    metadata:
       labels:
         app: web-app
         app.kubernetes.io/name: freva
@@ -77,74 +81,107 @@ spec:
         app.kubernetes.io/part-of: freva
         app.kubernetes.io/version: {{ web_version }}
         app.kubernetes.io/managed-by: ansible
-        freva.org/stateful: 'false'
+        freva.org/stateful: "false"
         freva.org/tier: frontend
     spec:
-      securityContext: { fsGroup: {{ fs_group }} }
+      securityContext:
+        fsGroup: {{ fs_group }}
       initContainers:
         - name: wait-prereqs
           image: busybox:stable
-          command: ["sh","-c","/bin/wait-for.sh"]
+          command: ["sh", "-c", "/bin/wait-for.sh"]
           volumeMounts:
-            - { name: wait-script, mountPath: /bin/wait-for.sh, subPath: wait-for.sh }
+            - name: wait-script
+              mountPath: /bin/wait-for.sh
+              subPath: wait-for.sh
       containers:
         - name: web
           image: ghcr.io/freva-org/freva-web:{{ web_version }}
           imagePullPolicy: {{ image_pull_policy }}
-          resources: {{ resources['web'] }}
+          resources: {{ resources["web"] }}
           env:
 {% if use_core %}
-            - { name: EVALUATION_SYSTEM_CONFIG_FILE, value: "{{ core_root_dir }}/freva/evaluation_system.conf" }
-{% else %}
-            - { name: EVALUATION_SYSTEM_CONFIG_FILE, value: "/data/config/evaluation_system.conf" }
+            - name: EVALUATION_SYSTEM_CONFIG_FILE
+              value: "{{ core_root_dir }}/freva/evaluation_system.conf"
 {% endif %}
             - name: DJANGO_SUPERUSER_PASSWORD
-              valueFrom: { secretKeyRef: { name: freva-secrets, key: MYSQL_ROOT_PASSWORD } }
-            - { name: ALLOWED_HOSTS, value: "{{ web_allowed_hosts | join(',') | sort }}" }
-            - { name: FREVA_WEB_CONFIG_FILE, value: "/data/config/web/freva_web.toml" }
-            - { name: SCHEDULER_HOST, value: "{{ web_scheduler_host | join(',') | sort }}" }
-            - { name: CSRF_TRUSTED_ORIGINS, value: "{{ web_csrf_trusted_origins | join(',') | sort }}" }
-            - { name: FREVA_BIN, value: "{{ web_freva_bin }}" }
-            - { name: COLUMNS, value: "140" }
-            - { name: REDIS_HOST, value: "cache-server" }
-            - { name: FREVA_REST_URL, value: "http://freva-rest-server:{{ freva_rest_port }}" }
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: ALLOWED_HOSTS
+              value: "{{ web_allowed_hosts | sort | join(',') }}"
+            - name: FREVA_WEB_CONFIG_FILE
+              value: "{{ core_root_dir }}/freva/web/freva_web.toml"
+            - name: SCHEDULER_HOST
+              value: "{{ web_scheduler_host | sort | join(',') }}"
+            - name: CSRF_TRUSTED_ORIGINS
+              value: "{{ web_csrf_trusted_origins | sort | join(',') }}"
+            - name: FREVA_BIN
+              value: "{{ web_freva_bin }}"
+            - name: COLUMNS
+              value: "140"
+            - name: REDIS_HOST
+              value: "cache-server"
+            - name: FREVA_REST_URL
+              value: "http://freva-rest-server:{{ freva_rest_port }}"
             - name: REDIS_PASSWD
-              valueFrom: { secretKeyRef: { name: freva-secrets, key: REDIS_PASSWORD } }
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_PASSWORD
             - name: REDIS_USER
-              valueFrom: { secretKeyRef: { name: freva-secrets, key: REDIS_USERNAME } }
-            - { name: OIDC_DISCOVERY_URL, value: "{{ web_oidc_url }}" }
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_USERNAME
+            - name: OIDC_DISCOVERY_URL
+              value: "{{ web_oidc_url }}"
             - name: OIDC_CLIENT_SECRET
-              valueFrom: { secretKeyRef: { name: freva-secrets, key: OIDC_CLIENT_SECRET_WEB } }
-            - { name: OIDC_CLIENT_ID, value: "{{ web_oidc_client }}" }
-            - { name: CHATBOT_HOST, value: "{{ web_chatbot_host.replace('http://','') }}" }
-            - { name: STAC_BROWSER, value: "1" }
-            - { name: DB_USER, value: "{{ db_user }}" }
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: OIDC_CLIENT_SECRET_WEB
+            - name: OIDC_CLIENT_ID
+              value: "{{ web_oidc_client }}"
+            - name: CHATBOT_HOST
+              value: "{{ web_chatbot_host.replace('http://','') }}"
+            - name: STAC_BROWSER
+              value: "1"
+            - name: DB_USER
+              value: "{{ db_user }}"
             - name: DB_PASSWD
-              valueFrom: { secretKeyRef: { name: freva-secrets, key: MYSQL_PASSWORD } }
-            - { name: DB_NAME, value: "{{ db }}" }
-            - { name: DB_HOST, value: "database-server" }
-            - { name: VAULT_URL, value: "http://vault-server:5002" }
-          command: ["bash","-c","sleep 20 && ./init_django.sh"]
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: MYSQL_PASSWORD
+            - name: DB_NAME
+              value: "{{ db }}"
+            - name: DB_HOST
+              value: "database-server"
+            - name: VAULT_URL
+              value: "http://vault-server:5002"
+          command: ["bash", "-c", "sleep 20 && ./init_django.sh"]
           volumeMounts:
 {% if use_core %}
-            - { name: core-root, mountPath: "{{ core_root_dir }}", readOnly: true }
-            - { name: core-out,  mountPath: "{{ core_scheduler_output_dir }}", readOnly: true }
+            - name: web-ext
+              mountPath: "{{ pvc['web-ext']['path'] }}"
+              readOnly: true
 {% endif %}
-            - { name: web-static, mountPath: /opt/freva_web/static }
-            - { name: web-config, mountPath: /data/config }
-            - { name: web-logs,   mountPath: /data/logs }
+            - name: web-static
+              mountPath: /opt/freva_web/static
       volumes:
         - name: web-static
-          emptyDir: {}
-        - name: web-config
-          persistentVolumeClaim: { claimName: web-config }
-        - name: web-logs
-          persistentVolumeClaim: { claimName: web-logs }
+          persistentVolumeClaim:
+            claimName: web-data
         - name: wait-script
-          configMap: { name: wait-utils, defaultMode: 0755 }
+          configMap:
+            name: wait-utils
+            defaultMode: 0755
 {% if use_core %}
-        - name: core-root
-          hostPath: { path: "{{ core_root_dir }}", type: Directory }
-        - name: core-out
-          hostPath: { path: "{{ core_scheduler_output_dir }}", type: Directory }
+        - name: web-ext
+          {{ pv['web-ext']['driver'] }}:
+{% for key, val in pv['web-ext']['driver-options'] | dictsort %}
+            {{ key }}: {{ val }}
+{% endfor %}
 {% endif %}

@@ -11,9 +11,8 @@ from typing import Any, Dict, List, Optional
 
 import namegenerator
 import yaml
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -39,6 +38,7 @@ TASK = """---
 
 
 def get_ingress_hosts(
+    project_name: str,
     services: List[str],
     domain: str,
     config: Dict[str, Any],
@@ -50,24 +50,35 @@ def get_ingress_hosts(
                 "fqdn": f"freva-api.{domain}",
                 "service": "freva-rest-server",
                 "port": config["freva_rest"]["freva_rest_port"],
+                "tls": False,
             },
             {
                 "fqdn": f"freva-solr.{domain}",
                 "service": "search-server",
                 "port": 8983,
+                "tls": False,
             },
             {
                 "fqdn": f"freva-db.{domain}",
                 "service": "database-server",
+                "tls": False,
                 "port": 3306,
             },
         ],
         "web": [
             {
+                "fqdn": f"{project_name}.{domain}",
+                "service": "web-app",
+                "port": 8080,
+                "tls": True,
+                "tls_secret": "web-cert-secret",
+            },
+            {
                 "fqdn": f"freva-vault.{domain}",
                 "service": "vault-server",
                 "port": 5002,
-            }
+                "tls": False,
+            },
         ],
     }
     fqdns: List[Dict[str, str | int]] = []
@@ -86,7 +97,7 @@ def get_pvcs_from_services(
         "freva-rest": [
             {
                 "name": "solr-data",
-                "mode": "ReadWriteOnce",
+                "mode": "ReadWriteMany",
                 "storage": config["solr"]["data_size"],
                 "instance": "rest-api",
                 "tier": "database",
@@ -94,7 +105,7 @@ def get_pvcs_from_services(
             },
             {
                 "name": "mongo-data",
-                "mode": "ReadWriteOnce",
+                "mode": "ReadWriteMany",
                 "storage": config["mongo"]["data_size"],
                 "instance": "mongo-server",
                 "tier": "database",
@@ -104,7 +115,7 @@ def get_pvcs_from_services(
         "web": [
             {
                 "name": "db-data",
-                "mode": "ReadWriteOnce",
+                "mode": "ReadWriteMany",
                 "storage": config["mysql"]["data_size"],
                 "instance": "database-server",
                 "tier": "database",
@@ -112,10 +123,18 @@ def get_pvcs_from_services(
             },
             {
                 "name": "vault-data",
-                "mode": "ReadWriteOnce",
+                "mode": "ReadWriteMany",
                 "storage": "500Mi",
                 "instance": "web-app",
                 "component": "data",
+                "tier": "backend",
+            },
+            {
+                "name": "web-data",
+                "mode": "ReadWriteMany",
+                "storage": config["web"]["data_size"],
+                "component": "data",
+                "instance": "web-app",
                 "tier": "backend",
             },
         ],
@@ -203,7 +222,10 @@ def create_manifest(args: argparse.Namespace) -> None:
                 ),
                 "resources": DF.cfg["kubernetes"]["resources"],
                 "ingress_hosts": get_ingress_hosts(
-                    services, DF.cfg["kubernetes"]["ingress"]["fqdn"], DF.cfg
+                    DF.project_name,
+                    services,
+                    DF.cfg["kubernetes"]["ingress"]["fqdn"],
+                    DF.cfg,
                 ),
             },
             **DF.cfg["kubernetes"],
@@ -250,7 +272,6 @@ def create_manifest(args: argparse.Namespace) -> None:
             inventory[key]["hosts"] = "localhost"
         inventory["web"]["vars"]["web_config_file"] = str(web_conf)
         logger.debug(yaml.safe_dump(inventory))
-
         DF._td.run_ansible_playbook(
             working_dir=asset_dir / "playbooks",
             playbook=playbook,

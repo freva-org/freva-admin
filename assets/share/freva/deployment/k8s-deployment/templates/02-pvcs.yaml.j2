@@ -1,19 +1,26 @@
 {%- set ns = project_name -%}
-{% for pvc in pvcs %}
+{% for claim in pvcs | default([]) %}
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: "{{ pvc['name'] }}"
+  name: "{{ claim['name'] }}"
   namespace: "{{ ns }}"
   labels:
     app.kubernetes.io/name: "{{ ns }}"
-    app.kubernetes.io/instance: "{{ pvc['instance'] }}"
-    app.kubernetes.io/component: "{{ pvc['component'] }}"
-    freva.org/tier: "{{ pvc['tier'] }}"
+    app.kubernetes.io/instance: "{{ claim['instance'] }}"
+    app.kubernetes.io/component: "{{ claim['component'] }}"
+    freva.org/tier: "{{ claim['tier'] }}"
 spec:
-  accessModes: ["{{ pvc['mode'] }}"]
+  accessModes: ["{{ claim['mode'] }}"]
   resources:
+{% if claim.get('storage', '') %}
     requests:
-      storage: {{ pvc['storage'] | tojson }}
+      storage: {{ claim['storage'] | tojson }}
+{% endif %}
+{% if claim.get('select', '') %}
+  selector:
+    matchLabels:
+      freva.org/volume: {{ claim['select'] }}
+{% endif %}
 {% endfor %}

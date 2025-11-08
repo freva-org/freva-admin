@@ -874,9 +874,6 @@ class DeployFactory:
             config[step]["vars"]["deployment_method"] = self.cfg.get(
                 "deployment_method", "docker"
             )
-            config[step]["vars"]["expose_method"] = self.cfg.get(
-                "kubernetes", {}
-            ).get("expose_method", "op-lb")
             if step in versions:
                 config[step]["vars"][f"{step.replace('-', '_')}_version"] = (
                     versions[step]
@@ -899,6 +896,8 @@ class DeployFactory:
         info: Dict[str, Any] = {}
         for step in config:
             for key, value in config[step].get("vars", {}).items():
+                if key in extra:
+                    continue
                 if step in tags or ("db" in self.steps and step == "vault"):
                     info.setdefault(step, {})
                     info[step].setdefault("vars", {})
@@ -943,14 +942,6 @@ class DeployFactory:
                 f"Deployment method: {deployment_method} is invalid, should be"
                 f"one of {', '.join(valid_deployment_methods)}"
             )
-        if deployment_method == "k8s":
-            for step in self.steps:
-                if step != "core":
-                    for key, val in self.cfg[step].items():
-                        if "_host" in key and isinstance(val, str):
-                            self.cfg[step][key] = self.cfg["kubernetes"][
-                                "deploy_host"
-                            ]
         return deployment_method
 
     def create_eval_config(self) -> Optional[Path]:
@@ -1029,7 +1020,7 @@ class DeployFactory:
         ssh_port: int = 22,
         skip_version_check: bool = False,
         tags: Optional[list[str]] = None,
-        local: bool = False
+        local: bool = False,
     ) -> None:
         """Play the ansible playbook.
 
@@ -1188,19 +1179,11 @@ class DeployFactory:
         }
 
         self.passwords = self.get_ansible_password(ask_pass)
-        deployment_method = self._set_deployment_methods()
+        self._set_deployment_methods()
         local_connection = local or self.local_debug
-        if self.steps == ["core"] or tags == ["core"]:
-            add = []
-        elif not tags and deployment_method == "k8s":
-            add = ["kubernetes"]
-        else:
-            add = []
         steps = [s for s in self.steps]
-        tags = [t for t in tags or steps] + add
-        if deployment_method == "k8s" and steps != ["core"]:
-            local_connection = is_localhost(self.cfg["kubernetes"]["deploy_host"])
-        elif skip_version_check is False:
+        tags = [t for t in tags or steps]
+        if skip_version_check is False:
             steps = list(
                 set(
                     steps
