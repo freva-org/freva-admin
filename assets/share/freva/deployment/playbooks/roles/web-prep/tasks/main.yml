@@ -1,7 +1,6 @@
 ---
 - name: Include role vars
   include_vars: "{{ role_path }}/files/vars.yml"
-  when: deployment_method in ["conda", "docker", "podman"]
 
 - name: Creating share directory
   file:
@@ -10,7 +9,6 @@
     mode: "{{ '2775' if core_admin_group is defined and core_admin_group != '' else '2755' }}"
     group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit }}"
   become: false
-  when: deployment_method in ["conda", "docker", "podman"]
 
 - name: Adding freva web config to the core structure
   copy:
@@ -19,4 +17,3 @@
     mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
     group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
   become: false
-  when: deployment_method in ["conda", "docker", "podman"]
