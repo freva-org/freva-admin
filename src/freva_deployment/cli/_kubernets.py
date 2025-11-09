@@ -11,8 +11,9 @@ from typing import Any, Dict, List, Optional
 
 import namegenerator
 import yaml
-from freva_deployment import __version__
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
+
+from freva_deployment import __version__
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
