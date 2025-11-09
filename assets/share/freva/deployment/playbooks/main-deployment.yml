@@ -1,50 +1,4 @@
 ---
-- name: Prep kubernetes
-  hosts: kubernetes
-  tags:
-    - kubernetes
-  vars_files:
-    - "./vars.yml"
-  become: "{{ ansible_become_user is defined and ansible_become_user != '' }}"
-  become_user: "{{ ansible_become_user | default('root') }}"
-  tasks:
-    - name: Ensure Kubernetes Python client is installed
-      pip:
-        name: kubernetes
-        state: present
-      when: not (config_only | default(false))
-
-    - name: Ensure namespace exists
-      kubernetes.core.k8s:
-        state: present
-        definition:
-          apiVersion: v1
-          kind: Namespace
-          metadata:
-            name: "{{ project_name }}"
-      when: not (config_only | default(false))
-
-    - name: Set admin user variable
-      set_fact:
-        admin_user: >
-          {{ admin_user | trim
-            if (admin_user is defined and admin_user | length > 0 and ansible_become | default(false) and ansible_become_user | default('root') == 'root')
-            else ansible_user | trim
-          }}
-
-    - name: Get UID
-      command: id -u {{ admin_user }}
-      register: uid_result
-
-    - name: Get GID
-      command: id -g {{ admin_user }}
-      register: gid_result
-
-    - name: Set UID and GID as facts
-      set_fact:
-        uid: "{{ uid_result.stdout }}"
-        gid: "{{ gid_result.stdout }}"
-
 - name: Deploy Freva Core Library
   hosts: core
   tags:
@@ -198,36 +152,6 @@
       failed_when: false
       when: deployment_method in ["conda", "docker", "podman"]
 
-- name: Add DB secrets to vault
-  hosts: db
-  gather_facts: false
-  vars:
-    body:
-      db.container: "{{ vault_name }}"
-      db.host: "{{ vault_db_host }}"
-      db.port: "{{ vault_db_port | string }}"
-      db.db: "{{ vault_db }}"
-      db.passwd: '{{ vault_passwd }}'
-      db.user: "{{ vault_db_user }}"
-  tags:
-    - db
-  tasks:
-    - name: POST request
-      when:
-        - deployment_method == "k8s"
-        - not (config_only | default(false))
-      uri:
-        url: "http://{{ db_vault_host }}:5002/vault/data"
-        method: POST
-        headers:
-          password: "{{ root_passwd }}"
-          Content-Type: "application/json"
-        body: "{{ body | to_json }}"
-        body_format: json
-        timeout: 3
-        return_content: true
-        status_code: 201
-
 - name: Add monogDB secrets to vault
   hosts: freva_rest
   gather_facts: false
@@ -254,4 +178,3 @@
         timeout: 3
         return_content: true
         status_code: 201
-      when: not (config_only | default(false))

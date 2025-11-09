@@ -9,17 +9,3 @@
 
 - name: Playing {{ deployment_method }} deployment
   include_tasks: "{{ play_file | trim }}"
-  when: deployment_method != "k8s"
-
-- name: Playing {{ deployment_method }} deployment
-  include_tasks: "{{ play_file | trim }}"
-  when: deployment_method == "k8s"
-  loop: "{{ service_settings }}"
-  loop_control:
-    loop_var: svc
-  vars:
-    service: "{{ svc.name }}"
-    env_vars: "{{ svc.env_vars }}"
-    image: "{{ svc.image }}"
-    service_port: "{{ svc.service_port }}"
-    workload_kind: "{{ svc.workload_kind }}"
