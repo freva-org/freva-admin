@@ -10,21 +10,6 @@ deployment_method = "podman"
 
 ## Kubernetes deployment settings
 [kubernetes]
-## Set the hostname from where you are going to spin up the kubernetes cluster
-## if the deployment method was set to "k8s". This can either be your local
-## computer or a server.
-deploy_host = "localhost"
-
-## The `expose_method` defines how a service is made accessible externally.
-## Options: hostport, nodeport or lb (default).
-## hostport binds directly to the node port,
-## lb requires a load balancer to be configured.
-expose_method = "lb"
-
-## Set the `config_only` flag to true in order to only create k8s configurations
-## but not start any services (default: false)
-config_only = false
-
 ## Set the group ID for all volmes used by pods
 fs_group = 0
 
@@ -34,14 +19,18 @@ run_as_group = 0
 ## Set the user id
 run_as_user = 0
 
-
 [kubernetes.ingress]
 ## Specify the fully qualified domain host for ingress connections to the
 ## cluster.
 fqdn = "localhost"
 
-## Set the ingress class name:
-class_name = "nginx"
+## Set the network ingress class name for external website access
+## if the web-app should not be external you can use the same class_name
+## as the one for 'internal' access.
+external_class_name = "nginx-external"
+## Set the network ingress class name for internal communication
+internal_class_name = "nginx-internal"
+
 
 ## Any ingress annotations that are needed
 annotations = {}
@@ -103,19 +92,37 @@ memory = "128Mi"
 cpu = "500m"
 memory = "512Mi"
 
-## Set the PersistentVolume (for external resources.)
+## The web-app needs to configuration and user plugin data
+## stored on the HPC storage system. You can define the driver and driver
+## specs here for the mount volumes to those paths here.
+## Driver can be local, nfs ..., options can be the paths on disk
+## server name etc.
 [kubernetes.pv.web-ext]
-accessModes = "ReadWriteMany"
-persistentVolumeReclaimPolicy = "Retain"
-storageClassName = ""
-nfs = { server = "gladedm1.ucar.edu", "path" =  "/gpfs/csfs1/work/mbergemann/",  readOnly = true}
+driver = "local"
+[kubernetes.pv.web-ext.driver-options]
+path =  "/opt/freva"
+readOnly = "true"
 
-
+## The data-loader needs access to the datasets it is supposed to load.
+## You can define the mount volumes to those paths here. Driver and driver
+## specs here. driver can be local, nfs ..., options can be the paths on disk
+## server name etc.
 [kubernetes.pv.ext-data]
-accessModes = "ReadWriteMany"
-persistentVolumeReclaimPolicy = "Retain"
-storageClassName = ""
-nfs = { server = "gladedm1.ucar.edu", "path" =  "/gpfs/csfs1/collections/rda", readOnly = true}
+driver = "local"
+[kubernetes.pv.ext-data.driver-options]
+path =  "/data"
+readOnly = "true"
+
+## The web-app needs access to images produced by user plugins.
+## You can define the mount volumes to those paths here. Driver and driver
+## specs here. driver can be local, nfs ..., options can be the paths on disk
+## server name etc.
+[kubernetes.pv.web-preview]
+driver = "local"
+[kubernetes.pv.web-preview.driver-options]
+path =  "/opt/freva/web/path_to_preview"
+readOnly = "true"
+
 
 ## Set the pvc resource allocation for each service.
 [kubernetes.pvc.mysql]
@@ -126,6 +133,12 @@ data_size = "20Gi"
 data_size = "20Gi"
 [kubernetes.pvc.web]
 data_size = "5Gi"
+[kubernetes.pvc.web-ext]
+path = "/opt/freva"
+[kubernetes.pvc.ext-data]
+path =  "/data"
+[kubernetes.pvc.web-preview]
+path = "/opt/freva/web/path_to_preview"
 
 
 ## Specify the path to the SSL certificate files used for secure connections
