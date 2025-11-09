@@ -3,6 +3,7 @@ docs/_generated/*
 *.img
 *.spec
 *.toml
+*.toml.bck
 !assets/share/freva/deployment/config/*.toml
 !deploy-freva-all.spec
 pyinstaller/cowsay
