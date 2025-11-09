@@ -75,7 +75,6 @@ spec:
             - name: API_REDIS_PASSWORD
               valueFrom: {secretKeyRef: {name: freva-secrets, key: REDIS_PASSWORD } }
             - {name: API_REDIS_HOST, value: "cache-server"}
-            - {name: API_LOGDIR, value: "/tmp/logs" }
             - {name: API_SOLR_HOST, value: "search-server:8983"}
             - name: API_MONGO_USER
               valueFrom: {secretKeyRef: {name: freva-secrets, key: FREVA_REST_DB_USER} }
@@ -84,12 +83,7 @@ spec:
               valueFrom: {secretKeyRef: {name: freva-secrets, key: FREVA_REST_DB_PASSWORD } }
             - {name: API_MONGO_DB, value: "search_stats" }
             - {name: API_SERVICES, value: "{{ freva_rest_services }}"}
-          volumeMounts:
-            - {name: freva-rest-logs, mountPath: /tmp/logs }
           readinessProbe:
             httpGet: {path: "/api/freva-nextgen/ping", port: {{ freva_rest_port }} }
             initialDelaySeconds: 10
             periodSeconds: 5
-      volumes:
-        - name: freva-rest-logs
-          persistentVolumeClaim: {claimName: freva-rest-logs}

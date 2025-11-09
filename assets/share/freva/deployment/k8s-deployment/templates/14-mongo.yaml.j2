@@ -69,9 +69,6 @@ spec:
             - { name: API_MONGO_DB, value: "search_stats" }
           volumeMounts:
             - { name: mongo-data, mountPath: /data/db }
-            - { name: mongo-logs, mountPath: /data/logs }
       volumes:
         - name: mongo-data
           persistentVolumeClaim: { claimName: mongo-data }
-        - name: mongo-logs
-          persistentVolumeClaim: { claimName: mongo-logs }

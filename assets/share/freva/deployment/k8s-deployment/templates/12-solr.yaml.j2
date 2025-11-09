@@ -67,9 +67,6 @@ spec:
             - { name: API_SOLR_HEAP, value: "{{ search_server_solr_mem }}" }
           volumeMounts:
             - { name: solr-data, mountPath: /data/db }
-            - { name: solr-logs, mountPath: /data/logs }
       volumes:
         - name: solr-data
           persistentVolumeClaim: { claimName: solr-data }
-        - name: solr-logs
-          persistentVolumeClaim: { claimName: solr-logs }
