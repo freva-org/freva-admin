@@ -7,7 +7,7 @@ spec:
   type: ClusterIP
   selector: { app: web-reverse-proxy }
   ports:
-    - { name: http, port: 80, targetPort: 80 }
+    - { name: http, port: 8080, targetPort: 8080 }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -40,15 +40,19 @@ spec:
             - {name: PROJECT_NAME, value: "{{ project_name }}"}
             - {name: PORT_HTTPSD, value: "8443"}
             - {name: PORT_HTTPD, value: "8080"}
+            - {name: NO_HTTP_CERT, value: "1" }
             - {name: WEB_HOST, value: "{{ web_project_website.replace('http://','').replace('https://','').replace('www.','') }}"}
           volumeMounts:
             - {name: web-static, mountPath: /srv/static}
+            - {name: logs, mountPath: /tmp/nginx }
 {% if use_core %}
             - {name: core-preview, mountPath: /srv/static/preview, readOnly: true}
 {% endif %}
       volumes:
         - name: web-static
           persistentVolumeClaim: {claimName: web-data}
+        - name: logs
+          persistentVolumeClaim: {claimName: proxy-logs}
 {% if use_core %}
         - name: core-preview
           {{ pv["web-preview"]["driver"] }}:
