@@ -11,9 +11,8 @@ from typing import Any, Dict, List, Optional
 
 import namegenerator
 import yaml
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -52,33 +51,30 @@ def get_ingress_hosts(
                 "service": "freva-rest-server",
                 "port": config["freva_rest"]["freva_rest_port"],
                 "tls": False,
+                "tls_secret": "web-cert-secret",
             },
             {
                 "fqdn": f"freva-solr.{domain}",
                 "service": "search-server",
                 "port": 8983,
                 "tls": False,
-            },
-            {
-                "fqdn": f"freva-db.{domain}",
-                "service": "database-server",
-                "tls": False,
-                "port": 3306,
+                "tls_secret": "web-cert-secret",
             },
         ],
         "web": [
-            {
-                "fqdn": f"{project_name}.{domain}",
-                "service": "web-app",
-                "port": 8080,
-                "tls": True,
-                "tls_secret": "web-cert-secret",
-            },
             {
                 "fqdn": f"freva-vault.{domain}",
                 "service": "vault-server",
                 "port": 5002,
                 "tls": False,
+                "tls_secret": "web-cert-secret",
+            },
+            {
+                "fqdn": f"freva-db.{domain}",
+                "service": "database-server",
+                "port": 3306,
+                "tls": False,
+                "tls_secret": "web-cert-secret",
             },
         ],
     }
@@ -98,7 +94,7 @@ def get_pvcs_from_services(
         "freva-rest": [
             {
                 "name": "solr-data",
-                "mode": "ReadWriteMany",
+                "mode": "ReadWriteOnce",
                 "storage": config["solr"]["data_size"],
                 "instance": "rest-api",
                 "tier": "database",
@@ -106,7 +102,7 @@ def get_pvcs_from_services(
             },
             {
                 "name": "mongo-data",
-                "mode": "ReadWriteMany",
+                "mode": "ReadWriteOnce",
                 "storage": config["mongo"]["data_size"],
                 "instance": "mongo-server",
                 "tier": "database",
@@ -116,7 +112,7 @@ def get_pvcs_from_services(
         "web": [
             {
                 "name": "db-data",
-                "mode": "ReadWriteMany",
+                "mode": "ReadWriteOnce",
                 "storage": config["mysql"]["data_size"],
                 "instance": "database-server",
                 "tier": "database",
@@ -124,7 +120,7 @@ def get_pvcs_from_services(
             },
             {
                 "name": "vault-data",
-                "mode": "ReadWriteMany",
+                "mode": "ReadWriteOnce",
                 "storage": "500Mi",
                 "instance": "web-app",
                 "component": "data",
@@ -132,11 +128,19 @@ def get_pvcs_from_services(
             },
             {
                 "name": "web-data",
-                "mode": "ReadWriteMany",
+                "mode": "ReadWriteOnce",
                 "storage": config["web"]["data_size"],
                 "component": "data",
                 "instance": "web-app",
                 "tier": "backend",
+            },
+            {
+                "name": "proxy-logs",
+                "mode": "ReadWriteOnce",
+                "storage": "500Mi",
+                "component": "logs",
+                "instance": "web-app",
+                "tier": "frontend",
             },
         ],
     }
@@ -215,6 +219,7 @@ def create_manifest(args: argparse.Namespace) -> None:
                 "redis_username": namegenerator.gen(),
                 "ingress_enabled": True,
                 "ingress_fqdns": [DF.cfg["web"]["project_website"]],
+                "fqdn": DF.cfg["kubernetes"]["ingress"]["fqdn"],
                 "out_dir": str(out_dir),
                 "image_pull_policy": "IfNotPresent",
                 "templates": get_service_templates(services),
