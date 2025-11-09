@@ -249,23 +249,6 @@ def create_manifest(args: argparse.Namespace) -> None:
             inventory["web"]["vars"]["web_config_content"] = base64.b64encode(
                 web_config.encode()
             ).decode()
-            plugin_note = ""
-        else:
-            plugin_note = (
-                "[b red]:bulb: NOTE:[/] If want to use plugins you"
-                " should install the freva libraries via pip "
-                "or conda:\n\n"
-                "  [b]python -m pip install freva-client freva[/b] (or) \n"
-                "  [b]conda -c conda-forge install freva-client freva [/b]\n\n"
-                "You should then set the "
-                "[b]EVALUATION_SYSTEM_CONFIG_FILE[/b] env varaiable "
-                "for the [b]web-server[/b] section in the compose file to the "
-                "config file that was installed by conda/pip - e.g\n\n  "
-                "<base-path-to-python-env>/freva/"
-                "evaluation_system.conf\n"
-                "This path also needs to be mounted as a volume into the "
-                "container.\n"
-            )
 
         playbook = TASK.format(asset_dir=asset_dir)
         web_conf = (
@@ -285,23 +268,21 @@ def create_manifest(args: argparse.Namespace) -> None:
             inventory=inventory,
             verbosity=args.verbose,
         )
-        config_path = (
-            Path(inventory["core"]["vars"]["core_root_dir"])
-            / "freva"
-            / "web"
-            / "freva_web.toml"
-        )
 
         RichConsole.rule("")
         RichConsole.print(
             (
-                "The k8s directory has been created. "
-                f"\n\n{plugin_note}"
-                "The web config file will be located in the "
-                f"[b]{config_path}[/b] you can adjust it's settings there and"
-                "restart the service."
+                f"The k8s manifests have been created in [b]{out_dir}[/b].\n"
+                f"You can apply them using kubctl.\n"
+                "Before starting the web app make sure you have the core.\n"
+                "library installed and prepared the web-directory structure."
+                " on the HPC.\n"
+                "You can do this by running the following command:\n\n"
+                f"  [b]deploy-freva cmd -c {args.config_file} "
+                "-t core pre-web --skip-version-check -g"
             )
         )
+        RichConsole.rule("")
 
 
 def kubernetes_parser(
