@@ -94,6 +94,11 @@ spec:
             - name: wait-script
               mountPath: /bin/wait-for.sh
               subPath: wait-for.sh
+          resources:
+            limits:
+              cpu: "50m"
+              cpu: "50m"
+              memory: "256Mi"
       containers:
         - name: web
           image: ghcr.io/freva-org/freva-web:{{ web_version }}
@@ -112,7 +117,7 @@ spec:
             - name: ALLOWED_HOSTS
               value: "{{ web_allowed_hosts | sort | join(',') }}"
             - name: FREVA_WEB_CONFIG_FILE
-              value: "{{ core_root_dir }}/freva/web/freva_web.toml"
+              value: "{{ core_root_dir }}/freva/web/freva_web_conf.toml"
             - name: SCHEDULER_HOST
               value: "{{ web_scheduler_host | sort | join(',') }}"
             - name: CSRF_TRUSTED_ORIGINS
@@ -141,7 +146,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: freva-secrets
-                  key: OIDC_CLIENT_SECRET_WEB
+                  key: OIDC_CLIENT_SECRET
             - name: OIDC_CLIENT_ID
               value: "{{ web_oidc_client }}"
             - name: CHATBOT_HOST
@@ -161,7 +166,8 @@ spec:
               value: "database-server"
             - name: VAULT_URL
               value: "http://vault-server:5002"
-          command: ["bash", "-c", "sleep 20 && ./init_django.sh"]
+            - name: PATH
+              value: "/opt/conda/envs/freva-web/bin:/opt/conda/condabin:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
           volumeMounts:
 {% if use_core %}
             - name: web-ext
