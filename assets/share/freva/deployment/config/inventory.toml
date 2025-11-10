@@ -36,61 +36,71 @@ internal_class_name = "nginx-internal"
 annotations = {}
 
 ## Set the resource allocation for each service.
+## web: Django frontend (2 replicas recommended)
 [kubernetes.resources.web.requests]
-cpu = "500m"
-memory = "1Gi"
+cpu = "300m"
+memory = "512Mi"
 [kubernetes.resources.web.limits]
-cpu = 1
-memory = "4Gi"
-
-[kubernetes.resources.cache-server.requests]
-cpu = 2
-memory = "4Gi"
-[kubernetes.resources.cache-server.limits]
-cpu = 4
-memory = "12Gi"
-
-[kubernetes.resources.data-loader-server.requests]
-cpu = 2
-memory = "5Gi"
-[kubernetes.resources.data-loader-server.limits]
-cpu = 4
-memory = "10Gi"
-
-[kubernetes.resources.freva-rest-server.requests]
-cpu = "200m"
-memory = "256Mi"
-[kubernetes.resources.freva-rest-server.limits]
-cpu = "1"
+cpu = "800m"
 memory = "1Gi"
 
-[kubernetes.resources.databaser-server.requests]
-cpu = "200m"
+## cache-server: Redis (backing data-loader & web)
+[kubernetes.resources.cache-server.requests]
+cpu = "300m"
 memory = "512Mi"
-[kubernetes.resources.database-server.limits]
+[kubernetes.resources.cache-server.limits]
 cpu = "1"
 memory = "2Gi"
 
-[kubernetes.resources.mongo-server.requests]
-cpu = "200m"
-memory = "512Mi"
-[kubernetes.resources.mongo-server.limits]
-cpu = "1"
-memory = "2Gi"
-
-[kubernetes.resources.search-server.requests]
+## data-loader-server: heavy lifting & serialization (2 replicas recommended)
+[kubernetes.resources.data-loader-server.requests]
 cpu = "500m"
-memory = "6Gi"
-[kubernetes.resources.search-server.limits]
+memory = "1Gi"
+[kubernetes.resources.data-loader-server.limits]
 cpu = "2"
-memory = "6Gi"
+memory = "4Gi"
 
+## freva-rest-server: REST API (2 replicas recommended)
+[kubernetes.resources.freva-rest-server.requests]
+cpu = "300m"
+memory = "512Mi"
+[kubernetes.resources.freva-rest-server.limits]
+cpu = "800m"
+memory = "1Gi"
+
+## database-server: MySQL
+[kubernetes.resources.database-server.requests]
+cpu = "500m"
+memory = "2Gi"
+[kubernetes.resources.database-server.limits]
+cpu = "2"
+memory = "4Gi"
+
+## mongo-server: metadata + jobs
+[kubernetes.resources.mongo-server.requests]
+cpu = "300m"
+memory = "1Gi"
+[kubernetes.resources.mongo-server.limits]
+cpu = "1500m"
+memory = "3Gi"
+
+## search-server: Apache Solr (main memory hog)
+[kubernetes.resources.search-server.requests]
+cpu = "1500m"
+memory = "8Gi"
+[kubernetes.resources.search-server.limits]
+cpu = "4"
+memory = "16Gi"
+
+## vault-server: HashiCorp Vault (small)
 [kubernetes.resources.vault-server.requests]
 cpu = "100m"
-memory = "128Mi"
+memory = "256Mi"
 [kubernetes.resources.vault-server.limits]
-cpu = "500m"
+cpu = "300m"
 memory = "512Mi"
+
+
 
 ## The web-app needs to configuration and user plugin data
 ## stored on the HPC storage system. You can define the driver and driver
