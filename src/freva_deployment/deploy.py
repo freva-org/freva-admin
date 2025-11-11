@@ -711,9 +711,7 @@ class DeployFactory:
     def ask_become_password(self) -> bool:
         """Check if we have to ask for the sudo passwd at all."""
         cfg = deepcopy(self.cfg)
-        solr_config = cfg.get("databrowser", cfg.get("solr", {}))
-        cfg.setdefault("freva_rest", solr_config)
-        for step in cfg:
+        for step in ("freva_rest", "web", "db"):
             if isinstance(cfg[step], dict):
                 ansible_become_user = cfg[step].get("ansible_become_user", "root")
                 if ansible_become_user:
@@ -1182,7 +1180,6 @@ class DeployFactory:
         self._set_deployment_methods()
         local_connection = local or self.local_debug
         steps = [s for s in self.steps]
-        tags = [t for t in tags or steps]
         if skip_version_check is False:
             steps = list(
                 set(
@@ -1195,6 +1192,13 @@ class DeployFactory:
                     )
                 )
             )
+        tags = [t for t in tags or steps]
+        ask_master_pass = False
+        for t in tags:
+            if t in ["vault", "db", "web"]:
+                ask_master_pass = True
+        if ask_master_pass is False:
+            self._master_pass = "foo"
         if local_connection:
             extravars["ansible_connection"] = "local"
         inventory = self.parse_config(steps)
