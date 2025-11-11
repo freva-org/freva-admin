@@ -30,11 +30,15 @@ metadata:
 spec:
   ingressClassName: {{ ingress.external_class_name | default('nginx') }}
   tls:
-    - secretName: web-cert-secret
-      hosts:
+    - hosts:
 {% for h in ext_hosts %}
         - {{ h }}
 {% endfor %}
+{% if ingress.certs_managed %}
+      secretName: web-cert-secret
+{% elif ingress.tls_secret_name | default() %}
+      secretName: {{ ingress.tls_secret_name }}
+{% endif %}
   rules:
 {% for h in ext_hosts %}
     - host: {{ h }}
@@ -46,7 +50,7 @@ spec:
               service:
                 name: web-reverse-proxy
                 port:
-                  number: 80
+                  number: 8080
 {% endfor %}
 ---
 apiVersion: networking.k8s.io/v1

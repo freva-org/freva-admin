@@ -1,4 +1,5 @@
 {%- set ns = project_name -%}
+{%- set volumes = external_volumes.get('data-loader', []) -%}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -41,7 +42,7 @@ spec:
           imagePullPolicy: {{ image_pull_policy }}
           resources: {{ resources['data-loader-server'] }}
           env:
-            - name: API_CONFIG,
+            - name: API_CONFIG
               value: /tmp/data-loader.conf
             - name: API_LOGDIR
               value: /tmp/data-loader.logs
@@ -57,13 +58,19 @@ spec:
                   key: REDIS_PASSWORD
             - name: API_REDIS_HOST
               value: cache-server
+{% if volumes %}
           volumeMounts:
-            - name: data
-              mountPath: {{ pvc['ext-data']['path'] }}
+{% for vol in volumes %}
+            - name: data-{{ loop.index }}
+              mountPath: {{ vol['mount_path'] }}
               readOnly: true
+{% endfor %}
       volumes:
-        - name: data
-          {{ pv['ext-data']['driver'] }}:
-{% for key, val in pv['ext-data']['driver-options'] | dictsort %}
+{% for vol in volumes %}
+        - name: data-{{ loop.index }}
+          {{ vol['driver'] }}:
+{% for key, val in vol['driver_options'] | dictsort %}
             {{ key }}: {{ val }}
 {% endfor %}
+{% endfor %}
+{% endif %}

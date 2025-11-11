@@ -35,6 +35,12 @@ internal_class_name = "nginx-internal"
 ## Any ingress annotations that are needed
 annotations = {}
 
+## Set this to true you the cluster mangages server certs
+certs_managed = true
+
+### Set any tls_cert_secret name that should be used.
+tls_secret_name = ""
+
 ## Set the resource allocation for each service.
 ## web: Django frontend (2 replicas recommended)
 [kubernetes.resources.web.requests]
@@ -107,9 +113,10 @@ memory = "512Mi"
 ## specs here for the mount volumes to those paths here.
 ## Driver can be local, nfs ..., options can be the paths on disk
 ## server name etc.
-[kubernetes.pv.web-ext]
+[kubernetes.external_volumes.web-ext]
 driver = "local"
-[kubernetes.pv.web-ext.driver-options]
+mount_path = "/opt/freva"
+[kubernetes.external_volumes.web-ext.driver_options]
 path =  "/opt/freva"
 readOnly = "true"
 
@@ -117,19 +124,20 @@ readOnly = "true"
 ## You can define the mount volumes to those paths here. Driver and driver
 ## specs here. driver can be local, nfs ..., options can be the paths on disk
 ## server name etc.
-[kubernetes.pv.ext-data]
+[[kubernetes.external_volumes.data-loader]]
 driver = "local"
-[kubernetes.pv.ext-data.driver-options]
-path =  "/data"
-readOnly = "true"
+mount_path = "/data"
+driver_options = {path =  "/data", readOnly = "true"}
+
 
 ## The web-app needs access to images produced by user plugins.
 ## You can define the mount volumes to those paths here. Driver and driver
 ## specs here. driver can be local, nfs ..., options can be the paths on disk
 ## server name etc.
-[kubernetes.pv.web-preview]
+[kubernetes.external_volumes.web-preview]
 driver = "local"
-[kubernetes.pv.web-preview.driver-options]
+mount_path = "/opt/freva/static/preview"
+[kubernetes.external_volumes.web-preview.driver_options]
 path =  "/opt/freva/web/path_to_preview"
 readOnly = "true"
 

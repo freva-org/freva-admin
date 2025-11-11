@@ -11,9 +11,8 @@ from typing import Any, Dict, List, Optional
 
 import namegenerator
 import yaml
-from rich_argparse import ArgumentDefaultsRichHelpFormatter
-
 from freva_deployment import __version__
+from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
@@ -164,7 +163,6 @@ def get_service_templates(services: List[str]) -> List[str]:
         "10-mysql.yaml.j2",
         "11-redis.yaml.j2",
         "13-vault.yaml.j2",
-        "31-proxy.yaml.j2",
         "32-web-app.yaml.j2",
     ]
     templates: List[str] = [

@@ -3,12 +3,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: django-app
+  name: web-reverse-proxy
   namespace: {{ ns }}
   labels:
     app: web-app
     app.kubernetes.io/name: freva
-    app.kubernetes.io/instance: django-app
+    app.kubernetes.io/instance: web-app
     app.kubernetes.io/component: web-app
     app.kubernetes.io/part-of: freva
     app.kubernetes.io/version: {{ web_version }}
@@ -20,8 +20,8 @@ spec:
   selector:
     app: web-app
   ports:
-    - port: 8000
-      targetPort: 8000
+    - port: 8080
+      targetPort: 8080
       name: http
 ---
 apiVersion: v1
@@ -32,7 +32,7 @@ metadata:
   labels:
     app: web-app
     app.kubernetes.io/name: freva
-    app.kubernetes.io/instance: django-app
+    app.kubernetes.io/instance: web-app
     app.kubernetes.io/component: web-app
     app.kubernetes.io/part-of: freva
     app.kubernetes.io/version: {{ web_version }}
@@ -54,12 +54,12 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: django-app
+  name: web-app
   namespace: {{ ns }}
   labels:
     app: web-app
     app.kubernetes.io/name: freva
-    app.kubernetes.io/instance: django-app
+    app.kubernetes.io/instance: web-app
     app.kubernetes.io/component: web-app
     app.kubernetes.io/part-of: freva
     app.kubernetes.io/version: {{ web_version }}
@@ -67,7 +67,7 @@ metadata:
     freva.org/stateful: "false"
     freva.org/tier: frontend
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: web-app
@@ -76,7 +76,7 @@ spec:
       labels:
         app: web-app
         app.kubernetes.io/name: freva
-        app.kubernetes.io/instance: django-app
+        app.kubernetes.io/instance: web-app
         app.kubernetes.io/component: web-app
         app.kubernetes.io/part-of: freva
         app.kubernetes.io/version: {{ web_version }}
@@ -100,7 +100,36 @@ spec:
               cpu: "50m"
               memory: "256Mi"
       containers:
-        - name: web
+        - name: nginx
+          image: ghcr.io/freva-org/freva-nginx:1.29.3
+          imagePullPolicy: {{ image_pull_policy }}
+          resources: {{ resources['web'] }}
+          env:
+            - {name: SERVER_ROOT, value: "/srv/static"}
+            - {name: VAULT_HOST, value: "vault-server:5002"}
+            - {name: FREVA_REST_HOST, value: "freva-rest-server:{{ freva_rest_port }}"}
+{% if use_core %}
+            - {name: EVALUATION_SYSTEM_CONFIG_FILE, value: "{{ core_root_dir }}/freva/evaluation_system.conf"}
+{% endif %}
+            - {name: CHATBOT_HOST, value: "{{ web_chatbot_host.replace('http://','') }}"}
+            - {name: WEB_SERVER_NAME, value: "127.0.0.1"}
+            - {name: WEB_SERVER_PORT, value: "8000"}
+            - {name: REST_PROXY_HOST_NAME, value: "http://{{ freva_rest_host }}"}
+            - {name: FILL_COLOR, value: "{{ web_main_color }}"}
+            - {name: PROXY_USER, value: "nobody"}
+            - {name: PROJECT_NAME, value: "{{ project_name }}"}
+            - {name: PORT_HTTPSD, value: "8443"}
+            - {name: PORT_HTTPD, value: "8080"}
+            - {name: NO_HTTP_CERT, value: "1" }
+            - {name: WEB_HOST, value: "{{ web_project_website.replace('http://','').replace('https://','').replace('www.','') }}"}
+          volumeMounts:
+            - {name: web-static, mountPath: /srv/static}
+            - {name: logs, mountPath: /tmp/nginx }
+{% if use_core %}
+            - {name: core-preview, mountPath: /srv/static/preview, readOnly: true}
+{% endif %}
+
+        - name: web-app
           image: ghcr.io/freva-org/freva-web:{{ web_version }}
           imagePullPolicy: {{ image_pull_policy }}
           resources: {{ resources["web"] }}
@@ -171,7 +200,7 @@ spec:
           volumeMounts:
 {% if use_core %}
             - name: web-ext
-              mountPath: "{{ pvc['web-ext']['path'] }}"
+              mountPath: "{{ external_volumes['web-ext']['mount_path'] }}"
               readOnly: true
 {% endif %}
             - name: web-static
@@ -180,14 +209,22 @@ spec:
         - name: web-static
           persistentVolumeClaim:
             claimName: web-data
+        - name: logs
+          persistentVolumeClaim:
+            claimName: proxy-logs
         - name: wait-script
           configMap:
             name: wait-utils
             defaultMode: 0755
 {% if use_core %}
         - name: web-ext
-          {{ pv['web-ext']['driver'] }}:
-{% for key, val in pv['web-ext']['driver-options'] | dictsort %}
+          {{ external_volumes['web-ext']['driver'] }}:
+{% for key, val in external_volumes['web-ext']['driver_options'] | dictsort %}
+            {{ key }}: {{ val }}
+{% endfor %}
+        - name: core-preview
+          {{ external_volumes["web-preview"]["driver"] }}:
+{% for key, val in external_volumes['web-preview']['driver_options'] | dictsort %}
             {{ key }}: {{ val }}
 {% endfor %}
 {% endif %}

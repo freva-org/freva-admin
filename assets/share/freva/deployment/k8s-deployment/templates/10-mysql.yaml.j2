@@ -17,8 +17,13 @@ metadata:
     freva.org/tier: database
 spec:
   type: ClusterIP
-  selector: { app: database-server }
-  ports: [{ port: 3306, targetPort: 3306, name: mysql }]
+  selector:
+    app: database-server
+  ports:
+    - port: 3306
+      targetPort: 3306
+      name: mysql
+
 ---
 apiVersion: apps/v1
 kind: StatefulSet
