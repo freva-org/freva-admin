@@ -83,7 +83,3 @@ spec:
               valueFrom: {secretKeyRef: {name: freva-secrets, key: FREVA_REST_DB_PASSWORD } }
             - {name: API_MONGO_DB, value: "search_stats" }
             - {name: API_SERVICES, value: "{{ freva_rest_services }}"}
-          readinessProbe:
-            httpGet: {path: "/api/freva-nextgen/ping", port: {{ freva_rest_port }} }
-            initialDelaySeconds: 10
-            periodSeconds: 5

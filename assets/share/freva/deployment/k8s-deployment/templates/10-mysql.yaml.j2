@@ -79,8 +79,6 @@ spec:
             - { name: PROJECT, value: "{{ project_name }}" }
           volumeMounts:
             - { name: db-data, mountPath: /data/db }
-          readinessProbe: { tcpSocket: { port: 3306 }, initialDelaySeconds: 5, periodSeconds: 5 }
-          livenessProbe:  { tcpSocket: { port: 3306 }, initialDelaySeconds: 10, periodSeconds: 10 }
       volumes:
         - name: db-data
           persistentVolumeClaim: { claimName: db-data }
