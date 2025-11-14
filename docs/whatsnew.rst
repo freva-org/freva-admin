@@ -7,6 +7,10 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2511.0.0
+~~~~~~~~~
+* Add kunernetes deployment support
+
 v2510.1.0
 ~~~~~~~~
 * Bumped version of freva-web to 2510.1.0
