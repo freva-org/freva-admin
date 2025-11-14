@@ -41,7 +41,7 @@ hiddenimports = ["tomlkit", "cryptography", "ansible_pylibssh"]
 # ---------------------------------------------------
 # Data files
 # ---------------------------------------------------
-datas = [
+data = [
     ("assets/share/freva/deployment", "freva_deployment/assets"),
     ("src/freva_deployment/versions.json", "freva_deployment"),
     ("src/freva_deployment/callback_plugins", "freva_deployment/callback_plugins"),
@@ -53,14 +53,14 @@ binaries = bins
 # ---------------------------------------------------
 for package in ("ansible", "ansible_collections"):
     all_data = collect_all(package)
-    datas += all_data[0]
+    data += all_data[0]
     binaries += all_data[1]
     hiddenimports += all_data[2]
 
 # ---------------------------------------------------
 # ✅ Filter out accidental _internal folders
 # ---------------------------------------------------
-datas = [d for d in datas if "_internal" not in d[0] and "_internal" not in d[1]]
+data = [d for d in data if "_internal" not in d[0] and "_internal" not in d[1]]
 binaries = [b for b in binaries if "_internal" not in b[0] and "_internal" not in b[1]]
 # ---------------------------------------------------
 # PyInstaller build
@@ -69,7 +69,7 @@ a = Analysis(
     ["pyinstaller/pyinstaller-deploy-freva.py"],
     pathex=[str(project_dir)],
     binaries=binaries,
-    datas=datas,
+    data=data,
     hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
@@ -104,7 +104,7 @@ exe = EXE(
 coll = COLLECT(
     exe,
     a.binaries,
-    a.datas,
+    a.data,
     strip=False,
     upx=True,
     upx_exclude=[],

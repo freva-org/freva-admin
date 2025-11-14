@@ -228,7 +228,7 @@ class RunnerDir(TemporaryDirectory):
         host: str
             Remote hostname
         file_paths: str
-            The paths to the file contaning the target content
+            The paths to the file containing the target content
         username: str, default: None
             Use this username to log on
         password: str, default: None

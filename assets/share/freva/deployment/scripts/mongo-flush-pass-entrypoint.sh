@@ -10,7 +10,7 @@ log() {
 }
 
 wait_for_mongo() {
-    # TODO: For a small test environemt, 30 seconds was too long, but to be safe and sure in a real env, we should keep it at 30 seconds
+    # TODO: For a small test environment, 30 seconds was too long, but to be safe and sure in a real env, we should keep it at 30 seconds
     for i in {1..30}; do
         if mongosh --quiet --eval "db.adminCommand('ping')" &>/dev/null; then
             return 0

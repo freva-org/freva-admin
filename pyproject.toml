@@ -98,12 +98,14 @@ setenv =
     LC_ALL = C
     LANG = C
 allowlist_externals = make
-commands = make -C docs clean
+commands = codespell {posargs: --quiet-level=2} docs
+           make -C docs clean
            make -C docs html
 [testenv:lint]
 deps = .
        black
        isort
+       codespell
 commands =
     isort --check --profile black -t py311 -l 79 src
 [testenv:types]

@@ -53,7 +53,7 @@ class CommandFactory(metaclass=abc.ABCMeta):
             Additional command line arguments
         Returns
         -------
-        list[str]: Constructed command line arguemnts.
+        list[str]: Constructed command line arguments.
         """
         prefer = kwargs.pop("prefer")
         container_cmd = Path(self.get_container_cmd(prefer)).name
@@ -95,7 +95,7 @@ class CommandFactory(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        list[str]: Constructed command line arguemnts.
+        list[str]: Constructed command line arguments.
         """
         return [self.command, "volume", sub_command] + list(flags)
 
@@ -111,7 +111,7 @@ class CommandFactory(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        list[str]: Constructed command line arguemnts.
+        list[str]: Constructed command line arguments.
         """
         return [self.command, sub_command] + list(flags)
 
@@ -148,7 +148,7 @@ class CommandFactory(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        list[str]: Constructed commmand line arguments.
+        list[str]: Constructed command line arguments.
         """
 
         cli_command = [self.command, "pull"]
@@ -172,7 +172,7 @@ class CommandFactory(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        list[str]: Constructed commmand line arguments.
+        list[str]: Constructed command line arguments.
         """
         return (
             [self.command, "inspect"]
@@ -192,7 +192,7 @@ class CommandFactory(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        list[str]: Constructed commmand line arguments.
+        list[str]: Constructed command line arguments.
         """
 
         cli_command = [self.command, sub_command, "-f"]
@@ -219,7 +219,7 @@ class CommandFactory(metaclass=abc.ABCMeta):
 
         Returns
         -------
-        list[str]: Constructed commmand line arguments.
+        list[str]: Constructed command line arguments.
         """
 
         cli_command = [self.command, sub_command]
@@ -314,7 +314,7 @@ def parse_args() -> List[str]:
     """Construct a command line argument parser."""
 
     parser = argparse.ArgumentParser(
-        prog=sys.argv[0], description="Container wrapper programm"
+        prog=sys.argv[0], description="Container wrapper program"
     )
     parser.add_argument(
         "-p",
@@ -325,7 +325,7 @@ def parse_args() -> List[str]:
     parser.add_argument(
         "--prefer",
         type=str,
-        help="Set a prefered container binary.",
+        help="Set a preferred container binary.",
         choices=["docker", "podman"],
         default="podman",
     )
@@ -477,7 +477,7 @@ def parse_args() -> List[str]:
         "-t",
         "--time-out",
         type=int,
-        help="Timout",
+        help="Timeout",
     )
 
     # -------------------------- rm commands ----------------------------------

@@ -95,7 +95,7 @@ except ImportError as error:
 
 
 class BootstrapConda:
-    """Install conda into the prefex location."""
+    """Install conda into the prefix location."""
 
     def call_from_bootstrap(self):
         """Call the script in a bootstrap env."""
@@ -377,7 +377,7 @@ class PrefectServer:
             self.env["PREFECT_UI_API_URL"] = f"https://{self.caddy_host}/api"
 
     def linger(self) -> None:
-        """Wait unitl the server gets terminated."""
+        """Wait until the server gets terminated."""
         try:
             while True:
                 server_status = self.server.poll()
@@ -395,7 +395,7 @@ class PrefectServer:
     def prep_server(
         self, script_path: Path, user_var: Optional[str] = None
     ) -> None:
-        """Perpare the server startup."""
+        """Prepare the server startup."""
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "freva-deployment"]
         )
@@ -683,7 +683,7 @@ def main():
         "--script-directory",
         type=Path,
         default=os.getenv("FREVA_AUTOMATION_SCRIPT_DIR", "."),
-        help="The direcotry that contains any pre-processing scripts "
+        help="The directory that contains any pre-processing scripts "
         "that should be executed before launching the automation "
         "server.",
     )
@@ -698,7 +698,7 @@ def main():
         "--endpoint",
         type=str,
         default=os.getenv("FREVA_AUTOMATION_SERVER_ENDPOINT") or None,
-        help="Set the reverse proxy endoint that serves the web app.",
+        help="Set the reverse proxy endpoint that serves the web app.",
     )
     parser.add_argument(
         "--cert-file",

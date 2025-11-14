@@ -73,9 +73,8 @@ unit file to start the compose service. If you want to use freva core
 library with data analysis plugins you will have to install `freva`
 from conda-forge:
 
-```console
-conda install -c conda-forge freva
-```
+
+{{cli_k8s}}
 
 Once you have installed the core library you will have to adjust the volumes
 and ``EVALUATION_SYSTEM_CONFIG_FILE`` environment variable in the ``web-app``
@@ -83,6 +82,16 @@ section of your compose file.
 
 :::
 
+## Kubernetes based deployment
+Since *v2511.0.0* the `deploy-freva` software supports kubernetes (k8s)
+based deployments. To configure the k8s setup use the `[kubernetes]` section
+in the config toml file. Generating manifests that can be applied via
+[kubectl](https://kubernetes.io/docs/reference/kubectl) is done by the `kubernetes`
+sub-command:
+
+```console
+deploy-freva kubernetes -c config.toml -o
+``
 
 
 ## Running the deployment

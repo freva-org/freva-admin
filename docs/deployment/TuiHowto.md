@@ -63,7 +63,7 @@ The following explains the essential setup steps:
    [Basic configuration section](eval-conf).
 1. Set the preview path mentioned in the [Basic configuration section](eval-conf).
 1. Set the workload manager system from the dropdown menu.
-1. Set the output directory of the `stdout`/`stderr` of the workload manger.
+1. Set the output directory of the `stdout`/`stderr` of the workload manager.
    ``💡`` the workload manager type, like pbs, will be automatically
    appended to this directory.
 1. Set the user names (comma separated) of the Freva admins of this project.
@@ -118,7 +118,7 @@ essential setup steps:
 
 1. The host name where the web ui should be installed. This should be a single
    host name.
-1. Set the path where the persitent data should be stored. This settings
+1. Set the path where the persistent data should be stored. This settings
    will only come into effect for `conda` based deployments.
 1. User name that should own the persistent data (admin-user).
 1. The url the web ui can be accessed. Users will use this url to get access
@@ -199,7 +199,7 @@ following explains the essential setup steps:
 1. Tick this box (`<SPACE>`) if you want to delete any pre existing databrowser data.
 1. Select how much memory you want to allocate for the search backend process.
 1. Select the port the freva-rest server is running on.
-1. The user name (admin-user) that should own persitent data and run the serivces.
+1. The user name (admin-user) that should own persistent data and run the services.
 1. Set the path where persistent data should be stored. This settings will
    only have an effect for conda based deployments.
 1. The host name(s) - comma separated - where the zarr streaming server should be
@@ -233,7 +233,7 @@ following explains the essential setup steps:
 1. Tick this box (`<SPACE>`) if you want to delete any pre existing databases.
 1. The host name where the database server should be installed. This should be a single
    host name.
-1. The host name whre the vault server should be installed. Defaults to the DB
+1. The host name where the vault server should be installed. Defaults to the DB
    host name.
 1. Delete all existing, persistent data.
 1. Set the database user name.

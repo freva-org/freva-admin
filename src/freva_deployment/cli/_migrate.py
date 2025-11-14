@@ -58,7 +58,7 @@ def exec_command(
 
 
 def execute_script_and_get_config(python_bin: Path, template: str) -> str:
-    """Execute a python2 template and read it's ouput."""
+    """Execute a python2 template and read it's output."""
     logger.debug("Working on %s", python_bin)
     python_path = python_bin.parents[3] / "freva" / "src"
     with TemporaryDirectory() as temp_dir:
@@ -215,7 +215,7 @@ def create_parser(
         "--old-pw",
         type=str,
         default=None,
-        help="The passowrd to the old database",
+        help="The password to the old database",
     )
     db_parser.add_argument(
         "--old-user",
@@ -231,7 +231,7 @@ def cli() -> None:
     """Run the command line interface."""
     epilog = (
         "[red][b]Note:[/b] The command `freva-migrate` is a legacy command,"
-        " please consdider using `deploy-freva migrate` instead.[/red]"
+        " please consider using `deploy-freva migrate` instead.[/red]"
     )
 
     arg = create_parser(epilog).parse_args(sys.argv[1:])

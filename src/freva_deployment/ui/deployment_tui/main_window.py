@@ -13,7 +13,6 @@ from typing import Any, Dict, List, cast
 import appdirs
 import npyscreen
 import tomlkit
-
 from freva_deployment.utils import asset_dir, config_dir, load_config
 
 from .base import BaseForm, selectFile
@@ -153,7 +152,7 @@ class MainApp(npyscreen.NPSAppManaged):
         self._auto_save_active = False
 
     def save_dialog(self, *args, **kwargs) -> None:
-        """Create a dialoge that allows for saving the config file."""
+        """Create a dialogue that allows for saving the config file."""
 
         the_selected_file = selectFile(
             select_dir=False, must_exist=False, file_extentions=[".toml"]
@@ -184,7 +183,7 @@ class MainApp(npyscreen.NPSAppManaged):
         self._setup_form.inventory_file.value = config_file
 
     def load_dialog(self, *args, **kwargs) -> None:
-        """Create a dialoge that allows for loading a config file."""
+        """Create a dialogue that allows for loading a config file."""
 
         the_selected_file = selectFile(
             select_dir=False, must_exist=True, file_extentions=[".toml"]

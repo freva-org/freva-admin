@@ -47,7 +47,7 @@ from .utils import (
 from .versions import get_steps_from_versions, get_versions
 
 LOCAL_DEBUG_MSG = (
-    "A freva test installation was sucessfully set up on your "
+    "A freva test installation was successfully set up on your "
     "computer!\n\nYou can visit the freva-web app at "
     "https://localhost:8443\n"
     "You can log on with user: [b]{user}[/b], password: [b]{password}[/b]"
@@ -923,7 +923,7 @@ class DeployFactory:
 
     @property
     def aux_dir(self) -> Path:
-        """Directory with auxillary files."""
+        """Directory with auxiliary files."""
         return asset_dir / "config"
 
     @property

@@ -13,7 +13,7 @@ from .logger import logger
 class DeploymentError(BaseException):
     """Define an error for when the deployment goes wrong.
 
-    For this error supresses the stack trace, since it has nothing to do
+    For this error suppresses the stack trace, since it has nothing to do
     with the code."""
 
     def __init__(self, message: str = "") -> None:
@@ -29,7 +29,7 @@ class DeploymentError(BaseException):
 
 
 class ConfigurationError(BaseException):
-    """Define an error when something was mis configured."""
+    """Define an error when something was mis-configured."""
 
     def __init__(self, message: str = "") -> None:
         self.error = message

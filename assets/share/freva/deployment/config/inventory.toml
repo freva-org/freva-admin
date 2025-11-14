@@ -5,7 +5,7 @@ project_name = "freva"
 ## of the service is realised. `docker`, `podman` leverages podman or docker,
 ## `conda` uses conda-forge to install the service while `k8s` involves a
 ### kubernetes based deployment
-## Chosse between: "docker", "podman", "conda", "k8s"
+## Choose between: "docker", "podman", "conda", "k8s"
 deployment_method = "podman"
 
 ## Kubernetes deployment settings
@@ -35,7 +35,7 @@ internal_class_name = "nginx-internal"
 ## Any ingress annotations that are needed
 annotations = {}
 
-## Set this to true you the cluster mangages server certs
+## Set this to true you the cluster manages server certs
 certs_managed = true
 
 ### Set any tls_cert_secret name that should be used.
@@ -409,9 +409,9 @@ web_host = "localhost"
 ## Set the URL of the web user interface.
 project_website = "www.freva.dkrz.de"
 
-## Freva can connect to a GPT service (that has to be set up seperately)
+## Freva can connect to a GPT service (that has to be set up separately)
 ## you can set the <HOSTNAME>:<PORT> of this service - if configured.
-## if you leave this blank, the website will not provid the chat interface.
+## if you leave this blank, the website will not provide the chat interface.
 chatbot_host=""
 
 ## Ansible needs a Python 3 interpreter on the target server. This interpreter

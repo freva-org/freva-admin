@@ -155,7 +155,7 @@ def get_pvcs_from_services(
 
 
 def get_service_templates(services: List[str]) -> List[str]:
-    """Assignes the templates needed for each the services."""
+    """Assigns the templates needed for each the services."""
     lookup = {
         "freva-rest": ["12-solr.yaml.j2", "14-mongo.yaml.j2", "20-rest.yaml.j2"],
         "data-loader": ["11-redis.yaml.j2", "22-data-loader.yaml.j2"],

@@ -1,5 +1,5 @@
 ---
-- name: Running common taks
+- name: Running common tasks
   include_tasks: "common_tasks.yml"
 
 - block:

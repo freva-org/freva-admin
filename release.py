@@ -182,7 +182,7 @@ class Bump(Release):
         }
 
     def update_whatsnew(self) -> None:
-        """Update the whats new section."""
+        """Update the what's new section."""
         file = Path(self.repo_dir / "docs" / "whatsnew.rst")
         service = {v: k for k, v in self.lookup.items()}.get(
             self.package_name, self.package_name
@@ -427,7 +427,7 @@ class Tag(Release):
         if self.version <= self.git_tag:
             raise Exit(
                 "Tag version: {} is the same as current version {}"
-                ", you need to bump the verion number first and "
+                ", you need to bump the version number first and "
                 "push the changes to the {} branch".format(
                     self.version,
                     self.git_tag,

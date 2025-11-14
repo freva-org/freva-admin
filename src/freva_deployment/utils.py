@@ -32,7 +32,7 @@ config_text = """
 [general]
 [variables]
 ### you can set here different *global* variables that are
-### evaluatated in the deployment configurations. For example
+### evaluated in the deployment configurations. For example
 ### if you set here the variable USER = "foo" then you can
 ### use the this defined variable in the inventory file to
 ### set the ansible user: anisble_user="${USER}"
@@ -69,7 +69,7 @@ class AssetDir:
 
     @property
     def is_bundeled(self) -> bool:
-        """Check if we are running a bundeled version of the code."""
+        """Check if we are running a bundled version of the code."""
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
             return True
         return False
@@ -249,10 +249,10 @@ def _convert_dict(
         if isinstance(value, dict):
             _convert_dict(value, variables, cfd)
         elif isinstance(value, str):
-            for varn, variable in variables.items():
-                if f"${{{varn}}}" in value or f"${varn}" in value:
-                    value = value.replace(f"${{{varn}}}", f"${varn}")
-                    value = value.replace(f"${varn}", variable)
+            for warn, variable in variables.items():
+                if f"${{{warn}}}" in value or f"${warn}" in value:
+                    value = value.replace(f"${{{warn}}}", f"${warn}")
+                    value = value.replace(f"${warn}", variable)
             inp_dict[key] = get_current_file_dir(cfd, value)
 
 
@@ -401,12 +401,12 @@ def get_email_credentials() -> tuple[str, str]:
 
 
 def get_passwd(master_pass: Optional[str] = None, min_characters: int = 8) -> str:
-    """Create a secure pasword.
+    """Create a secure password.
 
     Parameters
     ==========
     min_characters:
-        The minimum lenght of the password (default 8)
+        The minimum length of the password (default 8)
 
     Returns
     =======

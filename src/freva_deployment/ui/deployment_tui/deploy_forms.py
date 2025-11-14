@@ -98,7 +98,7 @@ class CoreScreen(BaseForm):
                     FileInfo,
                     section="core",
                     key="root_dir",
-                    name=(f"{self.num}Freva configuration direcory"),
+                    name=(f"{self.num}Freva configuration directory"),
                     value=cfg.get("root_dir", ""),
                 ),
                 False,
@@ -128,7 +128,7 @@ class CoreScreen(BaseForm):
                     ComboInfo,
                     section="core",
                     key="scheduler_system",
-                    name=f"{self.num}Workload manger",
+                    name=f"{self.num}Workload manager",
                     value=self.scheduler_index(
                         cast(str, cfg.get("scheduler_system"))
                     ),
@@ -141,7 +141,7 @@ class CoreScreen(BaseForm):
                     TextInfo,
                     section="core",
                     key="scheduler_output_dir",
-                    name=f"{self.num}Ouput dir. of the scheduler system",
+                    name=f"{self.num}Output dir. of the scheduler system",
                     value=cfg.get("scheduler_output_dir", ""),
                 ),
                 False,
@@ -407,7 +407,7 @@ class WebScreen(BaseForm):
                     TextInfo,
                     section="web",
                     key="homepage_heading",
-                    name=f"{self.num}A brief describtion of the project",
+                    name=f"{self.num}A brief description of the project",
                     value=cfg.get(
                         "homepage_heading", "Lorem ipsum dolor sit amet"
                     ),

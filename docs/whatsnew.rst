@@ -49,7 +49,7 @@ v2507.4.0
 
 v2507.3.0
 ~~~~~~~~~
-* Enable sub command that creats a single docker-compose file for deployment
+* Enable sub command that creates a single docker-compose file for deployment
 
 
 v2507.2.0
@@ -74,7 +74,7 @@ v2505.0.3
 v2505.0.0
 ~~~~~~~~~
 * Introduced ``conda-forge`` based deployment.
-  Instead of soley relying on deploying the micro-services within
+  Instead of solely relying on deploying the micro-services within
   docker containers. The servers can be set up with help of conda-forge
   environments.
 * More flexibility for setting up micro-services.

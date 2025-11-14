@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Simple script to download data via python buildin modules."""
+"""Simple script to download data via python build in modules."""
 
 import argparse
 import logging

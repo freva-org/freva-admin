@@ -7,7 +7,7 @@
   loop_control:
     label: "{{ item.desc }}"
 
-- name: Running common taks
+- name: Running common tasks
   include_tasks: "common_tasks.yml"
 
 - name: Stopping the {{ web_name }} services
