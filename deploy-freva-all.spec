@@ -36,7 +36,7 @@ for bin in ("mysqldump",):
 # ---------------------------------------------------
 # Hidden imports
 # ---------------------------------------------------
-hiddenimports = ["tomlkit", "cryptography", "ansible_pylibssh"]
+hiddenimports = ["tomlkit", "cryptography", "ansible_pylibssh", "ansible"]
 
 # ---------------------------------------------------
 # Data files
@@ -104,7 +104,7 @@ exe = EXE(
 coll = COLLECT(
     exe,
     a.binaries,
-    a.data,
+    a.datas,
     strip=False,
     upx=True,
     upx_exclude=[],
