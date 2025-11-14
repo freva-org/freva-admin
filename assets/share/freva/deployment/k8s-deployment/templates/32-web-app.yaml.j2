@@ -68,6 +68,11 @@ metadata:
     freva.org/tier: frontend
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector:
     matchLabels:
       app: web-app
@@ -97,13 +102,19 @@ spec:
           resources:
             limits:
               cpu: "50m"
-              cpu: "50m"
               memory: "256Mi"
       containers:
         - name: nginx
           image: ghcr.io/freva-org/freva-nginx:1.29.3
           imagePullPolicy: {{ image_pull_policy }}
-          resources: {{ resources['web'] }}
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
           env:
             - {name: SERVER_ROOT, value: "/srv/static"}
             - {name: VAULT_HOST, value: "vault-server:5002"}

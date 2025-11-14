@@ -38,6 +38,11 @@ metadata:
 spec:
   serviceName: mongo-server
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector: { matchLabels: { app: mongo-server } }
   template:
     metadata:

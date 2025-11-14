@@ -39,6 +39,11 @@ metadata:
 spec:
   serviceName: search-server
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector: { matchLabels: { app: search-server } }
   template:
     metadata:

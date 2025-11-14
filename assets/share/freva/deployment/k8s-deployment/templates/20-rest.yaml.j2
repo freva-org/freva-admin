@@ -37,6 +37,11 @@ metadata:
     freva.org/tier: backend
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector: { matchLabels: { app: freva-rest-server } }
   template:
     metadata:

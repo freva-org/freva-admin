@@ -37,6 +37,11 @@ metadata:
     freva.org/tier: database
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
   selector: { matchLabels: { app: cache-server } }
   template:
     metadata:
