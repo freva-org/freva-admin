@@ -94,6 +94,7 @@ commands =
 
 [testenv:docs]
 deps = .[doc]
+       codespell
 setenv =
     LC_ALL = C
     LANG = C
