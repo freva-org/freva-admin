@@ -68,7 +68,7 @@ echo $img_file
 
 kill_vm () {
     if [ -f temp/vm.log ];then
-        echo "#### RECIEVED KILL SIGNAL! ####" >> temp/vm.log
+        echo "#### RECEIVED KILL SIGNAL! ####" >> temp/vm.log
         pid=$(ps aux|grep 'tail -f temp/vm.log' |grep -v grep |grep $(whoami)|awk '{print $2}')
         if [ "$pid" ];then
             sleep 0.5

@@ -149,26 +149,12 @@
         https://freva.gitlab-pages.dkrz.de/metadata-crawler-source/binaries/data-crawler
         -o {{ conda_sbin }}/data-crawler
 
-    - name: Getting status of drs_config.toml file
-      stat:
-        path: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}/freva/drs_config.toml"
-      register: drs_path
-
-    - name: Inserting drs_config.toml file
-      copy:
-        src: "{{tempdir.path}}/freva/assets/drs_config.toml"
-        dest: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}/freva/drs_config.toml"
-        remote_src: true
-        group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
-        mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
-      when: not drs_path.stat.exists
-
     - name: Configuring evaluation_system
       command:
         cmd: "$PYTHON3 deploy.py {{ core_install_dir | regex_replace('^~', ansible_env.HOME) }} -s --no-conda"
         chdir: "{{tempdir.path}}/freva"
       environment:
-        PYTHON3: "{{ ansible_python_interpreter }}"
+        PYTHON3: "{{ ansible_python_interpreter  or 'python' }}"
         EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
         PYTHON_VERSION: "{{core_python_version}}"
 
@@ -179,8 +165,8 @@
         mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
         group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
 
-  always:
-    - name: Deleting temporary files
-      file:
-        state: absent
-        path: "{{tempdir.path}}"
+  #always:
+    #- name: Deleting temporary files
+    #  file:
+    #    state: absent
+    #    path: "{{tempdir.path}}"

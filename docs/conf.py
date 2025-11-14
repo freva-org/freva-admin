@@ -179,6 +179,7 @@ myst_substitutions = {
     "cli_cmd": cli_cmd,
     "cli_mig": cli_mig,
     "cli_compose": get_cli_output("compose"),
+    "cli_k8s": get_cli_output("kubernetes"),
     "cli_config": cli_config,
     "cli_config_get": get_cli_output("config", "get"),
     "cli_config_set": get_cli_output("config", "get"),

@@ -18,3 +18,25 @@ conda_packages:
 volume_names:
   - "{{ mongo_name }}_data"
   - "{{ mongo_name }}_logs"
+
+service_port: 27017
+image: "ghcr.io/freva-org/freva-mongo:{{ mongodb_server_version }}"
+env_vars:
+  API_MONGO_PASSWORD: "{{mongodb_server_db_passwd}}"
+  API_MONGO_DB: "search_stats"
+  API_MONGO_USER: "{{mongodb_server_db_user}}"
+
+workload_kind: "statefulset"
+
+secret_keys:
+  - API_MONGO_PASSWORD
+  - API_MONGO_DB
+  - API_MONGO_USER
+
+volumes:
+  mongo-data:
+    pvc: "mongo-data"
+    mountPath: "/data/db"
+  mongo-logs:
+    pvc: "mongo-logs"
+    mountPath: "/data/logs"

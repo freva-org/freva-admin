@@ -1,0 +1,77 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: search-server
+  namespace: {{ ns }}
+  labels:
+    app: search-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: search-server
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ solr_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'true'
+    freva.org/tier: database
+
+spec:
+  type: ClusterIP
+  selector: { app: search-server }
+  ports: [{ port: 8983, targetPort: 8983, name: http }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: search-server
+  namespace: {{ ns }}
+  labels:
+    app: search-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: search-server
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ solr_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'true'
+    freva.org/tier: database
+spec:
+  serviceName: search-server
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector: { matchLabels: { app: search-server } }
+  template:
+    metadata:
+      name: search-server
+      namespace: {{ ns }}
+      labels:
+        app: search-server
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: search-server
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ solr_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: 'true'
+        freva.org/tier: database
+    spec:
+      securityContext: { fsGroup: {{ fs_group }} }
+      containers:
+        - name: solr
+          image: ghcr.io/freva-org/freva-solr:{{ solr_version }}
+          imagePullPolicy: {{ image_pull_policy }}
+          ports: [{ containerPort: 8983, name: http }]
+          resources: {{ resources['search-server'] }}
+          env:
+            - { name: API_SOLR_PORT, value: "8983" }
+            - { name: API_SOLR_HEAP, value: "{{ search_server_solr_mem }}" }
+          volumeMounts:
+            - { name: solr-data, mountPath: /data/db }
+      volumes:
+        - name: solr-data
+          persistentVolumeClaim: { claimName: solr-data }

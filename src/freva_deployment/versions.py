@@ -54,7 +54,7 @@ def display_versions() -> str:
 
 @handled_exception
 def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
-    """Read the neccesary versions of microservices."""
+    """Read the necessary versions of microservices."""
     if _versions:
         return _versions[0]
     version_file = Path(user_cache_dir("freva-deployment")) / "versions.json"
@@ -101,7 +101,7 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
 
 
 def get_steps_from_versions(detected_versions: Dict[str, str]) -> List[str]:
-    """Decide on services the should be deployed, based on thier versions.
+    """Decide on services the should be deployed, based on their versions.
 
     Parameters
     ----------
@@ -128,7 +128,7 @@ def get_steps_from_versions(detected_versions: Dict[str, str]) -> List[str]:
             steps.append(service_name)
         elif version > min_version:
             # We do have a problem: an installed version has a higher version
-            # the the defined minium version, possibly the deployment
+            # the the defined minimum version, possibly the deployment
             # software is outdated.
             if os.environ.get("INTERACTIVE_DEPLOY", "1"):
                 answ = (

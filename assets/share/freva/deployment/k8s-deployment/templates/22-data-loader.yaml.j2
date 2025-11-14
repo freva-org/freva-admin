@@ -1,0 +1,76 @@
+{%- set ns = project_name -%}
+{%- set volumes = external_volumes.get('data-loader', []) -%}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: data-loader-server
+  namespace: {{ ns }}
+  labels:
+    app: data-loader-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: data-loader-server
+    app.kubernetes.io/component: rest-api
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ freva_rest_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'false'
+    freva.org/tier: backend
+
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: data-loader-server } }
+  template:
+    metadata:
+      name: data-loader-server
+      namespace: {{ ns }}
+      labels:
+        app: data-loader-server
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: data-loader-server
+        app.kubernetes.io/component: rest-api
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ freva_rest_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: 'false'
+        freva.org/tier: backend
+    spec:
+      securityContext: { fsGroup: {{ fs_group }} }
+      containers:
+        - name: data-loader
+          image: ghcr.io/freva-org/freva-data-loader:{{ freva_rest_version }}
+          imagePullPolicy: {{ image_pull_policy }}
+          resources: {{ resources['data-loader-server'] }}
+          env:
+            - name: API_CONFIG
+              value: /tmp/data-loader.conf
+            - name: API_LOGDIR
+              value: /tmp/data-loader.logs
+            - name: API_REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_USERNAME
+            - name: API_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_PASSWORD
+            - name: API_REDIS_HOST
+              value: cache-server
+{% if volumes %}
+          volumeMounts:
+{% for vol in volumes %}
+            - name: data-{{ loop.index }}
+              mountPath: {{ vol['mount_path'] }}
+              readOnly: true
+{% endfor %}
+      volumes:
+{% for vol in volumes %}
+        - name: data-{{ loop.index }}
+          {{ vol['driver'] }}:
+{% for key, val in vol['driver_options'] | dictsort %}
+            {{ key }}: {{ val }}
+{% endfor %}
+{% endfor %}
+{% endif %}

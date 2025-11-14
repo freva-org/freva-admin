@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from getpass import getuser
 from pathlib import Path
-from typing import List, cast
+from typing import Any, List, cast
 
 import npyscreen
 
@@ -19,6 +19,7 @@ from .base import (
 )
 
 DEPLOYMENT_METHODS = ["docker", "podman", "conda", "k8s"]
+EXPOSE_METHODS = ["op-lb", "saas-lb", "hostport"]
 
 
 def get_index(values: list[str], target: str, default: int = 0) -> int:
@@ -97,7 +98,7 @@ class CoreScreen(BaseForm):
                     FileInfo,
                     section="core",
                     key="root_dir",
-                    name=(f"{self.num}Freva configuration direcory"),
+                    name=(f"{self.num}Freva configuration directory"),
                     value=cfg.get("root_dir", ""),
                 ),
                 False,
@@ -127,7 +128,7 @@ class CoreScreen(BaseForm):
                     ComboInfo,
                     section="core",
                     key="scheduler_system",
-                    name=f"{self.num}Workload manger",
+                    name=f"{self.num}Workload manager",
                     value=self.scheduler_index(
                         cast(str, cfg.get("scheduler_system"))
                     ),
@@ -140,7 +141,7 @@ class CoreScreen(BaseForm):
                     TextInfo,
                     section="core",
                     key="scheduler_output_dir",
-                    name=f"{self.num}Ouput dir. of the scheduler system",
+                    name=f"{self.num}Output dir. of the scheduler system",
                     value=cfg.get("scheduler_output_dir", ""),
                 ),
                 False,
@@ -235,6 +236,7 @@ class WebScreen(BaseForm):
         """Add widgets to the screen."""
         self.list_keys = "imprint", "scheduler_host", "allowed_hosts"
         cfg = self.get_config(self.step)
+
         for key in self.list_keys:
             if key in cfg and isinstance(cfg[key], str):
                 value = cast(str, cfg[key])
@@ -405,7 +407,7 @@ class WebScreen(BaseForm):
                     TextInfo,
                     section="web",
                     key="homepage_heading",
-                    name=f"{self.num}A brief describtion of the project",
+                    name=f"{self.num}A brief description of the project",
                     value=cfg.get(
                         "homepage_heading", "Lorem ipsum dolor sit amet"
                     ),
@@ -710,7 +712,10 @@ class FrevaRestScreen(BaseForm):
                     ComboInfo,
                     section="freva_rest",
                     key="solr_mem",
-                    name=f"{self.num}Virtual memory (in GB) for the search engine service",
+                    name=(
+                        f"{self.num}Virtual memory (in GB) for the search "
+                        "engine service"
+                    ),
                     value=solr_mem_select,
                     values=solr_mem_values,
                 ),
@@ -927,7 +932,15 @@ class RunForm(npyscreen.FormMultiPageAction):
         self.how_exited_handers[npyscreen.wgwidget.EXITED_ESCAPE] = (
             self.parentApp.exit_application
         )
+        self.add_handlers({"^F": self.show_info})
         self._add_widgets()
+
+    def show_info(self, *args: Any, **kwargs: Any) -> None:
+        """Display an info if present."""
+        if isinstance(self.current_info, str):
+            npyscreen.notify_confirm(
+                self.current_info, title="Detailed Information"
+            )
 
     def _add_widgets(self) -> None:
         """Add the widgets to the form."""
@@ -981,6 +994,31 @@ class RunForm(npyscreen.FormMultiPageAction):
             max_height=2,
             value=self.parentApp._read_cache("gen_keys", False),
             name=f"{self.num}Generate a pair web certificates, debugging",
+        )
+        self.k8s_deploy_host = self.add_widget_intelligent(
+            TextInfo,
+            key="deploy_host",
+            section="kubernetes",
+            name=f"{self.num}Set a deploy host",
+            value=self.parentApp.config.get("kubernetes", {}).get("deploy_host"),
+        )
+
+        self.k8s_expose_method = self.add_widget_intelligent(
+            ComboInfo,
+            key="expose_method",
+            section="kubernetes",
+            name=f"{self.num}K8s Expose Method",
+            value=get_index(
+                EXPOSE_METHODS,
+                cast(
+                    str,
+                    self.parentApp.config.get("kubernetes", {}).get(
+                        "expose_method",
+                        "op-lb",
+                    ),
+                ),
+            ),
+            values=EXPOSE_METHODS,
         )
         self.use_ssh_pw = self.add_widget_intelligent(
             npyscreen.RoundCheckBox,

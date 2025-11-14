@@ -41,12 +41,13 @@ from .utils import (
     config_dir,
     get_cache_information,
     get_passwd,
+    is_localhost,
     load_config,
 )
 from .versions import get_steps_from_versions, get_versions
 
 LOCAL_DEBUG_MSG = (
-    "A freva test installation was sucessfully set up on your "
+    "A freva test installation was successfully set up on your "
     "computer!\n\nYou can visit the freva-web app at "
     "https://localhost:8443\n"
     "You can log on with user: [b]{user}[/b], password: [b]{password}[/b]"
@@ -474,7 +475,7 @@ class DeployFactory:
         self._config_keys.append("web")
 
         for key in "oidc_url", "oidc_client", "oidc_client_secret":
-            self.cfg["web"][key] = self.cfg["freva_rest"].get("oidc_url", "")
+            self.cfg["web"][key] = self.cfg["freva_rest"].get(key, "")
         self.cfg["web"].setdefault("ansible_become_user", "root")
         self._prep_core()
         freva_rest_host = (
@@ -574,7 +575,7 @@ class DeployFactory:
             self.cfg[key]["config_toml_file"] = str(self.web_conf_file)
         self._prep_vault()
         self.cfg["vault"]["ansible_python_interpreter"] = self.cfg["db"].get(
-            "ansible_python_interpreter", "/usr/bin/python3"
+            "ansible_python_interpreter",
         )
         self.cfg["web"]["root_passwd"] = self.master_pass
         self.cfg["web"]["private_keyfile"] = self.private_key_file
@@ -710,9 +711,7 @@ class DeployFactory:
     def ask_become_password(self) -> bool:
         """Check if we have to ask for the sudo passwd at all."""
         cfg = deepcopy(self.cfg)
-        solr_config = cfg.get("databrowser", cfg.get("solr", {}))
-        cfg.setdefault("freva_rest", solr_config)
-        for step in cfg:
+        for step in ("freva_rest", "web", "db"):
             if isinstance(cfg[step], dict):
                 ansible_become_user = cfg[step].get("ansible_become_user", "root")
                 if ansible_become_user:
@@ -783,9 +782,12 @@ class DeployFactory:
         config[step]["vars"]["ansible_user"] = (
             self.cfg[step].get("ansible_user") or getuser()
         )
-        config[step]["vars"][f"{step}_ansible_python_interpreter"] = (
-            self.cfg[step].get("ansible_python_interpreter") or "/usr/bin/python3"
-        )
+        python_exe = self.cfg[step].get("ansible_python_interpreter", "")
+        if python_exe.strip():
+            config[step]["vars"][
+                f"{step}_ansible_python_interpreter"
+            ] = python_exe
+
         dump_file = self._get_files_copy(step)
         if dump_file:
             config[step]["vars"][f"{step}_dump"] = str(dump_file)
@@ -807,7 +809,28 @@ class DeployFactory:
         logger.info("Parsing configurations")
         self._check_config()
         _ = [getattr(self, f"_prep_{step}")() for step in self.steps]
-        config: dict[str, ConfigType] = {}
+        kube_conf = self.cfg.get("kubernetes", {})
+        config: dict[str, ConfigType] = {
+            "kubernetes": {
+                "hosts": kube_conf.get("deploy_host", "localhost"),
+                "vars": {
+                    "expose_method": kube_conf.get("expose_method", "lb"),
+                    "config_only": kube_conf.get("config_only", False),
+                    "project_name": self.project_name,
+                    "ansible_become_user": self.cfg["freva_rest"].get(
+                        "become_user"
+                    )
+                    or "root",
+                    "ansible_user": self.cfg["freva_rest"].get("ansible_user")
+                    or getuser(),
+                    "base_path": self.cfg["freva_rest"].get("data_path")
+                    or "/opt/freva",
+                    "deployment_method": "k8s",
+                    "service": "",
+                },
+            }
+        }
+
         playbooks = "\n".join(
             [
                 a.read_text()
@@ -823,7 +846,7 @@ class DeployFactory:
             for tag in entry.get("tags", []):
                 if tag in self.steps + ["vault"]:
                     tags.append(entry["hosts"])
-        no_prepend = ("root_passwd", "deployment_method")
+        no_prepend = ("root_passwd", "deployment_method", "expose_method")
         for step in set(self._config_keys):
             config[step] = {}
             if self.cfg.get(step, {}).get(f"{step}_host"):
@@ -871,6 +894,8 @@ class DeployFactory:
         info: Dict[str, Any] = {}
         for step in config:
             for key, value in config[step].get("vars", {}).items():
+                if key in extra:
+                    continue
                 if step in tags or ("db" in self.steps and step == "vault"):
                     info.setdefault(step, {})
                     info[step].setdefault("vars", {})
@@ -898,7 +923,7 @@ class DeployFactory:
 
     @property
     def aux_dir(self) -> Path:
-        """Directory with auxillary files."""
+        """Directory with auxiliary files."""
         return asset_dir / "config"
 
     @property
@@ -906,15 +931,16 @@ class DeployFactory:
         """Set all the deployment steps."""
         return [s for s in self.step_order if s in self._steps]
 
-    def _set_deployment_methods(self) -> None:
+    def _set_deployment_methods(self) -> str:
         """Check the deployment methods."""
         valid_deployment_methods = ("podman", "docker", "conda", "k8s")
-        deployment_method = self.cfg.get("deployment_method")
+        deployment_method = self.cfg.get("deployment_method", "")
         if deployment_method not in valid_deployment_methods:
             raise ConfigurationError(
                 f"Deployment method: {deployment_method} is invalid, should be"
                 f"one of {', '.join(valid_deployment_methods)}"
             )
+        return deployment_method
 
     def create_eval_config(self) -> Optional[Path]:
         """Create and dump the evaluation_system.config."""
@@ -992,6 +1018,7 @@ class DeployFactory:
         ssh_port: int = 22,
         skip_version_check: bool = False,
         tags: Optional[list[str]] = None,
+        local: bool = False,
     ) -> None:
         """Play the ansible playbook.
 
@@ -1009,6 +1036,8 @@ class DeployFactory:
         tags: list[str], default: None
             Instead of running the steps, fine grain the deployment using this
             specific tasks.
+        local: bool, default: False
+            Use local connections only.
         """
         try:
             self._play(
@@ -1114,6 +1143,7 @@ class DeployFactory:
         ssh_port: int = 22,
         skip_version_check: bool = False,
         tags: Optional[list[str]] = None,
+        local: bool = False,
     ) -> None:
         plugin_path = Path(freva_deployment.callback_plugins.__file__).parent
         envvars: dict[str, str] = {
@@ -1147,9 +1177,9 @@ class DeployFactory:
         }
 
         self.passwords = self.get_ansible_password(ask_pass)
-        steps = [s for s in self.steps]
-
         self._set_deployment_methods()
+        local_connection = local or self.local_debug
+        steps = [s for s in self.steps]
         if skip_version_check is False:
             steps = list(
                 set(
@@ -1162,13 +1192,21 @@ class DeployFactory:
                     )
                 )
             )
+        tags = [t for t in tags or steps]
+        ask_master_pass = False
+        for t in tags:
+            if t in ["vault", "db", "web"]:
+                ask_master_pass = True
+        if ask_master_pass is False:
+            self._master_pass = "foo"
+        if local_connection:
+            extravars["ansible_connection"] = "local"
         inventory = self.parse_config(steps)
         if inventory is None:
             logger.info("Services up to date, nothing to do!")
             return None
         if self.local_debug:
             logger.info("Overriding configuration for local deployment!")
-            extravars["ansible_connection"] = "local"
         logger.debug(inventory)
         self.create_eval_config()
         RichConsole.rule(
@@ -1180,7 +1218,7 @@ class DeployFactory:
             playbook=asset_dir / "playbooks" / "main-deployment.yml",
             inventory=inventory,
             envvars=envvars,
-            tags=tags or steps,
+            tags=list(set(tags)),
             passwords=self.passwords,
             extravars=extravars,
             verbosity=verbosity,

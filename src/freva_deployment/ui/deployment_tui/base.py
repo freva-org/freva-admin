@@ -30,7 +30,7 @@ class InfoMixin(Widget):
         **kwargs: Any,
     ) -> None:
         name = kwargs.get("name", "Select")
-        kwargs["name"] = f"{name}. Press Strg+F for more info."
+        kwargs["name"] = f"{name}. Press Ctrl+F for more info."
         self.info = info or AD.get_config_info(section, key)
         super().__init__(*args, **kwargs)
 
@@ -56,7 +56,7 @@ class DictInfo(npyscreen.TitleText):
         **kwargs: Any,
     ) -> None:
         name = kwargs.get("name", "Select")
-        kwargs["name"] = f"{name}. Press Strg+F for more info."
+        kwargs["name"] = f"{name}. Press Ctrl+F for more info."
         self.info = info or AD.get_config_info(section, key)
         try:
             value_str = tomlkit.dumps(value or {}).strip().replace('"', "")
@@ -206,7 +206,7 @@ class BaseForm(npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus):
 
     _num: int = 0
     input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = {}
-    """Dictionary of input fileds: the key of the dictionary represents the name
+    """Dictionary of input fields: the key of the dictionary represents the name
        of the key in the in config toml input files. Values represent a tuple of
        npysceen types that display the input information on this key to the
        user and a boolean indicating whether or not this variable is mandatory.

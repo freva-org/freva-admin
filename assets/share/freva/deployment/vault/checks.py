@@ -34,7 +34,7 @@ def start_container(container_name: str) -> subprocess.Popen:
 
 
 def _check_container(process: subprocess.Popen) -> None:
-    """Check if the contianer starts up."""
+    """Check if the container starts up."""
     try:
         if process.poll() is not None:
             raise RuntimeError("Container died.")

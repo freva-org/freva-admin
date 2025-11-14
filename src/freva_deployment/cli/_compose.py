@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import base64
-import json
+import re
 from base64 import b64encode
 from pathlib import Path
 from typing import Optional
@@ -50,8 +50,6 @@ StartLimitBurst=5
 WantedBy=default.target
 
 """
-
-import re
 
 
 def comment_entries(toml_str, entries_to_comment):
@@ -110,7 +108,7 @@ def create_compose(args: argparse.Namespace) -> None:
                 "  [b]python -m pip install freva-client freva[/b] (or) \n"
                 "  [b]conda -c conda-forge install freva-client freva [/b]\n\n"
                 "You should then set the "
-                "[b]EVALUATIO_SYSTEM_CONFIG_FILE[/b] env varaiable "
+                "[b]EVALUATIO_SYSTEM_CONFIG_FILE[/b] env variable "
                 "for the [b]web-server[/b] section in the compose file to the "
                 "config file that was installed by conda/pip - e.g\n\n  "
                 "<base-path-to-python-env>/freva/"
@@ -156,7 +154,7 @@ def create_compose(args: argparse.Namespace) -> None:
                 "You can copy the file to your server and start "
                 f"the compose command.\n\n{plugin_note}"
                 "The web config file will be located in the "
-                f"[b]{config_path}[/b] you can ajust it's settings there and"
+                f"[b]{config_path}[/b] you can adjust it's settings there and"
                 " restart the compose."
             )
         )

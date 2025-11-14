@@ -1,6 +1,6 @@
 """
 
-This resAPI let's you savely store and retrieve secrets. Such secrets include
+This resAPI let's you safely store and retrieve secrets. Such secrets include
 the login credentials of the freva database or user name and password for
 the django enmail interface.
 
@@ -247,7 +247,7 @@ async def update_secret(
         Body(
             description=(
                 "The secret that should be stored, "
-                "this is a string represenatation of the"
+                "this is a string representation of the"
                 " the secrets. Secrets are encoded via "
                 "key=value. Multiple secrets are ',' "
                 "comma separated."
@@ -310,7 +310,7 @@ async def read_secret(
         ),
     ],
 ) -> JSONResponse:
-    """Read evaulation system secrets from the vault."""
+    """Read evaluation system secrets from the vault."""
     status_code = 400
     if len(public_key) != 128:  # This is not a checksum of a cert.
         text = f"But the vault is {Vault.vault_state}"

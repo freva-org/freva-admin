@@ -1,3 +1,23 @@
 ---
+service: data-loader
 systemd_unit_dir: "{{ '/etc/systemd/system' if  ansible_become_user is defined and ansible_become_user != '' else ansible_env.HOME + '/.config/systemd/user' }}"
 secrets_file: "{{ '/root' if ansible_become_user == 'root' else ansible_env.HOME}}/.data-portal-cluster-config.json"
+
+image: "ghcr.io/freva-org/freva-data-loader:{{ freva_rest_version }}"
+
+service_port: 0
+
+env_vars:
+  CACHE_CONFIG: "{{ redis_information }}"
+  API_CONFIG: "/tmp/data-loader.conf"
+  API_LOGDIR: "/tmp/data-loader-logs"
+
+secret_keys:
+  - CACHE_CONFIG
+
+workload_kind: "deployment"
+
+volumes:
+  data-loader-logs:
+    pvc: "data-loader-logs"
+    mountPath: "/tmp/data-loader-logs"

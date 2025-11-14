@@ -1,0 +1,77 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault-server
+  namespace: {{ ns }}
+  labels:
+    app: vault-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: vault-server
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ vault_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'true'
+    freva.org/tier: backend
+spec:
+  type: ClusterIP
+  selector: { app: vault-server }
+  ports: [{ port: 5002, targetPort: 5002, name: vault }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: vault-server
+  namespace: {{ ns }}
+  labels:
+    app: vault-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: vault-server
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ vault_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'true'
+    freva.org/tier: backend
+spec:
+  serviceName: vault-server
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector: { matchLabels: { app: vault-server } }
+  template:
+    metadata:
+      name: vault-server
+      namespace: {{ ns }}
+      labels:
+        app: vault-server
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: vault-server
+        app.kubernetes.io/component: web-app
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ vault_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: 'true'
+        freva.org/tier: backend
+    spec:
+      securityContext: { fsGroup: {{ fs_group }} }
+      containers:
+        - name: vault
+          image: ghcr.io/freva-org/freva-vault:{{vault_version}}
+          imagePullPolicy: {{ image_pull_policy }}
+          ports: [{ containerPort: 5002, name: vault }]
+          resources: {{ resources['vault-server'] }}
+          env:
+            - name: ROOT_PWD
+              valueFrom: { secretKeyRef: { name: freva-secrets, key: ADMIN_PASSWORD } }
+            - { name: KEY_FILE, value: "/vault/file/keys" }
+          volumeMounts:
+            - { name: vault-data, mountPath: /vault/file }
+      volumes:
+        - name: vault-data
+          persistentVolumeClaim: { claimName: vault-data }

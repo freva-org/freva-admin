@@ -34,9 +34,76 @@ pip_packages:
   - django-model-utils
   - djproxy
 
+secret_keys:
+  - OIDC_CLIENT_SECRET
+  - OIDC_CLIENT_ID
+  - REDIS_USER
+  - REDIS_PASSWD
+  - REDIS_PASSWORD
+  - REDIS_USERNAME
+
+web_port_httpd: "{{ '80' if ansible_become_user == 'root' or ansible_user == 'root' else '8080' }}"
+web_port_httpsd: "{{ '443' if ansible_become_user == 'root' or ansible_user == 'root'  else '8443' }}"
+
 volume_names:
   - "{{ web_name }}_django-static"
   - "{{ web_name }}_logs"
 
-web_port_httpd: "{{ '80' if ansible_become_user == 'root' or ansible_user == 'root' else '8080' }}"
-web_port_httpsd: "{{ '443' if ansible_become_user == 'root' or ansible_user == 'root'  else '8443' }}"
+volumes:
+  web-data:
+    pvc: "web-data"
+    mountPath: "/opt/freva_web/static"
+  web-logs:
+    pvc: "web-logs"
+    mountPath: "/data/logs"
+
+service_settings:
+  - name: web-app
+    env_vars:
+      EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+      DJANGO_SUPERUSER_PASSWORD: '{{ root_passwd }}'
+      ALLOWED_HOSTS: "{{web_allowed_hosts | join(',')}}"
+      FREVA_WEB_CONFIG_FILE: "{{ web_config_file }}"
+      SCHEDULER_HOST: "{{ web_scheduler_host | join(',') }}"
+      REDIS_HOST: "{{ web_cache_name }}"
+      CSRF_TRUSTED_ORIGINS: "{{ web_csrf_trusted_origins | join(',') }}"
+      FREVA_BIN: '{{ web_freva_bin }}'
+      COLUMNS: 140
+      FREVA_REST_URL: 'http://{{web_freva_rest_host.replace("http://", "")}}'
+      REDIS_PASSWD: '{{ web_redis_password }}'
+      REDIS_USER: '{{ web_redis_username }}'
+      OIDC_DISCOVERY_URL: '{{ web_oidc_url }}'
+      OIDC_CLIENT_SECRET: '{{ web_oidc_client_secret }}'
+      OIDC_CLIENT_ID: '{{ web_oidc_client }}'
+      CHATBOT_HOST: '{{ web_chatbot_host.replace("http://", "") }}'
+      STAC_BROWSER: 1
+    image: "ghcr.io/freva-org/freva-web:{{web_version}}"
+    service_port: -1
+    workload_kind: "deployment"
+  - name: web-cache
+    env_vars:
+      REDIS_PASSWORD: "{{ web_redis_password }}"
+      REDIS_USERNAME: "{{ web_redis_username }}"
+    image: "ghcr.io/freva-org/freva-redis:latest"
+    service_port: -1
+    workload_kind: "statefulset"
+
+proxy_settings:
+  env_vars:
+    SERVER_ROOT: "/srv/static"
+    VAULT_HOST: '{{ web_vault_host.replace("http://", "") }}:5002'
+    FREVA_REST_HOST: '{{ web_freva_rest_host.replace("http://", "") }}'
+    EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+    CHATBOT_HOST: '{{ web_chatbot_host.replace("http://", "") }}'
+    WEB_SERVER_NAME: "{{ web_name }}"
+    WEB_SERVER_PORT: 8000
+    SERVER_CERT: "{{ web_cert_content }}"
+    SERVER_KEY: "{{ web_key_content }}"
+    REST_PROXY_HOST_NAME: "{{ web_chatbot_rest_api_url }}"
+    FILL_COLOR: "{{ web_main_color }}"
+    PROXY_USER: "nobody"
+    PROJECT_NAME: "{{ project_name }}"
+    PORT_HTTPSD: 443
+    WEB_HOST: '{{ web_project_website.replace("http://", "").replace("https://", "").replace("www.","")  }}'
+  image: 'ghcr.io/freva-org/freva-nginx:{{ proxy_version or "latest" }}'
+  service_port: "{{ web_port_httpsd }}"

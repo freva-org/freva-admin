@@ -50,7 +50,7 @@ basic deployment setup and servicing Freva will be introduced.
 
 .. tip::
 
-    Please check :ref:`whatsnew` for any update announcments. Consult the
+    Please check :ref:`whatsnew` for any update announcements. Consult the
     :doc:`FAQ section <faq>` for fixing known issues.
 
 

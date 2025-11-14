@@ -79,7 +79,7 @@ user = "freva"
 db = "frevadb"
 
 ## If your user name where you run the deployment software and the user name
-## that installe the services differ you can instruct ansible to use the
+## that installee the services differ you can instruct ansible to use the
 ## the specified user name to establish ssh connections to the target server.
 ## If left blank the current user name will be taken.
 ansible_user = "freva"
@@ -136,7 +136,7 @@ ansible_become_user = ""
 ansible_python_interpreter = ""
 
 ## If your user name where you run the deployment software and the user name
-## that installe the services differ you can instruct ansible to use the
+## that installed the services differ you can instruct ansible to use the
 ## the specified user name to establish ssh connections to the target server.
 ## If left blank the current user name will be taken.
 ansible_user = "freva"
@@ -211,7 +211,7 @@ arch = "Linux-x86_64"
 ansible_become_user = ""
 
 ## If your user name where you run the deployment software and the user name
-## that installe the services differ you can instruct ansible to use the
+## that installed the services differ you can instruct ansible to use the
 ## the specified user name to establish ssh connections to the target server.
 ## If left blank the current user name will be taken.
 ansible_user = ""
@@ -252,7 +252,7 @@ project_website = "www.freva.dkrz.de"
 ansible_python_interpreter = ""
 
 ## If your user name where you run the deployment software and the user name
-## that installe the services differ you can instruct ansible to use the
+## that installed the services differ you can instruct ansible to use the
 ## the specified user name to establish ssh connections to the target server.
 ## If left blank the current user name will be taken.
 ansible_user = ""
@@ -279,7 +279,7 @@ institution_logo = ""
 ## Set an email addresses acting as contact point for users
 contacts = ""
 
-## Set the smpt email server that will be used to send emails to contacts via the web UI
+## Set the smtp email server that will be used to send emails to contacts via the web UI
 email_host = ""
 
 ## Set postal address, this will appear in the footer of the webside.

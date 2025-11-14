@@ -5,8 +5,158 @@ project_name = "freva"
 ## of the service is realised. `docker`, `podman` leverages podman or docker,
 ## `conda` uses conda-forge to install the service while `k8s` involves a
 ### kubernetes based deployment
-## Chosse between: "docker", "podman", "conda", "k8s"
+## Choose between: "docker", "podman", "conda", "k8s"
 deployment_method = "podman"
+
+## Kubernetes deployment settings
+[kubernetes]
+## Set the group ID for all volmes used by pods
+fs_group = 0
+
+## Set the user group
+run_as_group = 0
+
+## Set the user id
+run_as_user = 0
+
+[kubernetes.ingress]
+## Specify the fully qualified domain host for ingress connections to the
+## cluster.
+fqdn = "localhost"
+
+## Set the network ingress class name for external website access
+## if the web-app should not be external you can use the same class_name
+## as the one for 'internal' access.
+external_class_name = "nginx-external"
+## Set the network ingress class name for internal communication
+internal_class_name = "nginx-internal"
+
+
+## Any ingress annotations that are needed
+annotations = {}
+
+## Set this to true you the cluster manages server certs
+certs_managed = true
+
+### Set any tls_cert_secret name that should be used.
+tls_secret_name = ""
+
+## Set the resource allocation for each service.
+## web: Django frontend
+[kubernetes.resources.web.requests]
+cpu = "600m"
+memory = "512Mi"
+[kubernetes.resources.web.limits]
+cpu = "1000m"
+memory = "2Gi"
+
+## cache-server: Redis (backing data-loader & web)
+[kubernetes.resources.cache-server.requests]
+cpu = "300m"
+memory = "512Mi"
+[kubernetes.resources.cache-server.limits]
+cpu = "1"
+memory = "1Gi"
+
+## data-loader-server: heavy lifting & serialization (2 replicas recommended)
+[kubernetes.resources.data-loader-server.requests]
+cpu = "500m"
+memory = "1Gi"
+[kubernetes.resources.data-loader-server.limits]
+cpu = "1200m"
+memory = "4Gi"
+
+## freva-rest-server: REST API (2 replicas recommended)
+[kubernetes.resources.freva-rest-server.requests]
+cpu = "400m"
+memory = "512Mi"
+[kubernetes.resources.freva-rest-server.limits]
+cpu = "600m"
+memory = "512Mi"
+
+## database-server: MySQL
+[kubernetes.resources.database-server.requests]
+cpu = "600m"
+memory = "512Mi"
+[kubernetes.resources.database-server.limits]
+cpu = "800m"
+memory = "1Gi"
+
+## mongo-server: metadata + jobs
+[kubernetes.resources.mongo-server.requests]
+cpu = "300m"
+memory = "1Gi"
+[kubernetes.resources.mongo-server.limits]
+cpu = "1500m"
+memory = "3Gi"
+
+## search-server: Apache Solr (main memory hog)
+[kubernetes.resources.search-server.requests]
+cpu = "1500m"
+memory = "8Gi"
+[kubernetes.resources.search-server.limits]
+cpu = "4"
+memory = "16Gi"
+
+## vault-server: HashiCorp Vault (small)
+[kubernetes.resources.vault-server.requests]
+cpu = "100m"
+memory = "256Mi"
+[kubernetes.resources.vault-server.limits]
+cpu = "300m"
+memory = "512Mi"
+
+
+
+## The web-app needs to configuration and user plugin data
+## stored on the HPC storage system. You can define the driver and driver
+## specs here for the mount volumes to those paths here.
+## Driver can be local, nfs ..., options can be the paths on disk
+## server name etc.
+[kubernetes.external_volumes.web-ext]
+driver = "local"
+mount_path = "/opt/freva"
+[kubernetes.external_volumes.web-ext.driver_options]
+path =  "/opt/freva"
+readOnly = "true"
+
+## The data-loader needs access to the datasets it is supposed to load.
+## You can define the mount volumes to those paths here. Driver and driver
+## specs here. driver can be local, nfs ..., options can be the paths on disk
+## server name etc.
+[[kubernetes.external_volumes.data-loader]]
+driver = "local"
+mount_path = "/data"
+driver_options = {path =  "/data", readOnly = "true"}
+
+
+## The web-app needs access to images produced by user plugins.
+## You can define the mount volumes to those paths here. Driver and driver
+## specs here. driver can be local, nfs ..., options can be the paths on disk
+## server name etc.
+[kubernetes.external_volumes.web-preview]
+driver = "local"
+mount_path = "/opt/freva/static/preview"
+[kubernetes.external_volumes.web-preview.driver_options]
+path =  "/opt/freva/web/path_to_preview"
+readOnly = "true"
+
+
+## Set the pvc resource allocation for each service.
+[kubernetes.pvc.mysql]
+data_size = "20Gi"
+[kubernetes.pvc.mongo]
+data_size = "20Gi"
+[kubernetes.pvc.solr]
+data_size = "20Gi"
+[kubernetes.pvc.web]
+data_size = "5Gi"
+[kubernetes.pvc.web-ext]
+path = "/opt/freva"
+[kubernetes.pvc.ext-data]
+path =  "/data"
+[kubernetes.pvc.web-preview]
+path = "/opt/freva/web/path_to_preview"
 
 
 ## Specify the path to the SSL certificate files used for secure connections
@@ -67,7 +217,9 @@ ansible_python_interpreter = ""
 wipe = false
 
 ## Set the path where the permanent database data should be stored.
-## By default, this is set to /opt/freva/<project_name>/db_service.
+## By default, this is set to /opt/freva/.
+## NOTE: This directory will be used to store persisent data on conda based
+## deployments and creating docker-compose files.
 data_path = "/opt/freva"
 
 ## Set the username that will own all files created by the service such as
@@ -133,6 +285,8 @@ wipe = false
 
 ## Set the path where the permanent freva-rest data should be stored.
 ## By default, this is set to /opt/freva.
+## NOTE: This directory will be used to store persisent data on conda based
+## deployments and creating docker-compose files.
 data_path = "/opt/freva"
 
 ### Indicate whether or not the redis-caching services will be shared among
@@ -255,9 +409,9 @@ web_host = "localhost"
 ## Set the URL of the web user interface.
 project_website = "www.freva.dkrz.de"
 
-## Freva can connect to a GPT service (that has to be set up seperately)
+## Freva can connect to a GPT service (that has to be set up separately)
 ## you can set the <HOSTNAME>:<PORT> of this service - if configured.
-## if you leave this blank, the website will not provid the chat interface.
+## if you leave this blank, the website will not provide the chat interface.
 chatbot_host=""
 
 ## Ansible needs a Python 3 interpreter on the target server. This interpreter
@@ -273,6 +427,8 @@ ansible_user = ""
 
 ## Set the path where the permanent web data should be stored.
 ## By default, this is set to /opt/freva.
+## NOTE: This directory will be used to store persisent data on conda based
+## deployments and creating docker-compose files.
 data_path = "/opt/freva"
 
 ## Set the main HTML color scheme.

@@ -21,3 +21,39 @@ keycloak_version: "26.2.5"
 keycloak_url: "https://github.com/keycloak/keycloak/releases/download/{{ keycloak_version }}/keycloak-{{ keycloak_version }}.tar.gz"
 keycloak_realm_import_url: "https://raw.githubusercontent.com/freva-org/freva-service-config/refs/heads/main/keycloak/import/realm-export.json"
 keycloak_realm_file_path: "{{ keycloak_dir }}/data/import/realm-export.json"
+
+service_port: "{{ freva_rest_port }}"
+image: "ghcr.io/freva-org/freva-rest-api:{{freva_rest_version}}"
+env_vars:
+  API_SOLR_CORE: "files"
+  API_PORT: "{{freva_rest_port}}"
+  API_PROXY: "{{freva_rest_proxy_url}}"
+  API_OIDC_CLIENT_ID: "{{freva_rest_oidc_client}}"
+  API_OIDC_DISCOVERY_URL: "{{freva_rest_oidc_url}}"
+  API_OIDC_CLIENT_SECRET: "{{freva_rest_oidc_client_secret}}"
+  API_OIDC_TOKEN_CLAIMS: "{{ freva_rest_oidc_token_claims }}"
+  API_MONGO_USER: "{{freva_rest_db_user}}"
+  API_LOGDIR: "/tmp/logs"
+  API_SOLR_HOST: "{{freva_rest_search_server_host}}:8983"
+  API_SERVICES: "{{ freva_rest_services }}"
+  API_MONGO_HOST: "{{ freva_rest_mongodb_server_host }}:27017"
+  API_MONGO_PASSWORD: "{{freva_rest_db_passwd}}"
+  API_MONGO_DB: "search_stats"
+  CACHE_CONFIG: "{{ redis_information }}"
+  COLUMNS: 140
+
+secret_keys:
+  - API_OIDC_CLIENT_SECRET
+  - API_MONGO_USER
+  - API_MONGO_PASSWORD
+  - CACHE_CONFIG
+
+workload_kind: "deployment"
+
+volumes:
+  sss-pipes:
+    hostPath: "/var/lib/sss/pipes"
+    mountPath: "/var/lib/sss/pipes"
+  freva-rest-logs:
+    pvc: "freva-rest-logs"
+    mountPath: "/tmp/logs"

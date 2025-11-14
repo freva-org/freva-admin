@@ -1,3 +1,4 @@
 ---
 conda_url: "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3"
 cache_secrets: "{{ playbook_tempdir }}/data-portal-cluster-config.json"
+kubeconfig_path: "{{ lookup('env', 'HOME') }}/.kube/config"

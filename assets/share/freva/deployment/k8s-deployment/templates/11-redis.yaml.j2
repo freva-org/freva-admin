@@ -1,0 +1,70 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cache-server
+  namespace: {{ ns }}
+  labels:
+    app: cache-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: cache-server
+    app.kubernetes.io/component: data-loader
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ redis_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'true'
+    freva.org/tier: database
+spec:
+  type: ClusterIP
+  selector: { app: cache-server }
+  ports: [{ port: 6379, targetPort: 6379, name: redis }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cache-server
+  namespace: {{ ns }}
+  labels:
+    app: cache-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: cache-server
+    app.kubernetes.io/component: data-loader
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ redis_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'false'
+    freva.org/tier: database
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector: { matchLabels: { app: cache-server } }
+  template:
+    metadata:
+      labels:
+        app: cache-server
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: cache-server
+        app.kubernetes.io/component: data-loader
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ redis_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: 'false'
+        freva.org/tier: database
+    spec:
+      securityContext: { fsGroup: {{ fs_group }} }
+      containers:
+        - name: cache-server
+          image: ghcr.io/freva-org/freva-redis:{{ redis_version }}
+          imagePullPolicy: {{ image_pull_policy }}
+          ports: [{ containerPort: 6379, name: redis }]
+          resources: {{ resources['cache-server'] }}
+          env:
+            - name: REDIS_USERNAME
+              valueFrom: { secretKeyRef: { name: freva-secrets, key: REDIS_USERNAME } }
+            - name: REDIS_PASSWORD
+              valueFrom: { secretKeyRef: { name: freva-secrets, key: REDIS_PASSWORD } }

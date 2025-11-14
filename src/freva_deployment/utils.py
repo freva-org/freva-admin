@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 import hashlib
+import ipaddress
 import json
 import os
 import re
 import shutil
+import socket
 import sys
 import sysconfig
 from pathlib import Path
@@ -30,7 +32,7 @@ config_text = """
 [general]
 [variables]
 ### you can set here different *global* variables that are
-### evaluatated in the deployment configurations. For example
+### evaluated in the deployment configurations. For example
 ### if you set here the variable USER = "foo" then you can
 ### use the this defined variable in the inventory file to
 ### set the ansible user: anisble_user="${USER}"
@@ -67,7 +69,7 @@ class AssetDir:
 
     @property
     def is_bundeled(self) -> bool:
-        """Check if we are running a bundeled version of the code."""
+        """Check if we are running a bundled version of the code."""
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
             return True
         return False
@@ -172,6 +174,30 @@ config_file = AD.config_file
 is_bundeled = AD.is_bundeled
 
 
+def is_localhost(host: str) -> bool:
+    """Check if a given hostname is localhost."""
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        try:
+            ip = ipaddress.ip_address(socket.gethostbyname(host))
+        except socket.gaierror:
+            return False
+
+    local_addrs = set()
+    for addr_info in socket.getaddrinfo(socket.gethostname(), None):
+        local_addrs.add(addr_info[4][0])
+
+    # Add standard localhost addresses
+    local_addrs.update({"127.0.0.1", "::1"})
+    try:
+        for iface_info in socket.getaddrinfo(socket.getfqdn(), None):
+            local_addrs.add(iface_info[4][0])
+    except socket.gaierror:
+        pass
+    return str(ip) in local_addrs
+
+
 def get_cache_information(
     redis_host: Optional[str] = None,
     redis_port: Optional[str] = None,
@@ -223,10 +249,10 @@ def _convert_dict(
         if isinstance(value, dict):
             _convert_dict(value, variables, cfd)
         elif isinstance(value, str):
-            for varn, variable in variables.items():
-                if f"${{{varn}}}" in value or f"${varn}" in value:
-                    value = value.replace(f"${{{varn}}}", f"${varn}")
-                    value = value.replace(f"${varn}", variable)
+            for warn, variable in variables.items():
+                if f"${{{warn}}}" in value or f"${warn}" in value:
+                    value = value.replace(f"${{{warn}}}", f"${warn}")
+                    value = value.replace(f"${warn}", variable)
             inp_dict[key] = get_current_file_dir(cfd, value)
 
 
@@ -299,10 +325,14 @@ def _create_new_config(inp_file: Path) -> Path:
             if key not in tomlkit.dumps(config):
                 config[section][key] = config_tmpl[section][key]
                 create_backup = True
-    for key in ("deployment_method",):
+    for key in ("deployment_method", "kubernetes"):
         if key not in config:
             create_backup = True
             config[key] = config_tmpl[key]
+    for key in config_tmpl["kubernetes"]:
+        if key not in config["kubernetes"]:
+            create_backup = True
+            config["kubernetes"][key] = config_tmpl["kubernetes"][key]
     if create_backup:
         backup_file = inp_file.with_suffix(inp_file.suffix + ".bck")
         logger.info(
@@ -371,12 +401,12 @@ def get_email_credentials() -> tuple[str, str]:
 
 
 def get_passwd(master_pass: Optional[str] = None, min_characters: int = 8) -> str:
-    """Create a secure pasword.
+    """Create a secure password.
 
     Parameters
     ==========
     min_characters:
-        The minimum lenght of the password (default 8)
+        The minimum length of the password (default 8)
 
     Returns
     =======

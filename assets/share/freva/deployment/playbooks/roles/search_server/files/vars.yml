@@ -19,3 +19,19 @@ wipe: "{{ search_server_wipe }}"
 volume_names:
   - "{{ search_server_name }}_data"
   - "{{ search_server_name }}_logs"
+
+service_port: 8983
+image: "ghcr.io/freva-org/freva-{{ service }}:latest"
+env_vars:
+  API_SOLR_PORT: "{{ service_port }}"
+  API_SOLR_HEAP: "{{ search_server_solr_mem }}"
+
+workload_kind: "deployment"
+
+volumes:
+  search-api-data:
+    pvc: "search-api-data"
+    mountPath: "/data/db"
+  search-api-logs:
+    pvc: "search-api-logs"
+    mountPath: "/data/logs"

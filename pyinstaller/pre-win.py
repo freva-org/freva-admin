@@ -32,7 +32,7 @@ if sys.platform.lower().startswith("win"):
         if "get_context('fork')" in content or 'get_context("fork")' in content:
             write = True
             content = content.replace("get_context('fork')", "get_context('spawn')")
-            content = content.replace('get_context("fork")', 'get_context("spwan")')
+            content = content.replace('get_context("fork")', 'get_context("spawn")')
         if "RE_TASKS =" in content:
             for line in content.splitlines():
                 if line.startswith("RE_TASKS"):

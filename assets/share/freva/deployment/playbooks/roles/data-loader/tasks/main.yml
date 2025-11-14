@@ -4,8 +4,8 @@
 
 - name: Set deployment task file
   set_fact:
-    deployment_file: "{{ role_path }}/tasks/{{('k8s-deployment.yml' if deployment_method == 'k8s' else 'systemd-based.yml')}}"
-    play_file: "{{ role_path }}/tasks/{{('k8s-deployment.yml' if deployment_method == 'k8s' else 'systemd-based.yml') | trim}}"
+    deployment_file: "{{(role_path ~ '/tasks/container-deployment.yml' if deployment_method in ['docker', 'podman'] else role_path ~ '/tasks/conda-deployment.yml' if deployment_method == 'conda' else 'k8s-deployment.yml') | trim}}"
+    play_file: "{{('k8s-deployment.yml' if deployment_method == 'k8s' else role_path ~ '/tasks/systemd-based.yml') | trim}}"
 
 - name: Playing {{ deployment_method }} deployment
   include_tasks: "{{ play_file | trim }}"

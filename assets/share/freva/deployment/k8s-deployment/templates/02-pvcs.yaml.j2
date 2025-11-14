@@ -1,0 +1,26 @@
+{%- set ns = project_name -%}
+{% for claim in pvcs | default([]) %}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: "{{ claim['name'] }}"
+  namespace: "{{ ns }}"
+  labels:
+    app.kubernetes.io/name: "{{ ns }}"
+    app.kubernetes.io/instance: "{{ claim['instance'] }}"
+    app.kubernetes.io/component: "{{ claim['component'] }}"
+    freva.org/tier: "{{ claim['tier'] }}"
+spec:
+  accessModes: ["{{ claim['mode'] }}"]
+  resources:
+{% if claim.get('storage', '') %}
+    requests:
+      storage: {{ claim['storage'] | tojson }}
+{% endif %}
+{% if claim.get('select', '') %}
+  selector:
+    matchLabels:
+      freva.org/volume: {{ claim['select'] }}
+{% endif %}
+{% endfor %}

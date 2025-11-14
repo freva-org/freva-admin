@@ -20,6 +20,7 @@ from ._compose import compose_parser
 from ._config import config_parser
 from ._deploy import BatchParser
 from ._deploy import cli as deploy
+from ._kubernets import kubernetes_parser
 from ._migrate import cli as migrate
 from ._migrate import create_parser as migrate_parser
 
@@ -67,7 +68,6 @@ def main_cli(argv: Optional[List[str]] = None) -> None:
             formatter_class=ArgumentDefaultsRichHelpFormatter,
         )
     )
-
     config_parser(
         parser=subparser.add_parser(
             name="config",
@@ -82,11 +82,17 @@ def main_cli(argv: Optional[List[str]] = None) -> None:
             formatter_class=ArgumentDefaultsRichHelpFormatter,
         )
     )
-
+    kubernetes_parser(
+        parser=subparser.add_parser(
+            name="kubernetes",
+            help="Create a k8s manifests for deployment.",
+            formatter_class=ArgumentDefaultsRichHelpFormatter,
+        )
+    )
     migrate_parser(
         parser=subparser.add_parser(
             name="migrate",
-            help="Utilities to handle migrations from old freva systems.",
+            help="Utilities to handle migrations from the legacy freva.",
             formatter_class=ArgumentDefaultsRichHelpFormatter,
         )
     )

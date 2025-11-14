@@ -1,0 +1,90 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: freva-rest-server
+  namespace: {{ ns }}
+  labels:
+    app: freva-rest-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: freva-rest-server
+    app.kubernetes.io/component: rest-api
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ freva_rest_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'false'
+    freva.org/tier: backend
+spec:
+  type: ClusterIP
+  selector: { app: freva-rest-server }
+  ports: [{ port: {{ freva_rest_port }}, targetPort: {{ freva_rest_port }}, name: http }]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: freva-rest-server
+  namespace: {{ ns }}
+  labels:
+    app: freva-rest-server
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: freva-rest-server
+    app.kubernetes.io/component: rest-api
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ freva_rest_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: 'false'
+    freva.org/tier: backend
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector: { matchLabels: { app: freva-rest-server } }
+  template:
+    metadata:
+      name: freva-rest-server
+      namespace: {{ ns }}
+      labels:
+        app: freva-rest-server
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: freva-rest-server
+        app.kubernetes.io/component: rest-api
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ freva_rest_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: 'false'
+        freva.org/tier: backend
+    spec:
+      securityContext: { fsGroup: {{ fs_group }} }
+      containers:
+        - name: rest
+          image: ghcr.io/freva-org/freva-rest-api:{{ freva_rest_version }}
+          imagePullPolicy: {{ image_pull_policy }}
+          ports: [{ containerPort: {{ freva_rest_port }}, name: http }]
+          resources: {{ resources['freva-rest-server'] }}
+          env:
+            - {name: API_SOLR_CORE, value: "files"}
+            - {name: API_PORT, value: "{{ freva_rest_port }}"}
+            - {name: API_PROXY, value: "{{ freva_rest_proxy_url }}"}
+            - {name: COLUMNS, value: "140"}
+            - {name: API_OIDC_CLIENT_ID, value: "{{ freva_rest_oidc_client }}"}
+            - {name: API_OIDC_DISCOVERY_URL, value: "{{ freva_rest_oidc_url }}"}
+            - name: API_OIDC_CLIENT_SECRET
+              valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_CLIENT_SECRET } }
+            - {name: API_OIDC_TOKEN_CLAIMS, value: "{{ freva_rest_oidc_token_claims }}"}
+            - name: API_REDIS_USER
+              valueFrom: { secretKeyRef: {name: freva-secrets, key: REDIS_USERNAME } }
+            - name: API_REDIS_PASSWORD
+              valueFrom: {secretKeyRef: {name: freva-secrets, key: REDIS_PASSWORD } }
+            - {name: API_REDIS_HOST, value: "cache-server"}
+            - {name: API_SOLR_HOST, value: "search-server:8983"}
+            - name: API_MONGO_USER
+              valueFrom: {secretKeyRef: {name: freva-secrets, key: FREVA_REST_DB_USER} }
+            - {name: API_MONGO_HOST, value: "mongo-server:27017" }
+            - name: API_MONGO_PASSWORD
+              valueFrom: {secretKeyRef: {name: freva-secrets, key: FREVA_REST_DB_PASSWORD } }
+            - {name: API_MONGO_DB, value: "search_stats" }
+            - {name: API_SERVICES, value: "{{ freva_rest_services }}"}

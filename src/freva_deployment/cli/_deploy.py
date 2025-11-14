@@ -73,10 +73,17 @@ class BatchParser:
         self.parser.add_argument(
             "-l",
             "--local",
-            help="Deploy services on the local machine, debug purpose.",
+            help="Deploy services on the local machine.",
             action="store_true",
             default=False,
         )
+        self.parser.add_argument(
+            "--debug",
+            help="Deploy services on the local machine.",
+            action="store_true",
+            default=False,
+        )
+
         self.parser.add_argument(
             "-g",
             "--gen-keys",
@@ -141,7 +148,7 @@ class BatchParser:
         with DeployFactory(
             steps=steps,
             config_file=args.config,
-            local_debug=args.local,
+            local_debug=args.debug,
             gen_keys=args.gen_keys,
             _cowsay=args.cowsay,
         ) as DF:
@@ -152,6 +159,7 @@ class BatchParser:
                     ssh_port=args.ssh_port,
                     skip_version_check=args.skip_version_check,
                     tags=args.tags or None,
+                    local=args.local,
                 )
             except KeyboardInterrupt:
                 raise SystemExit(130)
@@ -163,7 +171,7 @@ def cli(argv: list[str] | None = None) -> None:
     """Run the command line interface."""
     epilog = (
         "[red][b]Note:[/b] The command `deploy-freva-cmd` is a legacy command,"
-        " please consdider using `deploy-freva cmd` instead.[/red]"
+        " please consider using `deploy-freva cmd` instead.[/red]"
     )
     bp = BatchParser(epilog=epilog)
     args = bp.parse_args(argv)

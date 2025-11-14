@@ -106,7 +106,7 @@
   vars_files:
     - "./vars.yml"
   become: "{{ freva_rest_ansible_become_user is defined and freva_rest_ansible_become_user != '' }}"
-  become_user: "{{ redis_ansible_become_user | default('root') }}"
+  become_user: "{{ freva_rest_ansible_become_user | default('root') }}"
   roles:
     - freva-rest
 
@@ -152,7 +152,7 @@
       failed_when: false
       when: deployment_method in ["conda", "docker", "podman"]
 
-- name : Add monogDB secrets to vault
+- name: Add monogDB secrets to vault
   hosts: freva_rest
   gather_facts: false
   vars:

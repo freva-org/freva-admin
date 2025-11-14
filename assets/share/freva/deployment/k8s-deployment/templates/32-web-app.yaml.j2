@@ -1,0 +1,241 @@
+{%- set ns = project_name -%}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-reverse-proxy
+  namespace: {{ ns }}
+  labels:
+    app: web-app
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: web-app
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ web_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: "false"
+    freva.org/tier: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: web-app
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wait-utils
+  namespace: {{ ns }}
+  labels:
+    app: web-app
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: web-app
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ web_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: "false"
+    freva.org/tier: frontend
+data:
+  wait-for.sh: |
+    #!/bin/sh
+    set -e
+    for host in database-server:3306 cache-server:6379 freva-rest-server:{{ freva_rest_port }}; do
+      for i in $(seq 1 60); do
+        nc -z "$(echo "$host" | cut -d: -f1)" "$(echo "$host" | cut -d: -f2)" && break
+        sleep 1
+      done
+    done
+    exit 0
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: {{ ns }}
+  labels:
+    app: web-app
+    app.kubernetes.io/name: freva
+    app.kubernetes.io/instance: web-app
+    app.kubernetes.io/component: web-app
+    app.kubernetes.io/part-of: freva
+    app.kubernetes.io/version: {{ web_version }}
+    app.kubernetes.io/managed-by: ansible
+    freva.org/stateful: "false"
+    freva.org/tier: frontend
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: web-app
+  template:
+    metadata:
+      labels:
+        app: web-app
+        app.kubernetes.io/name: freva
+        app.kubernetes.io/instance: web-app
+        app.kubernetes.io/component: web-app
+        app.kubernetes.io/part-of: freva
+        app.kubernetes.io/version: {{ web_version }}
+        app.kubernetes.io/managed-by: ansible
+        freva.org/stateful: "false"
+        freva.org/tier: frontend
+    spec:
+      securityContext:
+        fsGroup: {{ fs_group }}
+      initContainers:
+        - name: wait-prereqs
+          image: busybox:stable
+          command: ["sh", "-c", "/bin/wait-for.sh"]
+          volumeMounts:
+            - name: wait-script
+              mountPath: /bin/wait-for.sh
+              subPath: wait-for.sh
+          resources:
+            limits:
+              cpu: "50m"
+              memory: "256Mi"
+      containers:
+        - name: nginx
+          image: ghcr.io/freva-org/freva-nginx:1.29.3
+          imagePullPolicy: {{ image_pull_policy }}
+          resources:
+            requests:
+              cpu: "200m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+
+          env:
+            - {name: SERVER_ROOT, value: "/srv/static"}
+            - {name: VAULT_HOST, value: "vault-server:5002"}
+            - {name: FREVA_REST_HOST, value: "freva-rest-server:{{ freva_rest_port }}"}
+{% if use_core %}
+            - {name: EVALUATION_SYSTEM_CONFIG_FILE, value: "{{ core_root_dir }}/freva/evaluation_system.conf"}
+{% endif %}
+            - {name: CHATBOT_HOST, value: "{{ web_chatbot_host.replace('http://','') }}"}
+            - {name: WEB_SERVER_NAME, value: "127.0.0.1"}
+            - {name: WEB_SERVER_PORT, value: "8000"}
+            - {name: REST_PROXY_HOST_NAME, value: "http://{{ freva_rest_host }}"}
+            - {name: FILL_COLOR, value: "{{ web_main_color }}"}
+            - {name: PROXY_USER, value: "nobody"}
+            - {name: PROJECT_NAME, value: "{{ project_name }}"}
+            - {name: PORT_HTTPSD, value: "8443"}
+            - {name: PORT_HTTPD, value: "8080"}
+            - {name: NO_HTTP_CERT, value: "1" }
+            - {name: WEB_HOST, value: "{{ web_project_website.replace('http://','').replace('https://','').replace('www.','') }}"}
+          volumeMounts:
+            - {name: web-static, mountPath: /srv/static}
+            - {name: logs, mountPath: /tmp/nginx }
+{% if use_core %}
+            - {name: core-preview, mountPath: /srv/static/preview, readOnly: true}
+{% endif %}
+
+        - name: web-app
+          image: ghcr.io/freva-org/freva-web:{{ web_version }}
+          imagePullPolicy: {{ image_pull_policy }}
+          resources: {{ resources["web"] }}
+          env:
+{% if use_core %}
+            - name: EVALUATION_SYSTEM_CONFIG_FILE
+              value: "{{ core_root_dir }}/freva/evaluation_system.conf"
+{% endif %}
+            - name: DJANGO_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: MYSQL_ROOT_PASSWORD
+            - name: ALLOWED_HOSTS
+              value: "{{ web_allowed_hosts | sort | join(',') }}"
+            - name: FREVA_WEB_CONFIG_FILE
+              value: "{{ core_root_dir }}/freva/web/freva_web_conf.toml"
+            - name: SCHEDULER_HOST
+              value: "{{ web_scheduler_host | sort | join(',') }}"
+            - name: CSRF_TRUSTED_ORIGINS
+              value: "{{ web_csrf_trusted_origins | sort | join(',') }}"
+            - name: FREVA_BIN
+              value: "{{ web_freva_bin }}"
+            - name: COLUMNS
+              value: "140"
+            - name: REDIS_HOST
+              value: "cache-server"
+            - name: FREVA_REST_URL
+              value: "http://freva-rest-server:{{ freva_rest_port }}"
+            - name: REDIS_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_PASSWORD
+            - name: REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: REDIS_USERNAME
+            - name: OIDC_DISCOVERY_URL
+              value: "{{ web_oidc_url }}"
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: OIDC_CLIENT_SECRET
+            - name: OIDC_CLIENT_ID
+              value: "{{ web_oidc_client }}"
+            - name: CHATBOT_HOST
+              value: "{{ web_chatbot_host.replace('http://','') }}"
+            - name: STAC_BROWSER
+              value: "1"
+            - name: DB_USER
+              value: "{{ db_user }}"
+            - name: DB_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: freva-secrets
+                  key: MYSQL_PASSWORD
+            - name: DB_NAME
+              value: "{{ db }}"
+            - name: DB_HOST
+              value: "database-server"
+            - name: VAULT_URL
+              value: "http://vault-server:5002"
+            - name: PATH
+              value: "/opt/conda/envs/freva-web/bin:/opt/conda/condabin:/opt/conda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+          volumeMounts:
+{% if use_core %}
+            - name: web-ext
+              mountPath: "{{ external_volumes['web-ext']['mount_path'] }}"
+              readOnly: true
+{% endif %}
+            - name: web-static
+              mountPath: /opt/freva_web/static
+      volumes:
+        - name: web-static
+          persistentVolumeClaim:
+            claimName: web-data
+        - name: logs
+          persistentVolumeClaim:
+            claimName: proxy-logs
+        - name: wait-script
+          configMap:
+            name: wait-utils
+            defaultMode: 0755
+{% if use_core %}
+        - name: web-ext
+          {{ external_volumes['web-ext']['driver'] }}:
+{% for key, val in external_volumes['web-ext']['driver_options'] | dictsort %}
+            {{ key }}: {{ val }}
+{% endfor %}
+        - name: core-preview
+          {{ external_volumes["web-preview"]["driver"] }}:
+{% for key, val in external_volumes['web-preview']['driver_options'] | dictsort %}
+            {{ key }}: {{ val }}
+{% endfor %}
+{% endif %}

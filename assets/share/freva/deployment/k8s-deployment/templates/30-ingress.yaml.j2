@@ -1,0 +1,95 @@
+{# --------------------------- #
+#  Variables & Preprocessing   #
+# --------------------------- #}
+{%- set ns = project_name | default('freva') -%}
+{%- set ann = ingress.annotations | default({}, true) -%}
+{# Filter ingress_hosts that have TLS enabled #}
+{%- set tls_hosts = ingress_hosts
+      | selectattr('tls', 'defined')
+      | selectattr('tls')
+      | list
+-%}
+{%- set ext_hosts = [ns ~ '.' ~ fqdn, 'www.' ~ ns ~ '.' ~ fqdn ] -%}
+{# Group TLS hosts by secret so you can have multiple certs #}
+{%- set tls_groups = tls_hosts | groupby('tls_secret') -%}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ ns }}-external-ingress
+  namespace: {{ ns }}
+  labels:
+    app.kubernetes.io/part-of: {{ ns }}
+    app.kubernetes.io/managed-by: ansible
+{% if ann %}
+  annotations:
+{% for k, v in ann | dictsort %}
+    {{ k }}: {{ v }}
+{% endfor %}
+{% endif %}
+spec:
+  ingressClassName: {{ ingress.external_class_name | default('nginx') }}
+  tls:
+    - hosts:
+{% for h in ext_hosts %}
+        - {{ h }}
+{% endfor %}
+{% if ingress.certs_managed %}
+      secretName: web-cert-secret
+{% elif ingress.tls_secret_name | default() %}
+      secretName: {{ ingress.tls_secret_name }}
+{% endif %}
+  rules:
+{% for h in ext_hosts %}
+    - host: {{ h }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: web-reverse-proxy
+                port:
+                  number: 8080
+{% endfor %}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ ns }}-internal-ingress
+  namespace: {{ ns }}
+  labels:
+    app.kubernetes.io/part-of: {{ ns }}
+    app.kubernetes.io/managed-by: ansible
+{% if ann %}
+  annotations:
+{% for k, v in ann | dictsort %}
+    {{ k }}: {{ v }}
+{% endfor %}
+{% endif %}
+spec:
+  ingressClassName: {{ ingress.internal_class_name | default('nginx') }}
+{% if tls_hosts %}
+  tls:
+{%   for group in tls_groups %}
+    - hosts:
+{%     for item in group.list %}
+        - {{ item.fqdn }}
+          secretName: {{ group.grouper | default(tls_secret) }}
+{%     endfor %}
+{%   endfor %}
+{% endif %}
+
+  rules:
+{% for item in ingress_hosts %}
+    - host: {{ item.fqdn }}
+      http:
+        paths:
+          - path: {{ item.path | default('/') }}
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ item.service }}
+                port:
+                  number: {{ item.port }}
+{% endfor %}

@@ -18,7 +18,7 @@
 
 - name: Set up caching
   block:
-    - name: Running common taks
+    - name: Running common tasks
       include_tasks: "common_tasks.yml"
 
     - name: Register systmed unit file

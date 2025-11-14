@@ -22,3 +22,17 @@ conda_packages:
   - uvicorn
   - requests
   - hvac
+
+workload_kind: "statefulset"
+proxy_mode: "http"
+service_port: 5002
+image: "ghcr.io/freva-org/freva-vault:{{ vault_version }}"
+env_vars:
+  KEY_FILE: "/vault/file/keys"
+  ROOT_PW: "{{ root_passwd }}"
+secret_keys:
+  - ROOT_PW
+volumes:
+  vault-data:
+    pvc: "vault-data"
+    mountPath: "/vault/file"
