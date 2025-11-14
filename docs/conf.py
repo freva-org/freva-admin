@@ -205,6 +205,10 @@ cli_output_dir.mkdir(exist_ok=True, parents=True)
     get_cli_output("compose", format="rst")
 )
 
+(cli_output_dir / "k8s.txt").write_text(
+    get_cli_output("kubernetes", format="rst")
+)
+
 
 # ReadTheDocs has its own way of generating sitemaps, etc.
 if not os.environ.get("READTHEDOCS"):

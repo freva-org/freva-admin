@@ -100,7 +100,7 @@ setenv =
     LANG = C
 allowlist_externals = make
                       codespell
-commands = codespell {posargs: --quiet-level=2} docs
+commands = codespell {posargs: --quiet-level=2} docs -S "*.css,*.html,*.js,*.map"
            make -C docs clean
            make -C docs html
 [testenv:lint]
