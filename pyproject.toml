@@ -98,6 +98,7 @@ setenv =
     LC_ALL = C
     LANG = C
 allowlist_externals = make
+                      codespell
 commands = codespell {posargs: --quiet-level=2} docs
            make -C docs clean
            make -C docs html
