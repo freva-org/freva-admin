@@ -9,7 +9,9 @@ What's new
 
 v2511.1.0
 ~~~~~~~~
+
 * Bumped version of freva-web to 2511.0.0
+* Bumped version of freva_rest to 2511.0.0
 
 
 
