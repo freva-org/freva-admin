@@ -53,4 +53,4 @@
     | bash
   environment:
     CONDA_PREFIX: "{{ conda_path }}"
-    PATH: "{{ conda_path }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ conda_path }}/bin:{{ ansible_facts.env.PATH }}"

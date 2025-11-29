@@ -5,6 +5,8 @@
     - core
   vars_files:
     - "./vars.yml"
+  become: "{{ core_ansible_become_user is defined and core_ansible_become_user != '' }}"
+  become_user: "{{ core_become_user | default(core_ansible_user) }}"
   roles:
     - core
 

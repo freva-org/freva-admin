@@ -52,16 +52,32 @@ def display_versions() -> str:
     return versions
 
 
+def _download(url: str) -> str:
+    try:
+        with urlopen(url, context=ssl_context) as res:
+            return res.read().decode()
+    except Exception as error:
+        raise ConfigurationError(f"Could not download {url}: {error}")
+
+
 @handled_exception
 def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
     """Read the necessary versions of microservices."""
     if _versions:
         return _versions[0]
     version_file = Path(user_cache_dir("freva-deployment")) / "versions.json"
+    main_version_file = Path(__file__).parent / "versions.json"
     now = datetime.now()
-    service_version = json.loads(
-        (Path(__file__).parent / "versions.json").read_text()
-    )
+    if main_version_file.exists():
+        service_version = json.loads(main_version_file.read_text())
+    else:
+        service_version = json.loads(
+            _download(
+                "https://raw.githubusercontent.com/freva-org/freva-admin/"
+                "refs/heads/main/src/freva_deployment/versions.json"
+            )
+        )
+
     if (
         version_file.exists()
         and (
@@ -83,19 +99,13 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
     )
 
     for service in ("mongo", "solr", "nginx", "redis"):
-        try:
-            with urlopen(url.format(service=service), context=ssl_context) as res:
-                text = res.read().decode()
-        except Exception as error:
-            raise ConfigurationError(
-                f"Could not read version for service {service}: {error}"
-            )
-        for line in text.splitlines():
+        for line in _download(url.format(service=service)).splitlines():
             if not line.startswith("#") and "=" in line:
                 version = line.strip().split("=")[-1]
                 _versions[0][service] = version
                 break
     _versions[0]["mongodb_server"] = _versions[0].pop("mongo")
+    version_file.parent.mkdir(exist_ok=True, parents=True)
     version_file.write_text(json.dumps(_versions[0]))
     return _versions[0]
 

@@ -1,6 +1,6 @@
 ansible_python_interpreter: "{{ core_ansible_python_interpreter }}"
-conda_bin: "{{ core_install_dir | regex_replace('^~', ansible_env.HOME) }}/bin"
-conda_sbin: "{{ core_install_dir | regex_replace('^~', ansible_env.HOME) }}/sbin"
+conda_bin: "{{ core_install_dir | regex_replace('^~', ansible_facts.env.HOME) }}/bin"
+conda_sbin: "{{ core_install_dir | regex_replace('^~', ansible_facts.env.HOME) }}/sbin"
 pkg_mgr: "conda"
 ansible_become_user: "{{ core_ansible_become_user  | default('root')}}"
 conda_url: "https://repo.anaconda.com/miniconda/Miniconda3-latest-{{core_arch}}.sh"

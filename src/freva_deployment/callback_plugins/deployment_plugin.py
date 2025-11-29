@@ -2,6 +2,8 @@
 
 from __future__ import absolute_import, division, print_function
 
+from typing import IO, Optional
+
 __metaclass__ = type
 
 DOCUMENTATION = """
@@ -37,12 +39,29 @@ from ansible.plugins.callback import (
     module_response_deepcopy,
     strip_internal_keys,
 )
-from ansible_collections.community.general.plugins.callback.yaml import (
-    CallbackModule as YamlCallback,
-)
+
+# -----------------------------------------------------------------------------
+# Select a YAML-style base callback that works with multiple Ansible versions
+# -----------------------------------------------------------------------------
+try:
+    # Preferred: built-in yaml callback (ansible-core)
+    from ansible.plugins.callback.yaml import (
+        CallbackModule as BaseYamlCallback,  # type: ignore
+    )
+except Exception:
+    try:
+        # Fallback: old community.general yaml callback
+        from ansible_collections.community.general.plugins.callback.yaml import (  # type: ignore  # noqa: E501
+            CallbackModule as BaseYamlCallback,
+        )
+    except Exception:
+        # Last resort: default stdout callback (no YAML formatting, but works)
+        from ansible.plugins.callback.default import (
+            CallbackModule as BaseYamlCallback,  # type: ignore
+        )
 
 
-class CallbackModule(YamlCallback):
+class CallbackModule(BaseYamlCallback):
     """
     Custom Ansible callback plugin that logs output to a file in single-line JSON format
     and displays output to stdout in YAML format.
@@ -76,8 +95,10 @@ class CallbackModule(YamlCallback):
             os.getenv("DEPLOYMENT_LOG_PATH")
             or NamedTemporaryFile(suffix=".log", delete=False).name
         )
-        self.log_file = open(log_file, "w")
+        self.log_file: IO[str] = open(log_file, "w")
         super().__init__()
+        self._plugin_options["result_format"] = "yaml"
+        self._plugin_options["pretty_results"] = True
 
     def log_result(self, result: TaskResult) -> None:
         """

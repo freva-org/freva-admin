@@ -1061,6 +1061,7 @@ class DeployFactory:
     ) -> list[str]:
         """Check the versions of the different freva parts."""
         config: dict[str, ConfigType] = {}
+        versions = get_versions()
         steps = list(set(self.step_order) - set(self.steps))
         if not steps or self.local_debug:
             # The user has selected all steps anyway, nothing to do here:
@@ -1102,6 +1103,7 @@ class DeployFactory:
                     "project_name": self.project_name,
                     f"{step}_data_path": cfg[step].get("data_path", ""),
                     "version_file_path": str(version_path),
+                    f"{step.replace('-', '_')}_version": versions[step],
                 }
                 python_exe = self.cfg[step].get("ansible_python_interpreter", "")
                 config[step]["vars"][f"{step}_ansible_python_interpreter"] = (
@@ -1154,21 +1156,29 @@ class DeployFactory:
             ),
             "ANSIBLE_ACTION_WARNINGS": str(int(verbosity > 0)),
             "ANSIBLE_DEVEL_WARNING": str(int(verbosity > 0)),
+            "ANSIBLE_CALLBACK_RESULT_FORMAT": "yaml",
+            "ANSIBLE_CALLBACK_FORMAT_PRETTY": "true",
         }
-        self._td.create_config(
-            cowsay_enabled_stencils="default,sheep,moose",
-            stdout_callback="deployment_plugin",
-            callback_plugins=str(plugin_path),
-            host_key_checking="False",
-            retry_files_enabled="False",
-            nocows=str(bool(int(self._no_cowsay))).lower(),
-            action_warnings=str(verbosity > 0).lower(),
-            devel_warning=str(verbosity > 0).lower(),
-            cowpath=os.getenv("ANSIBLE_COW_PATH", shutil.which("cowsay") or ""),
-            cow_selection="random",
-            interpreter_python="auto_silent",
-            timeout="15",
-        )
+        config = {
+            "cowsay_enabled_stencils": "default,sheep,moose",
+            "stdout_callback": "deployment_plugin",
+            "callback_result_format": "yaml",
+            "result_format": "yaml",
+            "callback_format_pretty": "True",
+            "callback_plugins": str(plugin_path),
+            "host_key_checking": "False",
+            "retry_files_enabled": "False",
+            "nocows": str(bool(int(self._no_cowsay))).lower(),
+            "action_warnings": str(verbosity > 0).lower(),
+            "devel_warning": str(verbosity > 0).lower(),
+            "cowpath": os.getenv(
+                "ANSIBLE_COW_PATH", shutil.which("cowsay") or ""
+            ),
+            "cow_selection": "random",
+            "interpreter_python": "auto_silent",
+            "timeout": "15",
+        }
+        self._td.create_config(**config)
         logger.debug("CONFIG\n%s", self._td.ansible_config_file.read_text())
         extravars: dict[str, str] = {
             "ansible_port": str(ssh_port),
@@ -1213,6 +1223,9 @@ class DeployFactory:
             f"[r]Playing tasks: [i]{', '.join(tags or steps)}[/] with ansible[/]"
         )
         time.sleep(3)
+        config.pop("stdout_callback")
+        config.pop("callback_plugins")
+        self._td.create_config(**config)
         self._td.run_ansible_playbook(
             working_dir=asset_dir,
             playbook=asset_dir / "playbooks" / "main-deployment.yml",

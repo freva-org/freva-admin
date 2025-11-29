@@ -4,12 +4,16 @@
   register: docker_check
   ignore_errors: true
   changed_when: false
+  environment:
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
 
 - name: Check for podman binary
   command: which podman
   register: podman_check
   ignore_errors: true
   changed_when: false
+  environment:
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
 
 - name: Check for podman-compose binary
   command: which podman-compose
@@ -17,7 +21,7 @@
   ignore_errors: true
   changed_when: false
   environment:
-    PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
 
 - name: Set available engines
   set_fact:
@@ -48,9 +52,19 @@
           Preferred engine '{{ deployment_method }}' is not installed.
           Falling back to '{{ 'podman' if deployment_method == 'docker' else 'docker' }}'.
 
+
+- name: Set compose_bin to installed podman-compose
+  set_fact:
+    compose_bin: "{{ podman_compose_check.stdout }}"
+  when:
+    - docker_bin is search('podman')
+    - podman_compose_check.rc == 0
+
+
 - name: Install podman-compose via pip if needed
   when:
     - docker_bin is search('podman')
+    - podman_compose_check.rc != 0
   block:
     - name: Ensure pip is installed
       shell:
@@ -67,7 +81,7 @@
       register: podman_compose_check_post
       changed_when: false
       environment:
-        PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+        PATH: "/usr/local/bin:{{ ansible_facts.env.HOME }}"
 
     - name: Set compose_bin to installed podman-compose
       set_fact:
@@ -99,7 +113,7 @@
           register: docker_compose_check_post
           changed_when: false
           environment:
-            PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
 
         - name: Set compose_bin to docker-compose binary
           set_fact:
@@ -124,7 +138,7 @@
           register: docker_compose_check_post_pip
           changed_when: false
           environment:
-            PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
 
         - name: Set compose_bin to pip-installed docker-compose
           set_fact:

@@ -4,12 +4,12 @@
 
 - name: Getting status of the freva installation
   stat:
-    path: "{{ core_install_dir | regex_replace('^~', ansible_env.HOME)}}/bin/freva"
+    path: "{{ core_install_dir | regex_replace('^~', ansible_facts.env.HOME)}}/bin/freva"
   register: freva_path
 
 - name: Get freva conf path
   stat:
-    path: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}/freva/evaluation_system.conf"
+    path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}/freva/evaluation_system.conf"
   register: eval_path
 
 - name: Creating temp. dir
@@ -46,7 +46,7 @@
 
     - name: Preparing creation of directory structure
       file:
-        path: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}"
+        path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}"
         state: directory
 
     - name: Creating directory structure
@@ -56,14 +56,14 @@
         mode: "{{ '2775' if core_admin_group is defined and core_admin_group != '' else '2755' }}"
         group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
       loop:
-        - "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/freva/"
-        - "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/plugins/"
+        - "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/"
+        - "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/"
 
     - name: Ensure core directories exist only if missing
       block:
         - name: Stat core directories
           stat:
-            path: "{{ item | regex_replace('^~', ansible_env.HOME) }}"
+            path: "{{ item | regex_replace('^~', ansible_facts.env.HOME) }}"
           loop:
             - "{{ core_base_dir_location }}"
             - "{{ core_scheduler_output_dir }}"
@@ -72,7 +72,7 @@
 
         - name: Create core directories if they do not exist
           file:
-            path: "{{ item.item | regex_replace('^~', ansible_env.HOME) }}"
+            path: "{{ item.item | regex_replace('^~', ansible_facts.env.HOME) }}"
             state: directory
             mode: "3777"
           loop: "{{ core_dir_stats.results }}"
@@ -93,7 +93,7 @@
     - name: Inserting evaluation_system.conf file
       copy:
         src: "{{tempdir.path}}/freva/evaluation_system.conf"
-        dest: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}/freva/evaluation_system.conf"
+        dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}/freva/evaluation_system.conf"
         remote_src: true
         group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
         mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
@@ -104,13 +104,13 @@
         - name: Getting animator plugin
           git:
             repo: "https://gitlab.dkrz.de/freva/plugins4freva/animator.git"
-            dest: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/plugins/animator"
+            dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/animator"
             recursive: true
             executable: "{{ core_install_dir }}/bin/git"
 
         - name: Uncomment animator plugin block lines
           replace:
-            path: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}/freva/evaluation_system.conf"
+            path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}/freva/evaluation_system.conf"
             regexp: "{{ item.regexp }}"
             replace: "{{ item.replace }}"
           loop:
@@ -120,16 +120,16 @@
 
         - name: Register plugin core
           stat:
-            path: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/plugins/animator/plugin_env"
+            path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/animator/plugin_env"
           register: plugin_env
 
         - name: Installing the animator plugin
           command:
             cmd: make all
-            chdir: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/plugins/animator"
+            chdir: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/animator"
           when: not plugin_env.stat.exists
           environment:
-            PATH: "{{ core_install_dir }}/bin:{{ ansible_env.PATH }}"
+            PATH: "{{ core_install_dir }}/bin:{{ ansible_facts.env.PATH }}"
 
       when: debug | default(false)
 
@@ -151,22 +151,22 @@
 
     - name: Configuring evaluation_system
       command:
-        cmd: "$PYTHON3 deploy.py {{ core_install_dir | regex_replace('^~', ansible_env.HOME) }} -s --no-conda"
+        cmd: "$PYTHON3 deploy.py {{ core_install_dir | regex_replace('^~', ansible_facts.env.HOME) }} -s --no-conda"
         chdir: "{{tempdir.path}}/freva"
       environment:
         PYTHON3: "{{ ansible_python_interpreter  or 'python' }}"
-        EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+        EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
         PYTHON_VERSION: "{{core_python_version}}"
 
     - name: Copying Public key file
       copy:
         src: "{{ core_keyfile }}"
-        dest: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME) }}/freva/{{ project_name }}.crt"
+        dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/{{ project_name }}.crt"
         mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
         group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
 
-  #always:
-    #- name: Deleting temporary files
-    #  file:
-    #    state: absent
-    #    path: "{{tempdir.path}}"
+  always:
+    - name: Deleting temporary files
+      file:
+        state: absent
+        path: "{{tempdir.path}}"

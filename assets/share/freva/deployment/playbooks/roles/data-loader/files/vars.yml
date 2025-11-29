@@ -1,7 +1,7 @@
 ---
 service: data-loader
-systemd_unit_dir: "{{ '/etc/systemd/system' if  ansible_become_user is defined and ansible_become_user != '' else ansible_env.HOME + '/.config/systemd/user' }}"
-secrets_file: "{{ '/root' if ansible_become_user == 'root' else ansible_env.HOME}}/.data-portal-cluster-config.json"
+systemd_unit_dir: "{{ '/etc/systemd/system' if  ansible_become_user is defined and ansible_become_user != '' else ansible_facts.env.HOME + '/.config/systemd/user' }}"
+secrets_file: "{{ '/root' if ansible_become_user == 'root' else ansible_facts.env.HOME}}/.data-portal-cluster-config.json"
 
 image: "ghcr.io/freva-org/freva-data-loader:{{ freva_rest_version }}"
 

@@ -7,6 +7,11 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2511.1.0
+~~~~~~~~~
+* Bug fixing
+* Update playbooks for ansible v12
+
 v2511.0.0
 ~~~~~~~~~
 * Add kunernetes deployment support

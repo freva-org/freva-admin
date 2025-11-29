@@ -1,12 +1,12 @@
 ---
 - name: Stat required path {{ item.desc }}
   stat:
-    path: "{{ item.path | regex_replace('^~', ansible_env.HOME) }}"
+    path: "{{ item.path | regex_replace('^~', ansible_facts.env.HOME) }}"
   register: __stat_result
 
 - name: Fail if {{ item.desc }} does not exist
   fail:
     msg: >
       Error: {{ item.desc }} not available on machine.
-      Expected location: {{ item.path | regex_replace('^~', ansible_env.HOME) }}
+      Expected location: {{ item.path | regex_replace('^~', ansible_facts.env.HOME) }}
   when: not __stat_result.stat.exists
