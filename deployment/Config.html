@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>Example deployment configuration &#8212; freva-deployment 2510.1.0 documentation</title>
+    <title>Example deployment configuration &#8212; freva-deployment 2511.1.0 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=f0427901"></script>
+    <script src="../_static/documentation_options.js?v=0d324647"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -133,8 +133,8 @@
       
     
     
-    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2510.1.0 documentation - Home"/>
-    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2510.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2511.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2511.1.0 documentation - Home"/>
   
   
 </a></div>
@@ -493,8 +493,158 @@ under a normal user on a login node of a HPC system.</p>
 <span class="c1">## of the service is realised. `docker`, `podman` leverages podman or docker,</span>
 <span class="c1">## `conda` uses conda-forge to install the service while `k8s` involves a</span>
 <span class="c1">### kubernetes based deployment</span>
-<span class="c1">## Chosse between: &quot;docker&quot;, &quot;podman&quot;, &quot;conda&quot;, &quot;k8s&quot;</span>
+<span class="c1">## Choose between: &quot;docker&quot;, &quot;podman&quot;, &quot;conda&quot;, &quot;k8s&quot;</span>
 <span class="n">deployment_method</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;podman&quot;</span>
+
+<span class="c1">## Kubernetes deployment settings</span>
+<span class="k">[kubernetes]</span>
+<span class="c1">## Set the group ID for all volmes used by pods</span>
+<span class="n">fs_group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+
+<span class="c1">## Set the user group</span>
+<span class="n">run_as_group</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+
+<span class="c1">## Set the user id</span>
+<span class="n">run_as_user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+
+<span class="k">[kubernetes.ingress]</span>
+<span class="c1">## Specify the fully qualified domain host for ingress connections to the</span>
+<span class="c1">## cluster.</span>
+<span class="n">fqdn</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
+
+<span class="c1">## Set the network ingress class name for external website access</span>
+<span class="c1">## if the web-app should not be external you can use the same class_name</span>
+<span class="c1">## as the one for &#39;internal&#39; access.</span>
+<span class="n">external_class_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;nginx-external&quot;</span>
+<span class="c1">## Set the network ingress class name for internal communication</span>
+<span class="n">internal_class_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;nginx-internal&quot;</span>
+
+
+<span class="c1">## Any ingress annotations that are needed</span>
+<span class="n">annotations</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+
+<span class="c1">## Set this to true you the cluster manages server certs</span>
+<span class="n">certs_managed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+
+<span class="c1">### Set any tls_cert_secret name that should be used.</span>
+<span class="n">tls_secret_name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+
+<span class="c1">## Set the resource allocation for each service.</span>
+<span class="c1">## web: Django frontend</span>
+<span class="k">[kubernetes.resources.web.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;600m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;512Mi&quot;</span>
+<span class="k">[kubernetes.resources.web.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1000m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;2Gi&quot;</span>
+
+<span class="c1">## cache-server: Redis (backing data-loader &amp; web)</span>
+<span class="k">[kubernetes.resources.cache-server.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;300m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;512Mi&quot;</span>
+<span class="k">[kubernetes.resources.cache-server.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1Gi&quot;</span>
+
+<span class="c1">## data-loader-server: heavy lifting &amp; serialization (2 replicas recommended)</span>
+<span class="k">[kubernetes.resources.data-loader-server.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;500m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1Gi&quot;</span>
+<span class="k">[kubernetes.resources.data-loader-server.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1200m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;4Gi&quot;</span>
+
+<span class="c1">## freva-rest-server: REST API (2 replicas recommended)</span>
+<span class="k">[kubernetes.resources.freva-rest-server.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;400m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;512Mi&quot;</span>
+<span class="k">[kubernetes.resources.freva-rest-server.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;600m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;512Mi&quot;</span>
+
+<span class="c1">## database-server: MySQL</span>
+<span class="k">[kubernetes.resources.database-server.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;600m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;512Mi&quot;</span>
+<span class="k">[kubernetes.resources.database-server.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;800m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1Gi&quot;</span>
+
+<span class="c1">## mongo-server: metadata + jobs</span>
+<span class="k">[kubernetes.resources.mongo-server.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;300m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1Gi&quot;</span>
+<span class="k">[kubernetes.resources.mongo-server.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1500m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;3Gi&quot;</span>
+
+<span class="c1">## search-server: Apache Solr (main memory hog)</span>
+<span class="k">[kubernetes.resources.search-server.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;1500m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;8Gi&quot;</span>
+<span class="k">[kubernetes.resources.search-server.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;4&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;16Gi&quot;</span>
+
+<span class="c1">## vault-server: HashiCorp Vault (small)</span>
+<span class="k">[kubernetes.resources.vault-server.requests]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;100m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;256Mi&quot;</span>
+<span class="k">[kubernetes.resources.vault-server.limits]</span>
+<span class="n">cpu</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;300m&quot;</span>
+<span class="n">memory</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;512Mi&quot;</span>
+
+
+
+<span class="c1">## The web-app needs to configuration and user plugin data</span>
+<span class="c1">## stored on the HPC storage system. You can define the driver and driver</span>
+<span class="c1">## specs here for the mount volumes to those paths here.</span>
+<span class="c1">## Driver can be local, nfs ..., options can be the paths on disk</span>
+<span class="c1">## server name etc.</span>
+<span class="k">[kubernetes.external_volumes.web-ext]</span>
+<span class="n">driver</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;local&quot;</span>
+<span class="n">mount_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/freva&quot;</span>
+<span class="k">[kubernetes.external_volumes.web-ext.driver_options]</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;/opt/freva&quot;</span>
+<span class="n">readOnly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;true&quot;</span>
+
+<span class="c1">## The data-loader needs access to the datasets it is supposed to load.</span>
+<span class="c1">## You can define the mount volumes to those paths here. Driver and driver</span>
+<span class="c1">## specs here. driver can be local, nfs ..., options can be the paths on disk</span>
+<span class="c1">## server name etc.</span>
+<span class="k">[[kubernetes.external_volumes.data-loader]]</span>
+<span class="n">driver</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;local&quot;</span>
+<span class="n">mount_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/data&quot;</span>
+<span class="n">driver_options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w">  </span><span class="s2">&quot;/data&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">readOnly</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;true&quot;</span><span class="p">}</span>
+
+
+<span class="c1">## The web-app needs access to images produced by user plugins.</span>
+<span class="c1">## You can define the mount volumes to those paths here. Driver and driver</span>
+<span class="c1">## specs here. driver can be local, nfs ..., options can be the paths on disk</span>
+<span class="c1">## server name etc.</span>
+<span class="k">[kubernetes.external_volumes.web-preview]</span>
+<span class="n">driver</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;local&quot;</span>
+<span class="n">mount_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/freva/static/preview&quot;</span>
+<span class="k">[kubernetes.external_volumes.web-preview.driver_options]</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;/opt/freva/web/path_to_preview&quot;</span>
+<span class="n">readOnly</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;true&quot;</span>
+
+
+<span class="c1">## Set the pvc resource allocation for each service.</span>
+<span class="k">[kubernetes.pvc.mysql]</span>
+<span class="n">data_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;20Gi&quot;</span>
+<span class="k">[kubernetes.pvc.mongo]</span>
+<span class="n">data_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;20Gi&quot;</span>
+<span class="k">[kubernetes.pvc.solr]</span>
+<span class="n">data_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;20Gi&quot;</span>
+<span class="k">[kubernetes.pvc.web]</span>
+<span class="n">data_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;5Gi&quot;</span>
+<span class="k">[kubernetes.pvc.web-ext]</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/freva&quot;</span>
+<span class="k">[kubernetes.pvc.ext-data]</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w">  </span><span class="s2">&quot;/data&quot;</span>
+<span class="k">[kubernetes.pvc.web-preview]</span>
+<span class="n">path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/freva/web/path_to_preview&quot;</span>
 
 
 <span class="c1">## Specify the path to the SSL certificate files used for secure connections</span>
@@ -555,7 +705,9 @@ under a normal user on a login node of a HPC system.</p>
 <span class="n">wipe</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
 
 <span class="c1">## Set the path where the permanent database data should be stored.</span>
-<span class="c1">## By default, this is set to /opt/freva/&lt;project_name&gt;/db_service.</span>
+<span class="c1">## By default, this is set to /opt/freva/.</span>
+<span class="c1">## NOTE: This directory will be used to store persisent data on conda based</span>
+<span class="c1">## deployments and creating docker-compose files.</span>
 <span class="n">data_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/freva&quot;</span>
 
 <span class="c1">## Set the username that will own all files created by the service such as</span>
@@ -621,6 +773,8 @@ under a normal user on a login node of a HPC system.</p>
 
 <span class="c1">## Set the path where the permanent freva-rest data should be stored.</span>
 <span class="c1">## By default, this is set to /opt/freva.</span>
+<span class="c1">## NOTE: This directory will be used to store persisent data on conda based</span>
+<span class="c1">## deployments and creating docker-compose files.</span>
 <span class="n">data_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/freva&quot;</span>
 
 <span class="c1">### Indicate whether or not the redis-caching services will be shared among</span>
@@ -743,9 +897,9 @@ under a normal user on a login node of a HPC system.</p>
 <span class="c1">## Set the URL of the web user interface.</span>
 <span class="n">project_website</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;www.freva.dkrz.de&quot;</span>
 
-<span class="c1">## Freva can connect to a GPT service (that has to be set up seperately)</span>
+<span class="c1">## Freva can connect to a GPT service (that has to be set up separately)</span>
 <span class="c1">## you can set the &lt;HOSTNAME&gt;:&lt;PORT&gt; of this service - if configured.</span>
-<span class="c1">## if you leave this blank, the website will not provid the chat interface.</span>
+<span class="c1">## if you leave this blank, the website will not provide the chat interface.</span>
 <span class="n">chatbot_host</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
 
 <span class="c1">## Ansible needs a Python 3 interpreter on the target server. This interpreter</span>
@@ -761,6 +915,8 @@ under a normal user on a login node of a HPC system.</p>
 
 <span class="c1">## Set the path where the permanent web data should be stored.</span>
 <span class="c1">## By default, this is set to /opt/freva.</span>
+<span class="c1">## NOTE: This directory will be used to store persisent data on conda based</span>
+<span class="c1">## deployments and creating docker-compose files.</span>
 <span class="n">data_path</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;/opt/freva&quot;</span>
 
 <span class="c1">## Set the main HTML color scheme.</span>

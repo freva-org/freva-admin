@@ -9,7 +9,7 @@ The Free evaluation system framework (Freva) consists of three basic parts:
 - Services, such as a apache solr data search service, MySQL database, and web service providing a web-based user interface (web ui) to the core library
 
 Command line interface, python client and web ui make use of the core library,
-the core library on the other hand makes use of the services. This hierachy is outlined in the figure below:
+the core library on the other hand makes use of the services. This hierarchy is outlined in the figure below:
 
 ## Overview
 

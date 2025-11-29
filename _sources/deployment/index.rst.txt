@@ -50,6 +50,12 @@ that contains all the services with help of the compose sub command:
 .. literalinclude:: ../_generated/compose.txt
    :language: console
 
+Kubernetes manifest for using deployment  ``kubectl apply -f`` can be generated
+by using the ``kubernetes`` sub-command:
+
+
+.. literalinclude:: ../_generated/k8s.txt
+   :language: console
 
 
 .. toctree::

@@ -13,19 +13,30 @@ file into the `MODULEPATH` location.
 
 # Persisent micro service data:
 If you chose podman/docker or conda based deployment of the micro-services
-you will have access to a `systemd` unit of the created
-service. In general the services can be accessed by
+you will have access to a
+[systemd unit](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-managing_services_with_systemd)
+of the created service. In general the services can be accessed by
 `<project_name>-<service_name>.service` If for example the `project_name`
 key was set to `clex-ces` then the following services are created:
 
-- database: `clex-ces-db.service`, `clex-ces-vault.serice`
+- database: `clex-ces-db.service`, `clex-ces-vault.service`
 - freva-rest: `clex-ces-freva-rest.service` `clex-ces-mongo.service`
 - web ui: `clex-ces-web.service` `clex-ces-web-cache.service` `clex-ces-web-proxy.service`
-- data-loader: `freva-caching.service` `data-loader@schduler.service` `data-loader@worker.service`
+- data-loader: `freva-caching.service` `data-loader@scheduler.service` `data-loader@worker.service`
 
 The data-loader services for zarr streaming are optional. Additionally
 `clex-ces-web-cache.service` `clex-ces-web-proxy.service` will only be present
 for *conda-forge* based deployments.
+
+To get an overview over how things are started and controlled you can use
+the `list-units` and `cat` directives to find and inspect the service in
+question. For example to see how the `web` services is stated you can use
+the following commands:
+
+```console
+systemctl list-units "*web*"
+sysemctl cat clex-ces-web.service
+```
 
 :::{note}
 If you have set up the services as an unprivileged user you need
@@ -64,7 +75,7 @@ volumes. The volume names follow the following structure:
 
 `<project_name>-<service>_<name>`
 
-for exmaple:
+for example:
 - `clex-ces-db_data`: Persistent database data
 - `clex-ces-db_logs`: Persistent database logs
 
@@ -86,7 +97,7 @@ location, for example:
 - `/opt/freva/clex-ces/compose_services`
 
 ## Simple backup scripts:
-Services with persistant data - `db`, `mongo` and `solr` offer a very simple
+Services with persistent data - `db`, `mongo` and `solr` offer a very simple
 backup script.
 
 Depending on the chosen deployment method this backup is either executed directly on the
@@ -120,7 +131,7 @@ access the backup scripts using the `crontab` command.
 (the-web-ui-admin-panel)=
 ## The web UI admin Panel
 
-The web user interface is manged by django which offers a powerful admin
+The web user interface is managed by django which offers a powerful admin
 panel to manage users, user history and add additional links as so called
 flat pages. More information on the django admin panel can be found
 [online](https://www.tutorialspoint.com/django/django_admin_interface.htm).

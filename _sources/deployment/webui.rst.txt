@@ -69,7 +69,7 @@ environment file (default: ``<PREFIX>/setup.conf``), supporting the following va
    # Path to the key/cert pair for the web server (optional)
    FREVA_AUTOMATION_CERT_FILE=/opt/freva/automation/freva-automation.crt
    FREVA_AUTOMATION_KEY_FILE=/opt/freva/automation/freva-automation.key
-   # Extra conda packges that should be installed (maybe for hook scripts)
+   # Extra conda packages that should be installed (maybe for hook scripts)
    FREVA_AUTOMATION_EXTRA_PKGS=
    # Port the WebUI is running on (can be 443 or 8443)
    FREVA_AUTOMATION_SERVER_PORT=8443

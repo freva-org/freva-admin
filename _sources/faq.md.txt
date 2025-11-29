@@ -42,7 +42,7 @@ in your $PATH.
 
 ## 📦 Where are logs and volumes stored?
 Depending whether you've chosen `conda-forge` based or a `docker/podman` based
-deployment approach your logs data data will be located in diffrent locations:
+deployment approach your logs data data will be located in different locations:
 
 - `conda-forge`:
     All data will be stored in `<data_dir>/<project_name>/services/<service>`
@@ -58,8 +58,8 @@ deployment approach your logs data data will be located in diffrent locations:
 
 ## 💥 Can't inject secrets into vault.
 If secret injection fails but the `<project_name>-vault` is up and running you can
-check the logs. In most cases there will be a verion mismatch of the a older deployed
-version and the current vault version. To overcome this stop the service and delte
+check the logs. In most cases there will be a version mismatch of the a older deployed
+version and the current vault version. To overcome this stop the service and delete
 the data:
 
 For `conda-forge` based deployments:

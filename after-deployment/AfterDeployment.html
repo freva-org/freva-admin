@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>Activation scripts and module files for users &#8212; freva-deployment 2510.1.0 documentation</title>
+    <title>Activation scripts and module files for users &#8212; freva-deployment 2511.1.0 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=f0427901"></script>
+    <script src="../_static/documentation_options.js?v=0d324647"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -133,8 +133,8 @@
       
     
     
-    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2510.1.0 documentation - Home"/>
-    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2510.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2511.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2511.1.0 documentation - Home"/>
   
   
 </a></div>
@@ -488,19 +488,28 @@ file into the <code class="docutils literal notranslate"><span class="pre">MODUL
 <section id="persisent-micro-service-data">
 <h1>Persisent micro service data:<a class="headerlink" href="#persisent-micro-service-data" title="Link to this heading">#</a></h1>
 <p>If you chose podman/docker or conda based deployment of the micro-services
-you will have access to a <code class="docutils literal notranslate"><span class="pre">systemd</span></code> unit of the created
-service. In general the services can be accessed by
+you will have access to a
+<a class="reference external" href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-managing_services_with_systemd">systemd unit</a>
+of the created service. In general the services can be accessed by
 <code class="docutils literal notranslate"><span class="pre">&lt;project_name&gt;-&lt;service_name&gt;.service</span></code> If for example the <code class="docutils literal notranslate"><span class="pre">project_name</span></code>
 key was set to <code class="docutils literal notranslate"><span class="pre">clex-ces</span></code> then the following services are created:</p>
 <ul class="simple">
-<li><p>database: <code class="docutils literal notranslate"><span class="pre">clex-ces-db.service</span></code>, <code class="docutils literal notranslate"><span class="pre">clex-ces-vault.serice</span></code></p></li>
+<li><p>database: <code class="docutils literal notranslate"><span class="pre">clex-ces-db.service</span></code>, <code class="docutils literal notranslate"><span class="pre">clex-ces-vault.service</span></code></p></li>
 <li><p>freva-rest: <code class="docutils literal notranslate"><span class="pre">clex-ces-freva-rest.service</span></code> <code class="docutils literal notranslate"><span class="pre">clex-ces-mongo.service</span></code></p></li>
 <li><p>web ui: <code class="docutils literal notranslate"><span class="pre">clex-ces-web.service</span></code> <code class="docutils literal notranslate"><span class="pre">clex-ces-web-cache.service</span></code> <code class="docutils literal notranslate"><span class="pre">clex-ces-web-proxy.service</span></code></p></li>
-<li><p>data-loader: <code class="docutils literal notranslate"><span class="pre">freva-caching.service</span></code> <code class="docutils literal notranslate"><span class="pre">data-loader&#64;schduler.service</span></code> <code class="docutils literal notranslate"><span class="pre">data-loader&#64;worker.service</span></code></p></li>
+<li><p>data-loader: <code class="docutils literal notranslate"><span class="pre">freva-caching.service</span></code> <code class="docutils literal notranslate"><span class="pre">data-loader&#64;scheduler.service</span></code> <code class="docutils literal notranslate"><span class="pre">data-loader&#64;worker.service</span></code></p></li>
 </ul>
 <p>The data-loader services for zarr streaming are optional. Additionally
 <code class="docutils literal notranslate"><span class="pre">clex-ces-web-cache.service</span></code> <code class="docutils literal notranslate"><span class="pre">clex-ces-web-proxy.service</span></code> will only be present
 for <em>conda-forge</em> based deployments.</p>
+<p>To get an overview over how things are started and controlled you can use
+the <code class="docutils literal notranslate"><span class="pre">list-units</span></code> and <code class="docutils literal notranslate"><span class="pre">cat</span></code> directives to find and inspect the service in
+question. For example to see how the <code class="docutils literal notranslate"><span class="pre">web</span></code> services is stated you can use
+the following commands:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">systemctl list-units &quot;*web*&quot;</span>
+<span class="go">sysemctl cat clex-ces-web.service</span>
+</pre></div>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>If you have set up the services as an unprivileged user you need
@@ -538,7 +547,7 @@ The following logic applies:</p>
 <p>Persistent data for container based deployments in stored in docker/podman managed
 volumes. The volume names follow the following structure:</p>
 <p><code class="docutils literal notranslate"><span class="pre">&lt;project_name&gt;-&lt;service&gt;_&lt;name&gt;</span></code></p>
-<p>for exmaple:</p>
+<p>for example:</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">clex-ces-db_data</span></code>: Persistent database data</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">clex-ces-db_logs</span></code>: Persistent database logs</p></li>
@@ -559,7 +568,7 @@ location, for example:</p>
 </section>
 <section id="simple-backup-scripts">
 <h2>Simple backup scripts:<a class="headerlink" href="#simple-backup-scripts" title="Link to this heading">#</a></h2>
-<p>Services with persistant data - <code class="docutils literal notranslate"><span class="pre">db</span></code>, <code class="docutils literal notranslate"><span class="pre">mongo</span></code> and <code class="docutils literal notranslate"><span class="pre">solr</span></code> offer a very simple
+<p>Services with persistent data - <code class="docutils literal notranslate"><span class="pre">db</span></code>, <code class="docutils literal notranslate"><span class="pre">mongo</span></code> and <code class="docutils literal notranslate"><span class="pre">solr</span></code> offer a very simple
 backup script.</p>
 <p>Depending on the chosen deployment method this backup is either executed directly on the
 host machine (conda-forge based deployment) or in a container.</p>
@@ -586,7 +595,7 @@ access the backup scripts using the <code class="docutils literal notranslate"><
 </section>
 <section id="the-web-ui-admin-panel">
 <span id="id1"></span><h2>The web UI admin Panel<a class="headerlink" href="#the-web-ui-admin-panel" title="Link to this heading">#</a></h2>
-<p>The web user interface is manged by django which offers a powerful admin
+<p>The web user interface is managed by django which offers a powerful admin
 panel to manage users, user history and add additional links as so called
 flat pages. More information on the django admin panel can be found
 <a class="reference external" href="https://www.tutorialspoint.com/django/django_admin_interface.htm">online</a>.

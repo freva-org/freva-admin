@@ -32,7 +32,7 @@ project_website=
 # of the python environment
 root_dir=
 #
-# The location of the work direcotry for is user specific data
+# The location of the work directory for is user specific data
 base_dir_location=${root_dir}/freva_output
 #
 
@@ -48,7 +48,7 @@ directory_structure_type=central
 base_dir=${project_name}
 
 # Workload manager configuration
-# Workload manager system - currently the following workload manger systems are
+# Workload manager system - currently the following workload manager systems are
 # available: local (no workload manager), lsf, moab, oar, pbs, sge, slurm
 scheduler_system=local
 # The directory where temporary job scripts are created

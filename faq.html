@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>Frequently Asked Questions (FAQ) &#8212; freva-deployment 2510.1.0 documentation</title>
+    <title>Frequently Asked Questions (FAQ) &#8212; freva-deployment 2511.1.0 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
   <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="_static/documentation_options.js?v=f0427901"></script>
+    <script src="_static/documentation_options.js?v=0d324647"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="_static/clipboard.min.js?v=a7894cd8"></script>
@@ -133,8 +133,8 @@
       
     
     
-    <img src="_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2510.1.0 documentation - Home"/>
-    <img src="_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2510.1.0 documentation - Home"/>
+    <img src="_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2511.1.0 documentation - Home"/>
+    <img src="_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2511.1.0 documentation - Home"/>
   
   
 </a></div>
@@ -506,7 +506,7 @@ in your $PATH.</p>
 <section id="where-are-logs-and-volumes-stored">
 <h2>📦 Where are logs and volumes stored?<a class="headerlink" href="#where-are-logs-and-volumes-stored" title="Link to this heading">#</a></h2>
 <p>Depending whether you’ve chosen <code class="docutils literal notranslate"><span class="pre">conda-forge</span></code> based or a <code class="docutils literal notranslate"><span class="pre">docker/podman</span></code> based
-deployment approach your logs data data will be located in diffrent locations:</p>
+deployment approach your logs data data will be located in different locations:</p>
 <ul>
 <li><p><code class="docutils literal notranslate"><span class="pre">conda-forge</span></code>:
 All data will be stored in <code class="docutils literal notranslate"><span class="pre">&lt;data_dir&gt;/&lt;project_name&gt;/services/&lt;service&gt;</span></code></p></li>
@@ -524,8 +524,8 @@ checkout</p>
 <section id="can-t-inject-secrets-into-vault">
 <h2>💥 Can’t inject secrets into vault.<a class="headerlink" href="#can-t-inject-secrets-into-vault" title="Link to this heading">#</a></h2>
 <p>If secret injection fails but the <code class="docutils literal notranslate"><span class="pre">&lt;project_name&gt;-vault</span></code> is up and running you can
-check the logs. In most cases there will be a verion mismatch of the a older deployed
-version and the current vault version. To overcome this stop the service and delte
+check the logs. In most cases there will be a version mismatch of the a older deployed
+version and the current vault version. To overcome this stop the service and delete
 the data:</p>
 <p>For <code class="docutils literal notranslate"><span class="pre">conda-forge</span></code> based deployments:</p>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">rm -r &lt;data_dir&gt;/&lt;project_name&gt;/services/vault</span>

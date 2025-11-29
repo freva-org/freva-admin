@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>Configuring and running the deployment &#8212; freva-deployment 2510.1.0 documentation</title>
+    <title>Configuring and running the deployment &#8212; freva-deployment 2511.1.0 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=f0427901"></script>
+    <script src="../_static/documentation_options.js?v=0d324647"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -133,8 +133,8 @@
       
     
     
-    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2510.1.0 documentation - Home"/>
-    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2510.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2511.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2511.1.0 documentation - Home"/>
   
   
 </a></div>
@@ -576,13 +576,40 @@ This will bring up all micro services necessary to start the freva components.</
 set up anything else than a docker compose file and if chosen, a systemd
 unit file to start the compose service. If you want to use freva core
 library with data analysis plugins you will have to install <code class="docutils literal notranslate"><span class="pre">freva</span></code>
-from conda-forge:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">conda install -c conda-forge freva</span>
-</pre></div>
-</div>
+from conda-forge.</p>
 <p>Once you have installed the core library you will have to adjust the volumes
 and <code class="docutils literal notranslate"><span class="pre">EVALUATION_SYSTEM_CONFIG_FILE</span></code> environment variable in the <code class="docutils literal notranslate"><span class="pre">web-app</span></code>
 section of your compose file.</p>
+</div>
+</section>
+<section id="kubernetes-based-deployment">
+<h2>Kubernetes based deployment<a class="headerlink" href="#kubernetes-based-deployment" title="Link to this heading">#</a></h2>
+<p>Since <em>v2511.0.0</em> the <code class="docutils literal notranslate"><span class="pre">deploy-freva</span></code> software supports kubernetes (k8s)
+based deployments. To configure the k8s setup use the <code class="docutils literal notranslate"><span class="pre">[kubernetes]</span></code> section
+in the config toml file. Generating manifests that can be applied via
+<a class="reference external" href="https://kubernetes.io/docs/reference/kubectl">kubectl</a> is done by the <code class="docutils literal notranslate"><span class="pre">kubernetes</span></code>
+sub-command:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">deploy-freva kubernetes --help</span>
+<span class="go">Usage: deploy-freva kubernetes [-h] [-v] [-V] [-c CONFIG_FILE]</span>
+<span class="go">                               [-s {web,db,freva-rest,data-loader} [{web,db,freva-rest,data-loader} ...]]</span>
+<span class="go">                               [-o OUTPUT] [--no-plugins]</span>
+
+<span class="go">Options:</span>
+<span class="go">  -h, --help            show this help message and exit</span>
+<span class="go">  -v, --verbose         Verbosity level (default: 0)</span>
+<span class="go">  -V, --version         show program&#39;s version number and exit</span>
+<span class="go">  -c, --config-file CONFIG_FILE</span>
+<span class="go">                        Path to ansible inventory file. (default:</span>
+<span class="go">                        /home/runner/.config/freva/deployment/config/inventory</span>
+<span class="go">                        .toml)</span>
+<span class="go">  -s, --services {web,db,freva-rest,data-loader} [{web,db,freva-rest,data-loader} ...]</span>
+<span class="go">                        The services to be deployed. (default: [&#39;db&#39;,</span>
+<span class="go">                        &#39;freva-rest&#39;, &#39;web&#39;, &#39;data-loader&#39;])</span>
+<span class="go">  -o, --output OUTPUT   Output directory where the manifests should be</span>
+<span class="go">                        located. (default: None)</span>
+<span class="go">  --no-plugins          Do not setup core library to use plugins. (default:</span>
+<span class="go">                        False)</span>
+</pre></div>
 </div>
 </section>
 <section id="running-the-deployment">
@@ -607,8 +634,8 @@ issue the <code class="docutils literal notranslate"><span class="pre">deploy-fr
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">deploy-freva cmd --help</span>
 <span class="go">Usage: deploy-freva cmd [-h] [--config CONFIG]</span>
 <span class="go">                        [--steps {web,core,db,freva-rest,auto} [{web,core,db,freva-rest,auto} ...]]</span>
-<span class="go">                        [--ask-pass] [--ssh-port SSH_PORT] [-v] [-l] [-g]</span>
-<span class="go">                        [--skip-version-check] [-V]</span>
+<span class="go">                        [--ask-pass] [--ssh-port SSH_PORT] [-v] [-l] [--debug]</span>
+<span class="go">                        [-g] [--skip-version-check] [-V]</span>
 <span class="go">                        [-t {core,db,cache,data-loader,freva-rest,mongodb,search-server,pre-web,web} [{core,db,cache,data-loader,freva-rest,mongodb,search-server,pre-web,web} ...]]</span>
 <span class="go">                        [--cowsay]</span>
 
@@ -628,8 +655,8 @@ issue the <code class="docutils literal notranslate"><span class="pre">deploy-fr
 <span class="go">  --ssh-port SSH_PORT   Set the ssh port, in 99.9% of the cases this should be</span>
 <span class="go">                        22 (default: 22)</span>
 <span class="go">  -v, --verbose         Verbosity level (default: 0)</span>
-<span class="go">  -l, --local           Deploy services on the local machine, debug purpose.</span>
-<span class="go">                        (default: False)</span>
+<span class="go">  -l, --local           Deploy services on the local machine. (default: False)</span>
+<span class="go">  --debug               Deploy services on the local machine. (default: False)</span>
 <span class="go">  -g, --gen-keys        Generate public and private web certs, use with</span>
 <span class="go">                        caution. (default: False)</span>
 <span class="go">  --skip-version-check  Skip the version check. Use with caution. (default:</span>
@@ -817,6 +844,7 @@ the screen where you started.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#container-or-conda-forge-deployment">Container or Conda-Forge Deployment</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inspecting-and-adjusting-the-config">Inspecting and adjusting the config</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#creating-a-compose-file-ready-to-go">Creating a Compose file ready to go</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#kubernetes-based-deployment">Kubernetes based deployment</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-the-deployment">Running the deployment</a><ul class="nav section-nav flex-column">
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#deployment-with-existing-configuration">Deployment with existing configuration.</a></li>
 </ul>
