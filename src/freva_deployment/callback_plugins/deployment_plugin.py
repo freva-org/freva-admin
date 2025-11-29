@@ -45,19 +45,17 @@ from ansible.plugins.callback import (
 # -----------------------------------------------------------------------------
 try:
     # Preferred: built-in yaml callback (ansible-core)
-    from ansible.plugins.callback.yaml import (
-        CallbackModule as BaseYamlCallback,  # type: ignore
-    )
+    from ansible.plugins.callback.yaml import CallbackModule as BaseYamlCallback
 except Exception:
     try:
         # Fallback: old community.general yaml callback
-        from ansible_collections.community.general.plugins.callback.yaml import (  # type: ignore  # noqa: E501
+        from ansible_collections.community.general.plugins.callback.yaml import (  # noqa: E501
             CallbackModule as BaseYamlCallback,
         )
     except Exception:
         # Last resort: default stdout callback (no YAML formatting, but works)
         from ansible.plugins.callback.default import (
-            CallbackModule as BaseYamlCallback,  # type: ignore
+            CallbackModule as BaseYamlCallback,
         )
 
 
