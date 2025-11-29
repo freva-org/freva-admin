@@ -13,8 +13,9 @@ file into the `MODULEPATH` location.
 
 # Persisent micro service data:
 If you chose podman/docker or conda based deployment of the micro-services
-you will have access to a `systemd` unit of the created
-service. In general the services can be accessed by
+you will have access to a
+[systemd unit](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-managing_services_with_systemd)
+of the created service. In general the services can be accessed by
 `<project_name>-<service_name>.service` If for example the `project_name`
 key was set to `clex-ces` then the following services are created:
 
@@ -26,6 +27,16 @@ key was set to `clex-ces` then the following services are created:
 The data-loader services for zarr streaming are optional. Additionally
 `clex-ces-web-cache.service` `clex-ces-web-proxy.service` will only be present
 for *conda-forge* based deployments.
+
+To get an overview over how things are started and controlled you can use
+the `list-units` and `cat` directives to find and inspect the service in
+question. For example to see how the `web` services is stated you can use
+the following commands:
+
+```console
+systemctl list-units "*web*"
+sysemctl cat clex-ces-web.service
+```
 
 :::{note}
 If you have set up the services as an unprivileged user you need

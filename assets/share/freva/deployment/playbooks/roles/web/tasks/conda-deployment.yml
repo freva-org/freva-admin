@@ -74,7 +74,7 @@
       CSRF_TRUSTED_ORIGINS: "{{ web_csrf_trusted_origins | join(',') }}"
       DJANGO_SUPERUSER_EMAIL: "freva@dkrz.de"
       DJANGO_SUPERUSER_PASSWORD: "{{ root_passwd }}"
-      EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+      EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
       FREVA_REST_HOST: '{{ web_freva_rest_host.replace("http://", "") }}'
       FILL_COLOR: "{{ web_main_color }}"
       FREVA_REST_URL: 'http://{{ web_freva_rest_host.replace("http://", "") }}'
@@ -133,7 +133,7 @@
     chdir: "{{ data_dir }}/app"
   environment:
     GIT_PYTHON_REFRESH: "quiet"
-    EVALUATION_SYSTEM_CONFIG_FILE: "{{core_root_dir|regex_replace('^~', ansible_env.HOME)}}/freva/evaluation_system.conf"
+    EVALUATION_SYSTEM_CONFIG_FILE: "{{core_root_dir|regex_replace('^~', ansible_facts.env.HOME)}}/freva/evaluation_system.conf"
     NGINX_PORT: "{{ web_port_httpsd }}"
   loop:
     - "{{ conda_path }}/libexec/freva-rest-server/healthchecks.sh -s nginx"
@@ -152,10 +152,10 @@
   args:
     chdir: "{{ data_dir }}/app"
   environment:
-    PATH: "{{conda_path}}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{conda_path}}/bin:{{ ansible_facts.env.PATH }}"
     DJANGO_SUPERUSER_EMAIL: "freva@dkrz.de"
     DJANGO_SUPERUSER_PASSWORD: "{{ root_passwd }}"
-    EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+    EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
     FREVA_WEB_CONFIG_FILE: "{{ web_config_file }}"
 
 

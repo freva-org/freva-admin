@@ -146,6 +146,9 @@ class RunnerDir(TemporaryDirectory):
             stream.write("[colors]\n")
             stream.write("included = purple\n")
             stream.write("skip = green\n")
+            stream.write("[callback]\n")
+            stream.write("result_format=yaml\n")
+            stream.write("pretty_results=True\n")
 
     def create_playbook(self, content: List[Dict[str, Any]]) -> str:
         """Dump the content of a playbook into the playbook file."""

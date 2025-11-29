@@ -4,14 +4,14 @@ ansible_become: "{{ web_ansible_become_user is defined and web_ansible_become_us
 ansible_become_user: "{{ web_ansible_become_user | default('root') }}"
 ansible_python_interpreter: "{{ web_ansible_python_interpreter }}"
 admin_user: "{{ web_admin_user | default('') }}"
-base_path: '{{web_data_path| regex_replace("^~", ansible_env.HOME)}}'
-systemd_unit_dir: "{{ '/etc/systemd/system' if  web_ansible_become_user is defined and web_ansible_become_user != '' else ansible_env.HOME + '/.config/systemd/user' }}"
+base_path: '{{web_data_path| regex_replace("^~", ansible_facts.env.HOME)}}'
+systemd_unit_dir: "{{ '/etc/systemd/system' if  web_ansible_become_user is defined and web_ansible_become_user != '' else ansible_facts.env.HOME + '/.config/systemd/user' }}"
 web_name: "{{ project_name }}-web"
 web_cache_name: "{{ project_name }}-web-cache"
 web_proxy_name: "{{ project_name }}-web-proxy"
-web_config_file: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}/freva/web/freva_web_conf.toml"
-compose_file: '{{web_data_path|regex_replace("^~", ansible_env.HOME)}}/{{project_name}}/compose_services/{{web_name}}-compose.yml'
-old_compose_dir: '{{web_data_path|regex_replace("^~", ansible_env.HOME)}}/compose_services'
+web_config_file: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}/freva/web/freva_web_conf.toml"
+compose_file: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{web_name}}-compose.yml'
+old_compose_dir: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/compose_services'
 data_dir: '{{ base_path }}/{{ project_name }}/services/{{service}}'
 conda_path: '{{ data_dir }}/app/conda'
 wipe: true
@@ -60,7 +60,7 @@ volumes:
 service_settings:
   - name: web-app
     env_vars:
-      EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+      EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
       DJANGO_SUPERUSER_PASSWORD: '{{ root_passwd }}'
       ALLOWED_HOSTS: "{{web_allowed_hosts | join(',')}}"
       FREVA_WEB_CONFIG_FILE: "{{ web_config_file }}"
@@ -93,7 +93,7 @@ proxy_settings:
     SERVER_ROOT: "/srv/static"
     VAULT_HOST: '{{ web_vault_host.replace("http://", "") }}:5002'
     FREVA_REST_HOST: '{{ web_freva_rest_host.replace("http://", "") }}'
-    EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf"
+    EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir|regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
     CHATBOT_HOST: '{{ web_chatbot_host.replace("http://", "") }}'
     WEB_SERVER_NAME: "{{ web_name }}"
     WEB_SERVER_PORT: 8000

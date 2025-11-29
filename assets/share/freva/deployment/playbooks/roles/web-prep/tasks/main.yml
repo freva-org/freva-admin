@@ -12,8 +12,8 @@
 
 - name: Adding freva web config to the core structure
   copy:
-    src: "{{ core_config_toml_file | regex_replace('^~', ansible_env.HOME)}}"
-    dest: "{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}/freva/web/freva_web_conf.toml"
+    src: "{{ core_config_toml_file | regex_replace('^~', ansible_facts.env.HOME)}}"
+    dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}/freva/web/freva_web_conf.toml"
     mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
     group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit}}"
   become: false

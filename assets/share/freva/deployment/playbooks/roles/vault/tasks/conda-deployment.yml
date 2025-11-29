@@ -93,4 +93,4 @@
     -s db.user {{ vault_db_user }}
   environment:
     ROOT_PW: "{{ root_passwd }}"
-    PATH: "{{ conda_path }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ conda_path }}/bin:{{ ansible_facts.env.PATH }}"

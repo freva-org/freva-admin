@@ -67,8 +67,8 @@ class AssetDir:
             Path(appdirs.user_config_dir()) / "freva" / "deployment"
         )
 
-    @property
-    def is_bundeled(self) -> bool:
+    @staticmethod
+    def is_bundeled() -> bool:
         """Check if we are running a bundled version of the code."""
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
             return True
@@ -94,7 +94,7 @@ class AssetDir:
 
     @property
     def asset_dir(self) -> Path:
-        if self.is_bundeled:
+        if self.is_bundeled():
             return Path(__file__).parent / "assets"
 
         data_dir = self.get_dirs(False) / "share" / "freva" / "deployment"
@@ -171,7 +171,7 @@ AD = AssetDir()
 asset_dir = AD.asset_dir
 config_dir = AD.config_dir
 config_file = AD.config_file
-is_bundeled = AD.is_bundeled
+is_bundeled = AD.is_bundeled()
 
 
 def is_localhost(host: str) -> bool:

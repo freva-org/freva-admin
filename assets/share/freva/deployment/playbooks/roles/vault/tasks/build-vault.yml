@@ -44,7 +44,7 @@
       environment:
         CGO_ENABLED: "0"
         GO111MODULE: "on"
-        PATH: "{{ conda_path }}/bin:{{ ansible_env.PATH }}"
+        PATH: "{{ conda_path }}/bin:{{ ansible_facts.env.PATH }}"
 
   always:
     - name: Delete temporary vault build dir

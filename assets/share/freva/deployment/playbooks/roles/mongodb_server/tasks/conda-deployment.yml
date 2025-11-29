@@ -44,7 +44,7 @@
     {{conda_path}}/libexec/freva-rest-server/healthchecks.sh
     -s mongo
   environment:
-    PATH: "{{ conda_path }}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{ conda_path }}/bin:{{ ansible_facts.env.PATH }}"
     API_MONGO_PASSWORD: "{{mongodb_server_db_passwd}}"
     API_MONGO_DB: "search_stats"
     API_MONGO_USER: "{{mongodb_server_db_user}}"

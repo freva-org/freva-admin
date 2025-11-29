@@ -22,7 +22,7 @@ services:
     container_name: {{ web_name }}
     hostname: {{ web_name }}
     environment:
-      - EVALUATION_SYSTEM_CONFIG_FILE={{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf
+      - EVALUATION_SYSTEM_CONFIG_FILE={{ core_root_dir|regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf
       - DJANGO_SUPERUSER_PASSWORD={{ root_passwd }}
       - ALLOWED_HOSTS={{web_allowed_hosts | join(',')}}
       - FREVA_WEB_CONFIG_FILE={{ web_config_file }}
@@ -42,8 +42,8 @@ services:
 
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
-      - {{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}:{{ core_root_dir | regex_replace('^~', ansible_env.HOME)}}:ro
-      - {{ core_scheduler_output_dir|regex_replace('^~', ansible_env.HOME)}}:{{ core_scheduler_output_dir | regex_replace('^~', ansible_env.HOME)}}:ro
+      - {{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}:{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}:ro
+      - {{ core_scheduler_output_dir|regex_replace('^~', ansible_facts.env.HOME)}}:{{ core_scheduler_output_dir | regex_replace('^~', ansible_facts.env.HOME)}}:ro
       - django-static:/opt/freva_web/static:z
       - logs:/data/logs:z
     tty: true
@@ -58,12 +58,12 @@ services:
     volumes:
         - django-static:/srv/static:z
         - logs:/data/logs:z
-        - {{ core_preview_path | regex_replace('^~', ansible_env.HOME)}}:/srv/static/preview:ro
+        - {{ core_preview_path | regex_replace('^~', ansible_facts.env.HOME)}}:/srv/static/preview:ro
     environment:
         - SERVER_ROOT=/srv/static
         - VAULT_HOST={{ web_vault_host.replace("http://", "") }}:5002
         - FREVA_REST_HOST={{ web_freva_rest_host.replace("http://", "") }}
-        - EVALUATION_SYSTEM_CONFIG_FILE={{ core_root_dir|regex_replace('^~', ansible_env.HOME) }}/freva/evaluation_system.conf
+        - EVALUATION_SYSTEM_CONFIG_FILE={{ core_root_dir|regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf
         - CHATBOT_HOST={{ web_chatbot_host.replace("http://", "") }}
         - WEB_SERVER_NAME={{ web_name }}
         - WEB_SERVER_PORT=8000

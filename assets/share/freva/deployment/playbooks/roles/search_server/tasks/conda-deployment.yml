@@ -55,4 +55,4 @@
     {{conda_path}}/libexec/freva-rest-server/healthchecks.sh
     -s {{ search_server_service }}
   environment:
-    PATH: "{{conda_path}}/bin:{{ ansible_env.PATH }}"
+    PATH: "{{conda_path}}/bin:{{ ansible_facts.env.PATH }}"

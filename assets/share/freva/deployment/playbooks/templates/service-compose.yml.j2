@@ -243,7 +243,7 @@ services:
       - web_django-static:/srv/static:z
       - web_proxy-logs:/data/logs:z
 {% if use_core is true %}
-      - {{ core_preview_path | regex_replace('^~', ansible_env.HOME)}}:/srv/static/preview:ro
+      - {{ core_preview_path | regex_replace('^~', ansible_facts.env.HOME)}}:/srv/static/preview:ro
 {% endif %}
     environment:
       - SERVER_ROOT=/srv/static
