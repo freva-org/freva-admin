@@ -45,7 +45,9 @@ from ansible.plugins.callback import (
 # -----------------------------------------------------------------------------
 try:
     # Preferred: built-in yaml callback (ansible-core)
-    from ansible.plugins.callback.yaml import CallbackModule as BaseYamlCallback
+    from ansible.plugins.callback.yaml import (
+        CallbackModule as BaseYamlCallback,
+    )
 except Exception:
     try:
         # Fallback: old community.general yaml callback
