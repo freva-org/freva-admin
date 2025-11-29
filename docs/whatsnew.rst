@@ -11,6 +11,10 @@ v2511.1.0
 ~~~~~~~~~
 * Bug fixing
 * Update playbooks for ansible v12
+* Bumped version of freva-web to 2511.0.0
+* Bumped version of freva_rest to 2511.0.0
+
+
 
 v2511.0.0
 ~~~~~~~~~
