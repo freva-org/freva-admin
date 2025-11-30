@@ -2,8 +2,6 @@
 name: Bump version
 run-name: ${{ github.actor }} is updating service versions 🧉
 
-
-# Set the access for individual scopes, or use permissions: write-all
 permissions:
   id-token: write
   pull-requests: write
@@ -12,19 +10,22 @@ permissions:
 
 on:
   pull_request:
+
 jobs:
+  # Reusable CI job
   tests:
     uses: ./.github/workflows/ci_job.yml
+
   automerge:
-    name: Merge the auto-bump PR
+    name: Merge freva-bot bump PR
     runs-on: ubuntu-latest
     needs: tests
     if: >
-      github.event_name == 'pull_request' &&
       github.event.pull_request.base.ref == 'main' &&
       github.event.pull_request.user.type == 'Bot' &&
       github.event.pull_request.user.login == 'freva-bot[bot]' &&
-      startsWith(github.event.pull_request.head.ref, 'bump-')
+      startsWith(github.event.pull_request.head.ref, 'bump-') &&
+      needs.tests.result == 'success'
     steps:
       - name: Announce pending auto-merge
         uses: actions/github-script@v7
@@ -46,16 +47,19 @@ jobs:
               issue_number: pr.number,
               body
             });
-      - name: Approve dependabot's PR
+
+      - name: Approve freva-bot's PR
         run: gh pr review --approve "$PR_URL"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.TOKEN}}
-      - name: Auto-merge for dependabot's PR
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Auto-merge freva-bot's PR
         run: gh pr merge --merge --auto "$PR_URL"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.TOKEN}}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Notify auto-merge failure
         if: failure()
         uses: actions/github-script@v7
@@ -80,12 +84,13 @@ jobs:
     name: Notify freva-bot PR test failure
     runs-on: ubuntu-latest
     needs: tests
+    # always() is crucial: otherwise this job is skipped when tests fail
     if: >
-      github.event_name == 'pull_request' &&
-      needs.linting-and-testing.result == 'failure' &&
+      always() &&
       github.event.pull_request.user.type == 'Bot' &&
       github.event.pull_request.user.login == 'freva-bot[bot]' &&
-      startsWith(github.event.pull_request.head.ref, 'bump-')
+      startsWith(github.event.pull_request.head.ref, 'bump-') &&
+      needs.tests.result == 'failure'
     steps:
       - name: Comment on PR about failing tests
         uses: actions/github-script@v7
@@ -96,7 +101,7 @@ jobs:
             const body = [
               "❌ **freva-bot** could not auto-merge this bump PR.",
               "",
-              "Reason: tests or linting failed in the `linting-and-testing` job.",
+              "Reason: tests or linting failed in the `tests` workflow.",
               "",
               "Please check the CI logs, fix the issue, and re-run the workflow or push new commits."
             ].join("\n");
@@ -111,21 +116,25 @@ jobs:
     name: Merge PR by dependabot
     runs-on: ubuntu-latest
     needs: tests
-    # Specifically check that dependabot (or another trusted party) created this pull-request, and that it has been labelled correctly.
-    if: github.event.pull_request.user.login == 'dependabot[bot]'
+    if: >
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      needs.tests.result == 'success'
     steps:
       - name: Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@v1
         with:
-          github-token: "${{ secrets.TOKEN }}"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Approve dependabot's PR
         run: gh pr review --approve "$PR_URL"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.TOKEN}}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Auto-merge for dependabot's PR
         run: gh pr merge --merge --auto "$PR_URL"
         env:
-          PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.TOKEN}}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
