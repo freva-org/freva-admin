@@ -334,7 +334,7 @@ class Bump(Release):
         self.git_repo.git.checkout(branch)
         self.git_repo.index.add("*")
         commit_message = f"Bump {self.package_name} version to {self.version}"
-        self.repo.index.commit(commit_message)
+        self.git_repo.index.commit(commit_message)
         origin = self.git_repo.remote(name="origin")
         logger.debug("Submitting PR")
         origin.set_url(self.repo_url)
