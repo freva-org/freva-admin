@@ -1,0 +1,55 @@
+---
+name: Tag deployment after freva-bot merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+
+    # Only run when:
+    # - PR was merged
+    # - PR targets main
+    # - PR author is freva-bot[bot]
+    # - branch name starts with 'bump-'
+    if: >
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.user.type == 'Bot' &&
+      github.event.pull_request.user.login == 'freva-bot[bot]' &&
+      startsWith(github.event.pull_request.head.ref, 'bump-')
+
+    steps:
+      - name: Checkout main at merge commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+
+      - name: Extract deployment version
+        id: version
+        run: |
+          version=$(python src/freva_deployment/__init__.py -v)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        run: |
+          git config user.name "freva-bot[bot]"
+          git config user.email "freva-bot@users.noreply.github.com"
+
+          tag="v${{ steps.version.outputs.version }}"
+
+          echo "Creating tag: $tag"
+
+          git tag "$tag"
+          git push origin "$tag"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
