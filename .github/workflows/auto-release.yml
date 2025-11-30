@@ -53,3 +53,25 @@ jobs:
           git push origin "$tag"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Announce created tag in PR
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            const version = "${{ steps.version.outputs.version }}";
+            const tag = `v${version}`;
+            const body = [
+              "🏷️ **freva-bot** created a new deployment tag:",
+              "",
+              `- Tag: \`${tag}\``,
+              "",
+              "Downstream release workflows that trigger on tags should now be running."
+            ].join("\n");
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body
+            });
