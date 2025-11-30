@@ -124,7 +124,9 @@ class Exit(Exception):
 class Bump(Release):
     """Bump the version."""
 
-    url = "https://api.github.com/repos/freva-org/freva-admin/pulls"
+    owner = "freva-org"
+    repo = "freva-admin"
+    url = f"https://api.github.com/repos/{owner}/{repo}/pulls"
 
     def __init__(
         self,
@@ -136,34 +138,41 @@ class Bump(Release):
     ) -> None:
         self.extra_packages = {}
         self.version = os.environ.get("REPO_VERSION", "").strip("v")
-        token = os.environ.get("GITHUB_TOKEN", "")
+        if not self.version:
+            raise Exit("REPO_VERSION environment variable is not set", code=1)
+        token = os.environ.get("DEPLOY_BOT_TOKEN", "")
+        if not token:
+            raise Exit("DEPLOY_BOT_TOKEN environment variable is not set", code=1)
+
         self.branch = branch
+        self.token = token
         self.package_name = package_name
         self.repo_dir = Path(repo_dir)
         self.search_path = search_path
-        self.repo_url = f"https://{token}@github.com/freva-org/freva-admin.git"
+        self.repo_url = (
+            f"https://x-access-token:{self.token}@github.com/"
+            f"{self.owner}/{self.repo}.git"
+        )
         logger.debug(
             "Cloning repository from %s with branch %s to %s",
             self.repo_url,
             self.repo_dir,
             branch,
         )
-        self.repo = git.Repo.clone_from(
+        self.git_repo = git.Repo.clone_from(
             self.repo_url, self.repo_dir, branch=branch
         )
         # Ensure commits are authored by the bot identity
-        with self.repo.config_writer() as cw:
+        with self.git_repo.config_writer() as cw:
             cw.set_value(
-                "user",
-                "name",
-                os.getenv("BOT_COMMIT_NAME", "github-actions[bot]"),
+                "user", "name", os.getenv("BOT_COMMIT_NAME", "freva-bot[bot]")
             )
             cw.set_value(
                 "user",
                 "email",
                 os.getenv(
                     "BOT_COMMIT_EMAIL",
-                    "41898282+github-actions[bot]@users.noreply.github.com",
+                    "freva-bot@users.noreply.github.com",
                 ),
             )
 
@@ -179,21 +188,96 @@ class Bump(Release):
             "freva-web": "web",
             "databrowserAPI": "databrowser",
             "freva": "core",
+            "freva-nextgen": "freva_rest",
         }
 
     def update_whatsnew(self) -> None:
-        """Update the what's new section."""
-        file = Path(self.repo_dir / "docs" / "whatsnew.rst")
+        """Update the what's new section for the current deployment version.
+
+        Behaviour:
+        - If a section for the current deploy_version already exists:
+          * If a bullet for this service exists, replace its version.
+          * Otherwise, append a new bullet for this service.
+        - If no section exists yet, create one right after :titlesonly:.
+        - Only change the minimal section of the file to reduce merge conflicts.
+        """
+        file = self.repo_dir / "docs" / "whatsnew.rst"
+        text = file.read_text()
+
+        # How this service is referred to in the text
         service = {v: k for k, v in self.lookup.items()}.get(
             self.package_name, self.package_name
         )
-        new_content = (
-            f":titlesonly:\n\nv{self.deploy_version}\n"
-            f"{'~'*len(self.deploy_version.public)}\n"
-            f"* Bumped version of {service} to "
-            f"{self.version}\n\n"
-        )
-        file.write_text(file.read_text().replace(":titlesonly:", new_content))
+
+        version_str = self.deploy_version.public  # e.g. "2405.0.0"
+        header_line = f"v{version_str}"
+        underline = "~" * len(version_str)
+        bullet_line = f"* Bumped version of {service} to {self.version}\n"
+
+        # Regex to find the section header for this deploy version:
+        # v2405.0.0
+        # ~~~~~~~~
+        header_pattern = rf"^v{re.escape(version_str)}\n(~+)\n"
+        header_match = re.search(header_pattern, text, flags=re.MULTILINE)
+
+        if header_match:
+            # Section exists: work only inside this section
+            section_start = (
+                header_match.end()
+            )  # index right after underline + newline
+
+            # Find start of the next version header (or EOF)
+            next_header_match = re.search(
+                r"^v\d[\d\.]*\n~+\n", text[section_start:], flags=re.MULTILINE
+            )
+            if next_header_match:
+                section_end = section_start + next_header_match.start()
+            else:
+                section_end = len(text)
+
+            section_body = text[section_start:section_end]
+
+            # Regex for "this service" bullet
+            # e.g. "* Bumped version of freva_rest to 1.2.3"
+            bullet_re = re.compile(
+                rf"^\* Bumped version of {re.escape(service)} to .*$",
+                flags=re.MULTILINE,
+            )
+
+            if bullet_re.search(section_body):
+                # Replace existing bullet's version
+                new_section_body = bullet_re.sub(
+                    bullet_line.rstrip(),  # no trailing newline here
+                    section_body,
+                    count=1,
+                )
+                # Ensure we have a terminating newline
+                new_section_body = new_section_body.rstrip() + "\n\n"
+            else:
+                # Append new bullet at the end of the section
+                new_section_body = (
+                    section_body.rstrip() + "\n" + bullet_line + "\n"
+                )
+
+            new_text = (
+                text[:section_start] + new_section_body + text[section_end:]
+            )
+            file.write_text(new_text)
+            return
+
+        # No section for this deploy version yet: create one after :titlesonly:
+        marker = ":titlesonly:"
+        if marker in text:
+            idx = text.index(marker) + len(marker)
+            insertion = f"\n\n{header_line}\n{underline}\n{bullet_line}\n"
+            new_text = text[:idx] + insertion + text[idx:]
+        else:
+            # Fallback: prepend a full section at the top
+            new_text = (
+                f"{marker}\n\n{header_line}\n{underline}\n{bullet_line}\n\n{text}"
+            )
+
+        file.write_text(new_text)
 
     @cached_property
     def deploy_version(self) -> str:
@@ -212,34 +296,46 @@ class Bump(Release):
         file = Path(self.repo_dir / "src" / "freva_deployment" / "__init__.py")
         match = re.search(self.version_pattern, file.read_text())
         if not match:
-            raise ValueError("Could not find frev-deployment version")
+            raise Exit("Could not find freva-deployment version", code=1)
         return Version(match.group(1))
 
-    def main(self) -> None:
-        """Do the main work."""
-        self.update_whatsnew()
+    def _bump_service_version(self, service_file: Path) -> None:
+        logger.debug("Bumping the service version.")
+        versions = json.loads(service_file.read_text())
+        old_version = versions[self.package_name]
+        if old_version > self.version:
+            raise Exit(
+                "Service version is new than bump version.: "
+                "current version: {old_version}, new version: {self.version}",
+                code=1,
+            )
+        versions[self.package_name] = self.version
+        for service, vers in self.extra_packages.items():
+            versions[service] = vers
+        service_file.write_text(json.dumps(versions, indent=3))
+
+    def _bump_deployment_version(self) -> None:
         file = Path(self.repo_dir / "src" / "freva_deployment" / "__init__.py")
-        service_file = file.parent / "versions.json"
+        self._bump_service_version(file.parent / "versions.json")
         logger.debug("Looking for version")
         logger.debug("New version is %s", self.deploy_version.public)
         file_content = file.read_text().replace(
             self.old_deploy_version.public, self.deploy_version.public
         )
-        logger.debug("Updating service versions.")
         file.write_text(file_content)
-        versions = json.loads(service_file.read_text())
-        versions[self.package_name] = self.version
-        for service, vers in self.extra_packages.items():
-            versions[service] = vers
-        service_file.write_text(json.dumps(versions, indent=3))
+
+    def main(self) -> None:
+        """Do the main work."""
+        self.update_whatsnew()
         branch = f"bump-{self.package_name}-{self.version}"
+        self._bump_deployment_version()
         logger.debug("Creating new branch %s", branch)
-        self.repo.create_head(branch)
-        self.repo.git.checkout(branch)
-        self.repo.index.add("*")
+        self.git_repo.create_head(branch)
+        self.git_repo.git.checkout(branch)
+        self.git_repo.index.add("*")
         commit_message = f"Bump {self.package_name} version to {self.version}"
         self.repo.index.commit(commit_message)
-        origin = self.repo.remote(name="origin")
+        origin = self.git_repo.remote(name="origin")
         logger.debug("Submitting PR")
         origin.set_url(self.repo_url)
         origin.push(branch)
@@ -262,7 +358,7 @@ class Bump(Release):
             ),
         }
         headers = {
-            "Authorization": f"Bearer {os.environ.get('GITHUB_TOKEN', '')}",
+            "Authorization": f"Bearer {self.token}",
             "Accept": "application/vnd.github+json",
             "X-GitHub-Api-Version": "2022-11-28",
         }
