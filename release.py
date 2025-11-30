@@ -305,7 +305,7 @@ class Bump(Release):
         old_version = versions[self.package_name]
         if old_version > self.version:
             raise Exit(
-                "Service version is new than bump version.: "
+                "Service version is newer than bump version.: "
                 "current version: {old_version}, new version: {self.version}",
                 code=1,
             )
