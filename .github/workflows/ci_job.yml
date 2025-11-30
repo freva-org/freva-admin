@@ -2,7 +2,8 @@
 name: CLI Test
 run-name: ${{ github.actor }} is testing the cli 🧉
 
-on: [push, workflow_call]
+on: [push, pull_request, workflow_call]
+
 jobs:
   linting-and-testing:
     runs-on: ubuntu-latest
@@ -26,3 +27,24 @@ jobs:
 
       - name: Running tests with tox
         run: tox -p 3 --parallel-no-spinner
+  dependabot:
+    name: Merge the auto-bump PR
+    runs-on: ubuntu-latest
+    needs: [lint-and-testing]
+    if: >
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.base.ref == 'main' &&
+      github.event.pull_request.user.type == 'Bot' &&
+      github.event.pull_request.user.login == 'freva-bot[bot]' &&
+      startsWith(github.event.pull_request.head.ref, 'bump-')
+    steps:
+      - name: Approve dependabot's PR
+        run: gh pr review --approve "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.TOKEN}}
+      - name: Auto-merge for dependabot's PR
+        run: gh pr merge --merge --auto "$PR_URL"
+        env:
+          PR_URL: ${{github.event.pull_request.html_url}}
+          GITHUB_TOKEN: ${{secrets.TOKEN}}
