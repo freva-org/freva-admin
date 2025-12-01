@@ -575,7 +575,7 @@ class ReleaseCandidate(Tag):
         the_version = Version(self.version.public + f"rc{self.release_candidate}")
         tag = self.get_latest_tag()
         if the_version <= tag:
-            raise Exit(
+            raise ValueError(
                 "Tag version: {} is the smaller or equal as current version {}"
                 ", you need to bump the version number first.".format(
                     tag,
