@@ -573,18 +573,35 @@ class ReleaseCandidate(Tag):
     def main(self) -> None:
         """Get rc version."""
         the_version = Version(self.version.public + f"rc{self.release_candidate}")
-        print(self.git_tag)
-        if the_version <= self.git_tag:
+        tag = self.get_latest_tag()
+        if the_version <= tag:
             raise Exit(
-                "Tag version: {} is the same as current version {}"
-                ", you need to bump the version number first and "
-                "push the changes to the {} branch".format(
+                "Tag version: {} is the smaller or equal as current version {}"
+                ", you need to bump the version number first.".format(
+                    tag,
                     the_version,
-                    self.git_tag,
-                    self.branch,
                 )
             )
         print(the_version.public)
+
+    def get_latest_tag(self) -> Version:
+        """Get the latest git tag."""
+        logger.debug("Searching for the latest tag")
+        with tempfile.TemporaryDirectory() as td:
+            git.Repo.clone_from(self.repo_url, td, branch="main")
+            repo = git.Repo(td)
+            try:
+                # Get the latest tag on the main branch
+                return Version(
+                    repo.git.describe("--tags", "--abbrev=0", self.branch).lstrip(
+                        "v"
+                    )
+                )
+            except git.exc.GitCommandError:
+                logger.debug("No tag found")
+            except InvalidVersion:
+                logger.debug("Tag found, but could not parse version")
+            return Version("0.0.0")
 
 
 if __name__ == "__main__":
