@@ -63,7 +63,13 @@ def cli(temp_dir: str) -> "Release":
     deploy_parser = subparser.add_parser(
         "deploy", help="Update the version in the deployment repository"
     )
-    for _parser in tag_parser, deploy_parser:
+    rc_parser = subparser.add_parser(
+        "rc", help="Check the release candidate version"
+    )
+    rc_parser.add_argument(
+        "release-candidate", type=int, help="The release candidate number"
+    )
+    for _parser in (tag_parser, deploy_parser, rc_parser):
         _parser.add_argument("name", help="The name of the software/package.")
         _parser.add_argument(
             "-p", "--path", help="Set the search path.", type=str, default="."
@@ -74,6 +80,7 @@ def cli(temp_dir: str) -> "Release":
             help="Enable debug mode.",
             action="store_true",
         )
+    for _parser in (tag_parser, deploy_parser):
         _parser.add_argument(
             "-b",
             "--branch",
@@ -89,6 +96,7 @@ def cli(temp_dir: str) -> "Release":
         nargs=2,
         action="append",
     )
+    rc_parser.set_defaults(apply_func=ReleaseCandidate)
     tag_parser.set_defaults(apply_func=Tag)
     deploy_parser.set_defaults(apply_func=Bump)
     args = parser.parse_args()
@@ -97,6 +105,9 @@ def cli(temp_dir: str) -> "Release":
         kwargs = {s: v for (s, v) in args.services or ()}
     if args.verbose:
         logger.setLevel(logging.DEBUG)
+    rc = getattr(args, "release-candidate", None)
+    if rc is not None:
+        return args.apply_func(rc, args.name, args.path)
     return args.apply_func(args.name, temp_dir, args.branch, args.path, **kwargs)
 
 
@@ -540,6 +551,40 @@ class Tag(Release):
         except git.GitCommandError as error:
             raise Exit("Could not create tag: {}".format(error))
         logger.info("Tags created.")
+
+
+class ReleaseCandidate(Tag):
+    def __init__(
+        self,
+        release_candidate: 0,
+        repo_dir: str,
+        search_path: str,
+        **kwargs: str,
+    ) -> None:
+        self.release_candidate = release_candidate
+        the_path = str(Path.cwd())
+        _repo = git.Repo(the_path)
+        self.branch = _repo.active_branch.name
+
+        super().__init__(
+            repo_dir, the_path, search_path=str(Path(search_path).absolute())
+        )
+
+    def main(self) -> None:
+        """Get rc version."""
+        the_version = Version(self.version.public + f"rc{self.release_candidate}")
+        print(self.git_tag)
+        if the_version <= self.git_tag:
+            raise Exit(
+                "Tag version: {} is the same as current version {}"
+                ", you need to bump the version number first and "
+                "push the changes to the {} branch".format(
+                    the_version,
+                    self.git_tag,
+                    self.branch,
+                )
+            )
+        print(the_version.public)
 
 
 if __name__ == "__main__":
