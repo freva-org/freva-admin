@@ -787,6 +787,7 @@ class DeployFactory:
             config[step]["vars"][
                 f"{step}_ansible_python_interpreter"
             ] = python_exe
+            config[step]["vars"]["ansible_python_interpreter"] = python_exe
 
         dump_file = self._get_files_copy(step)
         if dump_file:
@@ -1175,7 +1176,7 @@ class DeployFactory:
                 "ANSIBLE_COW_PATH", shutil.which("cowsay") or ""
             ),
             "cow_selection": "random",
-            "interpreter_python": "auto_silent",
+            # "interpreter_python": "auto_silent",
             "timeout": "15",
         }
         self._td.create_config(**config)
