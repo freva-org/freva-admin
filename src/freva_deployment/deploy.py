@@ -553,6 +553,7 @@ class DeployFactory:
         if web_host == "127.0.0.1":
             web_host = "localhost"
         self.cfg["web"]["host"] = web_host
+
         self.cfg["web"]["csrf_trusted_origins"] = []
         for url in [server_name] + self.cfg["web"]["project_website"].split(","):
             trusted_origin = urlparse(url.strip())
@@ -564,6 +565,9 @@ class DeployFactory:
             for prefix in ("www.", ""):
                 uri = f"https://{prefix}{netloc}"
                 self.cfg["web"]["csrf_trusted_origins"].append(uri)
+        host_ip = gethostbyname(web_host)
+        self.cfg["web"]["csrf_trusted_origins"].append(f"http://{host_ip}")
+        self.cfg["web"]["csrf_trusted_origins"].append(f"https://{host_ip}")
 
         self.cfg["web"]["csrf_trusted_origins"] = list(
             set(self.cfg["web"]["csrf_trusted_origins"])
@@ -787,6 +791,7 @@ class DeployFactory:
             config[step]["vars"][
                 f"{step}_ansible_python_interpreter"
             ] = python_exe
+            config[step]["vars"]["ansible_python_interpreter"] = python_exe
 
         dump_file = self._get_files_copy(step)
         if dump_file:
@@ -1019,6 +1024,7 @@ class DeployFactory:
         skip_version_check: bool = False,
         tags: Optional[list[str]] = None,
         local: bool = False,
+        extra: Optional[Dict[str, str]] = None,
     ) -> None:
         """Play the ansible playbook.
 
@@ -1038,6 +1044,9 @@ class DeployFactory:
             specific tasks.
         local: bool, default: False
             Use local connections only.
+        extra:
+            Add/Override inventory settings.
+
         """
         try:
             self._play(
@@ -1046,6 +1055,7 @@ class DeployFactory:
                 ssh_port=ssh_port,
                 skip_version_check=skip_version_check,
                 tags=tags,
+                extra=extra,
             )
         except KeyboardInterrupt as error:
             if str(error):
@@ -1146,7 +1156,9 @@ class DeployFactory:
         skip_version_check: bool = False,
         tags: Optional[list[str]] = None,
         local: bool = False,
+        extra: Optional[Dict[str, str]] = None,
     ) -> None:
+        extra = extra or {}
         plugin_path = Path(freva_deployment.callback_plugins.__file__).parent
         envvars: dict[str, str] = {
             "ANSIBLE_CONFIG": str(self._td.ansible_config_file),
@@ -1211,7 +1223,7 @@ class DeployFactory:
             self._master_pass = "foo"
         if local_connection:
             extravars["ansible_connection"] = "local"
-        inventory = self.parse_config(steps)
+        inventory = self.parse_config(steps, **extra)
         if inventory is None:
             logger.info("Services up to date, nothing to do!")
             return None

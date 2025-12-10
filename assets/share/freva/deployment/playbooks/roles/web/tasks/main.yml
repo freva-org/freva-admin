@@ -2,6 +2,10 @@
 - name: Include role vars
   include_vars: "{{ role_path }}/files/vars.yml"
 
+- name: Set custom nameserver fact from gathered facts
+  ansible.builtin.set_fact:
+    current_nameservers: "{{ ansible_dns.nameservers | default([]) }}"
+
 - name: Set deployment task file
   set_fact:
     deployment_file: "{{(role_path ~ '/tasks/container-deployment.yml' if deployment_method in ['docker', 'podman'] else role_path ~ '/tasks/conda-deployment.yml' if deployment_method == 'conda' else 'k8s-deployment.yml') | trim}}"

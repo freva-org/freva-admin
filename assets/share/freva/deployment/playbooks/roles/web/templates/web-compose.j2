@@ -58,6 +58,7 @@ services:
     volumes:
         - django-static:/srv/static:z
         - logs:/data/logs:z
+        - config:/data/config:z
         - {{ core_preview_path | regex_replace('^~', ansible_facts.env.HOME)}}:/srv/static/preview:ro
     environment:
         - SERVER_ROOT=/srv/static
@@ -71,6 +72,7 @@ services:
         - SERVER_KEY={{ web_key_content }}
         - REST_PROXY_HOST_NAME={{ web_chatbot_rest_api_url }}
         - FILL_COLOR={{ web_main_color }}
+        - PROXY_DNS={{ current_nameservers | default('8.8.8.8') }}
 {% if (ansible_become == true and ansible_become_user == 'root') or ansible_user == 'root' %}
         - PROXY_USER=nobody
 {% else %}
@@ -92,3 +94,4 @@ networks:
 volumes:
     django-static:
     logs:
+    config:

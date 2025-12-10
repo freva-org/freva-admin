@@ -42,6 +42,9 @@ SendSIGKILL=no
 KillSignal=SIGTERM
 PermissionsStartOnly=true
 ExecStart={prefix}/conda/bin/python automation-setup.py
+StateDirectory=prefect
+Environment="PREFECT_HOME=/var/lib/prefect"
+Environment="PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:////var/lib/prefect/prefect.db?timeout=30"
 StandardOutput=journal
 StandardError=journal
 Environment="PATH={prefix}/conda/bin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
@@ -243,8 +246,9 @@ def run_deployment(
     use_ssh_pass: bool = False,
     verbosity: int = 0,
     skip_version_check: bool = False,
+    extra: Optional[List[str]] = None,
 ):
-
+    extra = extra or []
     steps = steps or ["auto"]
     cmd = ["deploy-freva", "cmd", "-c", f"{config_file}"]
     if verbosity:
@@ -256,6 +260,10 @@ def run_deployment(
     if skip_version_check:
         cmd.append("--skip-version-check")
     cmd += ["-s"] + steps
+    for ex in extra:
+        key, _, value = ex.partition("=")
+        if key and value:
+            cmd.append(f"-e {key} {value}")
     PrefectServer.execute(cmd)
 
 
@@ -267,6 +275,7 @@ def freva_deployment_flow(
     verbosity: int = 0,
     use_ssh_pass: bool = False,
     skip_version_check: bool = False,
+    extra: Optional[List[str]] = None,
 ):
     """
     Apply the freva deployment for a Project.
@@ -278,6 +287,7 @@ def freva_deployment_flow(
         verbosity: Set the verbosity level.
         skip_version_check: Skip checking the micro server versions.
         use_ssh_pass: Instead of trying to connect via ssh keys, use a ssh password
+        extra: Any config items that should be overridden.
     """
     update_deployment_software()
     if os.getenv("SCRIPT_PATH"):
@@ -293,6 +303,7 @@ def freva_deployment_flow(
         use_ssh_pass,
         verbosity,
         skip_version_check=skip_version_check,
+        extra=extra,
     )
 
 

@@ -128,6 +128,14 @@ class BatchParser:
             ),
         )
         self.parser.add_argument(
+            "-e",
+            "--extra",
+            type=str,
+            nargs=2,
+            action="append",
+            help="Add/Override inventory settings.",
+        )
+        self.parser.add_argument(
             "--cowsay",
             action="store_true",
             help="Let the cow speak!",
@@ -143,6 +151,7 @@ class BatchParser:
         """Run the command line interface."""
         set_log_level(args.verbose)
         steps = [s.replace("-", "_") for s in args.steps]
+        extra = dict(args.extra) if args.extra else None
         if args.tags:
             steps = []
         with DeployFactory(
@@ -160,6 +169,7 @@ class BatchParser:
                     skip_version_check=args.skip_version_check,
                     tags=args.tags or None,
                     local=args.local,
+                    extra=extra,
                 )
             except KeyboardInterrupt:
                 raise SystemExit(130)

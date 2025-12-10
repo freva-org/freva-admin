@@ -92,6 +92,7 @@
       PROJECT_NAME: "{{ project_name }}"
       PROXY_GROUP: "{{ admin_group }}"
       PROXY_USER: "{{ admin_user }}"
+      PROXY_DNS: "{{ current_nameservers | default('8.8.8.8') }}"
       SCHEDULER_HOST: "{{ web_scheduler_host | join(',') }}"
       SERVER_CERT: "{{ web_cert_content }}"
       SERVER_KEY: "{{ web_key_content }}"
