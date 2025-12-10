@@ -9,7 +9,9 @@ What's new
 
 v2511.2.1
 ~~~~~~~~~
-* Bug fixing
+* Bug fixing.
+* Add extra argument.
+* Make reverse proxy settings persistent.
 
 v2511.2.0
 ~~~~~~~~~
