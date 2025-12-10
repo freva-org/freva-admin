@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>Configuring and running the deployment &#8212; freva-deployment 2511.2.0 documentation</title>
+    <title>Configuring and running the deployment &#8212; freva-deployment 2511.2.1 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
 
-    <script src="../_static/documentation_options.js?v=9f4d98ac"></script>
+    <script src="../_static/documentation_options.js?v=3b351cb5"></script>
     <script src="../_static/doctools.js?v=9bcbadda"></script>
     <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -133,8 +133,8 @@
       
     
     
-    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2511.2.0 documentation - Home"/>
-    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2511.2.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2511.2.1 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2511.2.1 documentation - Home"/>
   
   
 </a></div>
@@ -637,7 +637,7 @@ issue the <code class="docutils literal notranslate"><span class="pre">deploy-fr
 <span class="go">                        [--ask-pass] [--ssh-port SSH_PORT] [-v] [-l] [--debug]</span>
 <span class="go">                        [-g] [--skip-version-check] [-V]</span>
 <span class="go">                        [-t {core,db,cache,data-loader,freva-rest,mongodb,search-server,pre-web,web} [{core,db,cache,data-loader,freva-rest,mongodb,search-server,pre-web,web} ...]]</span>
-<span class="go">                        [--cowsay]</span>
+<span class="go">                        [-e EXTRA EXTRA] [--cowsay]</span>
 
 <span class="go">Run deployment in batch mode.</span>
 
@@ -666,6 +666,8 @@ issue the <code class="docutils literal notranslate"><span class="pre">deploy-fr
 <span class="go">                        Fine grain deployment. Instead of using steps you can</span>
 <span class="go">                        set those ansible tasks (tags) to be deployed.</span>
 <span class="go">                        (default: None)</span>
+<span class="go">  -e, --extra EXTRA EXTRA</span>
+<span class="go">                        Add/Override inventory settings. (default: None)</span>
 <span class="go">  --cowsay              Let the cow speak! (default: False)</span>
 </pre></div>
 </div>
