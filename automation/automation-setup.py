@@ -242,9 +242,10 @@ def run_deployment(
     gen_certs: bool = False,
     use_ssh_pass: bool = False,
     verbosity: int = 0,
+    skip_version_check: bool = False,
 ):
 
-    step = steps or ["auto"]
+    steps = steps or ["auto"]
     cmd = ["deploy-freva", "cmd", "-c", f"{config_file}"]
     if verbosity:
         cmd.append("-" + "v" * verbosity)
@@ -252,6 +253,8 @@ def run_deployment(
         cmd.append("--ask-pass")
     if gen_certs:
         cmd.append("-g")
+    if skip_version_check:
+        cmd.append("--skip-version-check")
     cmd += ["-s"] + steps
     PrefectServer.execute(cmd)
 
@@ -263,6 +266,7 @@ def freva_deployment_flow(
     gen_certs: bool = False,
     verbosity: int = 0,
     use_ssh_pass: bool = False,
+    skip_version_check: bool = False,
 ):
     """
     Apply the freva deployment for a Project.
@@ -271,7 +275,8 @@ def freva_deployment_flow(
         project: The freva project that should be deployed.
         steps: The steps that should be run.
         gen_certs: Auto generate self signed keys.
-        verbosity: Set the verbosity level
+        verbosity: Set the verbosity level.
+        skip_version_check: Skip checking the micro server versions.
         use_ssh_pass: Instead of trying to connect via ssh keys, use a ssh password
     """
     update_deployment_software()
@@ -281,7 +286,14 @@ def freva_deployment_flow(
     config = toml.loads(
         (Path(__file__).parent / ".freva-automation.toml").read_text()
     )
-    run_deployment(config[project], steps, gen_certs, use_ssh_pass, verbosity)
+    run_deployment(
+        config[project],
+        steps,
+        gen_certs,
+        use_ssh_pass,
+        verbosity,
+        skip_version_check=skip_version_check,
+    )
 
 
 def get_user_config_dir(appname: str) -> Path:
