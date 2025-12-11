@@ -9,8 +9,10 @@
     - "rm -f {{ web_name }} {{ web_cache_name }} {{web_cache_name}}"
     - "rmi -f  ghcr.io/freva-org/freva-web:{{ web_version }}"
     - "rmi -f  ghcr.io/freva-org/freva-nginx"
+    - "network rm {{ web_name }}_{{ web_name }}"
     - "pull ghcr.io/freva-org/freva-web:{{ web_version }}"
     - "pull ghcr.io/freva-org/freva-nginx:{{ proxy_version or 'latest'}}"
+    - "network create {{ web_name }}_{{ web_name }} --ipv6"
   changed_when: true
 
 - name: Creating volumes

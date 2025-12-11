@@ -7,6 +7,11 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2511.2.2
+~~~~~~~~~
+* Bug fixing
+* Enable ipv6 for web container networks
+
 v2511.2.1
 ~~~~~~~~~
 * Bug fixing.
