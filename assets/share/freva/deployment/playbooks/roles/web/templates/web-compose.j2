@@ -43,6 +43,7 @@ services:
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - {{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}:{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}:ro
+      - {{ core_base_dir_location | regex_replace('^~', ansible_facts.env.HOME)}}:{{ core_base_dir_location | regex_replace('^~', ansible_facts.env.HOME)}}:ro
       - {{ core_scheduler_output_dir|regex_replace('^~', ansible_facts.env.HOME)}}:{{ core_scheduler_output_dir | regex_replace('^~', ansible_facts.env.HOME)}}:ro
       - django-static:/opt/freva_web/static:z
       - logs:/data/logs:z
