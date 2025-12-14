@@ -4,7 +4,7 @@
 
 - name: Set custom nameserver fact from gathered facts
   ansible.builtin.set_fact:
-    current_nameservers: "{{ ansible_facts['dns'].nameservers | default([]) }}"
+    current_nameservers: "{{ ansible_facts['dns'].nameservers | default([]) | join(' ') }}"
 
 
 - name: Set deployment task file
