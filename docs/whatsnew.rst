@@ -7,6 +7,10 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2511.2.3
+~~~~~~~~~
+* Bugfixing
+
 v2511.2.2
 ~~~~~~~~~
 * Bug fixing

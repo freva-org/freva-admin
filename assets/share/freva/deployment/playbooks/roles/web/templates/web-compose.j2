@@ -59,7 +59,6 @@ services:
     volumes:
         - django-static:/srv/static:z
         - logs:/data/logs:z
-        - config:/data/config:z
         - {{ core_preview_path | regex_replace('^~', ansible_facts.env.HOME)}}:/srv/static/preview:ro
     environment:
         - SERVER_ROOT=/srv/static
@@ -95,4 +94,3 @@ networks:
 volumes:
     django-static:
     logs:
-    config:

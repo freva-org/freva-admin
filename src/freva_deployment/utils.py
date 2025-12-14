@@ -159,7 +159,10 @@ class AssetDir:
 
     @property
     def config_file(self):
-        cfg_file = self.config_dir / "freva-deployment.config"
+        if os.access(self.config_dir, os.W_OK):
+            cfg_file = self.config_dir / "freva-deployment.config"
+        else:
+            cfg_file = self._user_config_dir / "freva-deployment.config"
         if not cfg_file.exists():
             cfg_file.parent.mkdir(exist_ok=True, parents=True)
             with cfg_file.open("w", encoding="utf-8") as f_obj:
