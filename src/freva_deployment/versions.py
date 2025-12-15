@@ -65,31 +65,7 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
     """Read the necessary versions of microservices."""
     if _versions:
         return _versions[0]
-    version_file = Path(user_cache_dir("freva-deployment")) / "versions.json"
-    main_version_file = Path(__file__).parent / "versions.json"
-    now = datetime.now()
-    if main_version_file.exists():
-        service_version = json.loads(main_version_file.read_text())
-    else:
-        service_version = json.loads(
-            _download(
-                "https://raw.githubusercontent.com/freva-org/freva-admin/"
-                "refs/heads/main/src/freva_deployment/versions.json"
-            )
-        )
 
-    if (
-        version_file.exists()
-        and (
-            now - datetime.fromtimestamp(version_file.stat().st_mtime)
-        ).total_seconds()
-        < 3600 * 1000
-    ):
-        versions = json.loads(version_file.read_text())
-        versions.update(service_version)
-        _versions.append(versions)
-        return _versions[0]
-    version_file.parent.mkdir(exist_ok=True, parents=True)
     _versions.append(
         json.loads((Path(__file__).parent / "versions.json").read_text())
     )
@@ -105,8 +81,6 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
                 _versions[0][service] = version
                 break
     _versions[0]["mongodb_server"] = _versions[0].pop("mongo")
-    version_file.parent.mkdir(exist_ok=True, parents=True)
-    version_file.write_text(json.dumps(_versions[0]))
     return _versions[0]
 
 
