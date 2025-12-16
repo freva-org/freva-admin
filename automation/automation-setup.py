@@ -41,14 +41,17 @@ NoNewPrivileges=true
 SendSIGKILL=no
 KillSignal=SIGTERM
 PermissionsStartOnly=true
-ExecStart={prefix}/conda/bin/python automation-setup.py
+ExecStart={prefix}/conda/bin/python {prefix}/automation-setup.py
 StateDirectory=prefect
+Environment="HOME=/var/lib/prefect"
 Environment="PREFECT_HOME=/var/lib/prefect"
 Environment="PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:////var/lib/prefect/prefect.db?timeout=30"
+Environment="PREFECT_API_URL=http://127.0.0.1:8888/api"
 StandardOutput=journal
 StandardError=journal
+StateDirectory=prefect
 Environment="PATH={prefix}/conda/bin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
-EnvironmentFile={prefix}/setup.conf
+EnvironmentFile=/etc/sysconfig/freva-automation.conf
 WorkingDirectory={prefix}
 StandardOutput=journal
 StandardError=journal
@@ -59,6 +62,11 @@ RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
+"""
+
+
+CONFIG = """
+freva = "{path}"
 """
 
 
@@ -170,22 +178,12 @@ class BootstrapConda:
 
 
 __version__ = "0.1.0"
-SCRIPT_URL = "https://example.org/freva_setup.py"  # <- replace with real URL
-SCRIPT_CHECKSUM = "REPLACE_WITH_ACTUAL_SHA256"
+SCRIPT_URL = "https://raw.githubusercontent.com/freva-org/freva-admin/refs/heads/main/automation/automation-setup.py"
+SCRIPT_CHECKSUM = (
+    "c2bcfa7702a46d753748fea4c8a21daf2c79b32ef924cef280c1c53d6f9fdf89"
+)
 
 Steps = Literal["core", "freva-rest", "db", "web"]
-
-
-def dump_cfg(paths: List[Path]) -> None:
-
-    projects = {}
-    cfg_file = Path(__file__).parent / ".freva-automation.toml"
-    for path in paths:
-        config = toml.load(path)
-        project_name = config.get("project_name", "")
-        if project_name:
-            projects[project_name] = str(path)
-    cfg_file.write_text(toml.dumps(projects))
 
 
 def project_type() -> Type:
@@ -194,12 +192,8 @@ def project_type() -> Type:
         import toml
     except ImportError:
         return Literal["freva"]
-    cfg_file = Path(__file__).parent / ".freva-automation.toml"
-    try:
-        projects = list(toml.load(cfg_file).keys())
-    except FileNotFoundError:
-        dump_cfg(load_env_configs())
-        projects = list(toml.load(cfg_file).keys())
+    cfg_file = Path(__file__).parent / "freva-automation.toml"
+    projects = list(toml.load(cfg_file).keys())
     if not projects:
         return Literal["freva"]
     return Literal[*projects]
@@ -228,14 +222,14 @@ def update_deployment_software():
 
 
 @task
-def run_scripts(script_path: Path):
+def run_scripts(script_path: Path, prefix: str = "*"):
 
     logger = get_run_logger()
-    for path in script_path.glob("*.sh"):
+    for path in script_path.glob(f"{prefix}.sh"):
         try:
             PrefectServer.execute(["sh", str(path.absolute())])
         except subprocess.CalledProcessError as error:
-            logger.warning("Could not execute script: %s", path)
+            logger.error("Could not execute script: %s", path)
 
 
 @task
@@ -263,7 +257,8 @@ def run_deployment(
     for ex in extra:
         key, _, value = ex.partition("=")
         if key and value:
-            cmd.append(f"-e {key} {value}")
+            cmd += ["-e", key.strip(), value.strip()]
+
     PrefectServer.execute(cmd)
 
 
@@ -294,7 +289,7 @@ def freva_deployment_flow(
         run_scripts(Path(os.getenv("SCRIPT_PATH")))
     steps = steps or ["auto"]
     config = toml.loads(
-        (Path(__file__).parent / ".freva-automation.toml").read_text()
+        (Path(__file__).parent / "freva-automation.toml").read_text()
     )
     run_deployment(
         config[project],
@@ -588,19 +583,6 @@ def write_config(config: dict, output_path: Path):
         toml.dump(config, stream)
 
 
-def merge_config_files(default_path: Path, env_configs: List[Path]) -> List[Path]:
-    try:
-        config = toml.load(default_path)
-    except FileNotFoundError:
-        config = {}
-    config.setdefault("configs", [])
-    for cfg in env_configs:
-        if cfg not in config["configs"]:
-            config["configs"].append(str(cfg))
-    write_config(config, default_path)
-    return [f for f in map(Path, config["configs"]) if f.is_file()]
-
-
 async def delete_existing_deployment(name: str):
     """Delete existing deployments."""
     async with get_client() as client:
@@ -615,8 +597,7 @@ async def delete_existing_deployment(name: str):
 
 
 def register_prefect_deployment(
-    config_files: List[str],
-    name: str = "freva-deployment-instance",
+    name: str = "Freva Deployments",
 ) -> None:
     basepath = Path(__file__).parent.absolute()
 
@@ -625,7 +606,6 @@ def register_prefect_deployment(
     ).save(name="freva-local", overwrite=True)
     LocalFileSystem.load("freva-local")
 
-    dump_cfg(config_files)
     this_file = Path(__file__).name
     asyncio.run(delete_existing_deployment(name))
     freva_deployment_flow.from_source(
@@ -756,14 +736,26 @@ def main():
     prefix = args.prefix.absolute().expanduser()
     if bootstrap or not (prefix / "conda" / "bin" / "prefect").is_file():
         service = prefix / "freva-automation.service"
+        config = prefix / "freva-automation.toml"
         args.prefix.mkdir(exist_ok=True, parents=True)
         script_path = prefix / "automation-setup.py"
         if not script_path.is_file() or not Path(sys.argv[0]).is_file():
             script_path.write_text(sys.stdin.read())
         if not service.is_file():
             service.write_text(SERVICE.format(prefix=prefix))
+        if not config.is_file():
+            config.write_text(
+                CONFIG.format(
+                    path=os.getenv(
+                        "FREVA_CONFIG_PATH", "/path/to/freva-config.toml"
+                    )
+                )
+            )
         BootstrapConda(args.prefix, extra_pkgs)
-        print(f"Boot strapping success: check systemd {service} file.")
+        print(
+            "Boot strapping success.\n"
+            f"Check systemd {service} and {config} config file."
+        )
         return
 
     if args.version:
@@ -787,12 +779,6 @@ def main():
     # Main execution
     log_dir = prefix / "log"
     log_dir.mkdir(exist_ok=True, parents=True)
-    defaults = prefix / "automation.toml"
-    configs = args.config
-    merged = merge_config_files(defaults, configs)
-    if not merged:
-        print("[WARNING]: no config files found.")
-        return
     env = os.environ.copy()
     try:
         os.environ["SCRIPT_PATH"] = str(args.script_directory or "")
@@ -806,9 +792,7 @@ def main():
             )
             ps.prep_server(args.script_directory.expanduser(), args.user)
             ps.start_prefect()
-            register_prefect_deployment(
-                config_files=merged,
-            )
+            register_prefect_deployment()
             if args.no_reverse_proxy is False:
                 ps.start_caddy(args.cert_file, args.key_file)
             ps.linger()
