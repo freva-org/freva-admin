@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2602.3.0
+~~~~~~~~
+* Bumped version of freva-web to 2602.0.0
+
+
+
 v2602.2.0
 ~~~~~~~~
 * Bumped version of freva-web to 2601.1.0
