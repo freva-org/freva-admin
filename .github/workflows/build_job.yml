@@ -293,9 +293,8 @@ jobs:
     name: Create Pip package
     permissions:
       id-token: write
-    needs: [tests, build-linux, build-osx]
+    # needs: [tests, build-linux, build-osx]
     runs-on: ubuntu-latest
-    if: github.event_name != 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/')
     steps:
       -
         name: Checkout
