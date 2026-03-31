@@ -3,6 +3,6 @@ PyYAML==6.0.3
 appdirs==1.4.4
 npyscreen==5.0.2
 rich==14.3.3
-requests==2.33.0
+requests==2.33.1
 toml==0.10.2
 tomlkit==0.14.0
