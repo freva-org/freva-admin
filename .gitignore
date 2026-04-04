@@ -26,3 +26,4 @@ src/freva_deployment/ui/__pycache__
 *.egg*
 *.key
 *.crt
+.DS_Store
