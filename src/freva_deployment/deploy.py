@@ -1061,7 +1061,13 @@ class DeployFactory:
             if str(error):
                 pprint(f" [red][ERROR]: {error}[/]", file=sys.stderr)
             raise KeyboardInterrupt() from None
-
+    def _set_python_interpreter(
+        self, step: str, config: dict[str, ConfigType]
+    ) -> None:
+        python_exe = self.cfg[step].get("ansible_python_interpreter", "").strip()
+        interp = python_exe or "/usr/bin/python"
+        config[step]["vars"][f"{step}_ansible_python_interpreter"] = interp
+        config[step]["vars"]["ansible_python_interpreter"] = interp
     def get_steps_from_versions(
         self,
         envvars: dict[str, str],
@@ -1115,10 +1121,7 @@ class DeployFactory:
                     "version_file_path": str(version_path),
                     f"{step.replace('-', '_')}_version": versions[step],
                 }
-                python_exe = self.cfg[step].get("ansible_python_interpreter", "")
-                config[step]["vars"][f"{step}_ansible_python_interpreter"] = (
-                    python_exe or "/usr/bin/python"
-                )
+                self._set_python_interpreter(step, config)
         config.setdefault("core", {})
         config["core"].setdefault("vars", {})
         config["core"]["vars"]["core_install_dir"] = cfg["core"]["install_dir"]
