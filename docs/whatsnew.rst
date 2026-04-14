@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2604.1.0
+~~~~~~~~
+* Bumped version of freva-web to 2604.1.2
+
+
+
 v2604.0.1
 ~~~~~~~~
 * Fix a bug in the deployment script that caused the core deployment to fail
