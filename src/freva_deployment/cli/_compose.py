@@ -9,7 +9,7 @@ from base64 import b64encode
 from pathlib import Path
 from typing import Optional
 
-import namegenerator
+import petname
 import yaml
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
@@ -86,7 +86,7 @@ def create_compose(args: argparse.Namespace) -> None:
             "use_core": args.no_plugins is False,
             "uid": args.user,
             "redis_password": DF._create_random_passwd(30, 10),
-            "redis_username": namegenerator.gen(),
+            "redis_username": petname.generate(),
         }
         logger.info("Parsing configurations")
         inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))
