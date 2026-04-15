@@ -9,7 +9,7 @@ from base64 import b64encode
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import namegenerator
+import petname
 import yaml
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
@@ -216,7 +216,7 @@ def create_manifest(args: argparse.Namespace) -> None:
                 "eval_config_content": eval_conf_enc,
                 "use_core": args.no_plugins is False,
                 "redis_password": DF._create_random_passwd(30, 10),
-                "redis_username": namegenerator.gen(),
+                "redis_username": petname.generate(),
                 "ingress_enabled": True,
                 "ingress_fqdns": [DF.cfg["web"]["project_website"]],
                 "fqdn": DF.cfg["kubernetes"]["ingress"]["fqdn"],
