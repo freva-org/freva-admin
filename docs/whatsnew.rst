@@ -7,6 +7,10 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2604.1.0
+~~~~~~~~
+* Bumped version of freva-web to 2604.2.0
+
 v2604.0.2
 ~~~~~~~~
 * fix: replace deprecated namegenerator lib with petnam
