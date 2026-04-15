@@ -22,7 +22,7 @@ requires-python = ">=3.8"
 dependencies = [ "appdirs",
              "ansible",
              "ansible-core",
-             "namegenerator",
+             "petname",
              "cowsay",
              "npyscreen",
              "paramiko",

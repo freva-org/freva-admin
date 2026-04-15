@@ -21,7 +21,7 @@ from urllib.parse import urlparse
 from urllib.request import urlretrieve
 
 import appdirs
-import namegenerator
+import petname
 import tomlkit
 import yaml
 from rich import print as pprint
@@ -386,7 +386,7 @@ class DeployFactory:
         vault_host = self.cfg["db"].get("vault_host") or self.cfg["db"]["db_host"]
         self.cfg["freva_rest"]["vault_host"] = vault_host
         self.cfg["freva_rest"]["db_host"] = freva_rest_host
-        self.cfg["freva_rest"]["db_user"] = namegenerator.gen()
+        self.cfg["freva_rest"]["db_user"] = petname.generate()
         self.cfg["freva_rest"].pop("core", None)
         services = ["databrowser", "stacapi"]
         if self.cfg["freva_rest"].get("data_loader_portal_hosts", "").strip():
@@ -606,7 +606,7 @@ class DeployFactory:
             self.cfg["web"]["chatbot_rest_api_url"] = f"https://{web_host}"
         else:
             self.cfg["web"]["chatbot_rest_api_url"] = f"http://{freva_rest_host}"
-        self.cfg["web"]["redis_username"] = namegenerator.gen()
+        self.cfg["web"]["redis_username"] = petname.generate()
         self.cfg["web"]["redis_password"] = self._create_random_passwd()
 
     def _prep_local_debug(self, cfg: dict[str, Any]) -> dict[str, Any]:

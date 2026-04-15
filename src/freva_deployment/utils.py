@@ -16,7 +16,7 @@ from typing import Any, Dict, MutableMapping, NamedTuple, Optional, Union, cast
 from urllib.request import urlopen
 
 import appdirs
-import namegenerator
+import petname
 import tomlkit
 from rich.console import Console
 from rich.prompt import Prompt
@@ -213,7 +213,7 @@ def get_cache_information(
         keys = RandomKeys(
             common_name=redis_host.rpartition("//")[-1].partition(":")[0]
         )
-        user = namegenerator.gen()
+        user = petname.generate()
         ssl_cert = keys.certificate_chain.decode("utf-8")
         ssl_key = keys.private_key_pem.decode("utf-8")
 
