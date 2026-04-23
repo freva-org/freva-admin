@@ -32,6 +32,8 @@ env_vars:
   API_OIDC_DISCOVERY_URL: "{{freva_rest_oidc_url}}"
   API_OIDC_CLIENT_SECRET: "{{freva_rest_oidc_client_secret}}"
   API_OIDC_TOKEN_CLAIMS: "{{ freva_rest_oidc_token_claims }}"
+  API_ADMIN_CLAIMS: "{{ freva_rest_oidc_admin_claims }}"
+  API_OIDC_TRUSTED_ISSUERS: "{{ freva_rest_oidc_trusted_issuers }}"
   API_MONGO_USER: "{{freva_rest_db_user}}"
   API_LOGDIR: "/tmp/logs"
   API_SOLR_HOST: "{{freva_rest_search_server_host}}:8983"

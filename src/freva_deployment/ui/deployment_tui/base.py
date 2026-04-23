@@ -187,9 +187,7 @@ def selectFile(starting_value: str = "", *args, **keywords):
     F.set_colors()
     F.wCommand.show_bold = True
     if starting_value:
-        if not os.path.exists(
-            os.path.abspath(os.path.expanduser(starting_value))
-        ):
+        if not os.path.exists(os.path.abspath(os.path.expanduser(starting_value))):
             F.value = os.getcwd()
         else:
             F.value = starting_value
@@ -201,7 +199,9 @@ def selectFile(starting_value: str = "", *args, **keywords):
     return F.wCommand.value
 
 
-class BaseForm(npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus):
+class BaseForm(
+    npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus, npyscreen.FormMultiPage
+):
     """Base class for forms."""
 
     _num: int = 0
@@ -338,9 +338,7 @@ class BaseForm(npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus):
     def show_info(self, *args: Any, **kwargs: Any) -> None:
         """Display an info if present."""
         if isinstance(self.current_info, str):
-            npyscreen.notify_confirm(
-                self.current_info, title="Detailed Information"
-            )
+            npyscreen.notify_confirm(self.current_info, title="Detailed Information")
 
     def create(self) -> None:
         """Setup the form."""
@@ -444,7 +442,7 @@ class VarForm(npyscreen.FormMultiPageActionWithMenus):
         self.keys.append(
             self.add_widget_intelligent(
                 npyscreen.TitleText,
-                name=f"Set a new key:",
+                name="Set a new key:",
                 value="",
                 editable=True,
             )
@@ -452,7 +450,7 @@ class VarForm(npyscreen.FormMultiPageActionWithMenus):
         self.values.append(
             self.add_widget_intelligent(
                 npyscreen.TitleText,
-                name=f"Set a the according value:",
+                name="Set a the according value:",
                 value="",
                 editable=True,
             )

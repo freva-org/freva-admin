@@ -129,9 +129,7 @@ class CoreScreen(BaseForm):
                     section="core",
                     key="scheduler_system",
                     name=f"{self.num}Workload manager",
-                    value=self.scheduler_index(
-                        cast(str, cfg.get("scheduler_system"))
-                    ),
+                    value=self.scheduler_index(cast(str, cfg.get("scheduler_system"))),
                     values=self.scheduler_systems,
                 ),
                 True,
@@ -199,9 +197,7 @@ class CoreScreen(BaseForm):
                     section="core",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Python path on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -408,9 +404,7 @@ class WebScreen(BaseForm):
                     section="web",
                     key="homepage_heading",
                     name=f"{self.num}A brief description of the project",
-                    value=cfg.get(
-                        "homepage_heading", "Lorem ipsum dolor sit amet"
-                    ),
+                    value=cfg.get("homepage_heading", "Lorem ipsum dolor sit amet"),
                 ),
                 True,
             ),
@@ -463,9 +457,7 @@ class WebScreen(BaseForm):
                     section="web",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Pythonpath on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -601,9 +593,7 @@ class DBScreen(BaseForm):
                     section="db",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Pythonpath on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -657,12 +647,11 @@ class FrevaRestScreen(BaseForm):
                 self.add_widget_intelligent(
                     TextInfo,
                     section="freva_rest",
-                    key="redis_host",
+                    key="freva_rest_host",
                     name=f"{self.num} Set the index server host name",
                     value=cast(
                         str,
-                        cfg.get("search_server_host")
-                        or cfg.get("freva_rest_host"),
+                        cfg.get("search_server_host") or cfg.get("freva_rest_host"),
                     ),
                 ),
                 False,
@@ -671,12 +660,11 @@ class FrevaRestScreen(BaseForm):
                 self.add_widget_intelligent(
                     TextInfo,
                     section="freva_rest",
-                    key="redis_host",
+                    key="mongodb_server_host",
                     name=f"{self.num} Set the mongoDB host name",
                     value=cast(
                         str,
-                        cfg.get("mongodb_server_host")
-                        or cfg.get("freva_rest_host"),
+                        cfg.get("mongodb_server_host") or cfg.get("freva_rest_host"),
                     ),
                 ),
                 False,
@@ -690,6 +678,32 @@ class FrevaRestScreen(BaseForm):
                     value=cast(
                         str,
                         cfg.get("redis_host") or cfg.get("freva_rest_host"),
+                    ),
+                ),
+                False,
+            ),
+            redis_deploy_user=(
+                self.add_widget_intelligent(
+                    TextInfo,
+                    section="freva_rest",
+                    key="redis_deploy_user",
+                    name=f"{self.num} Set the redis deploy user",
+                    value=cast(
+                        str,
+                        cfg.get("redis_deploy_user") or cfg.get("ansibl_user"),
+                    ),
+                ),
+                False,
+            ),
+            redis_login_user=(
+                self.add_widget_intelligent(
+                    TextInfo,
+                    section="freva_rest",
+                    key="redis_login_user",
+                    name=f"{self.num} Set the redis login user",
+                    value=cast(
+                        str,
+                        cfg.get("redis_login_user") or cfg.get("ansibl_become_user"),
                     ),
                 ),
                 False,
@@ -801,9 +815,27 @@ class FrevaRestScreen(BaseForm):
                     section="freva_rest",
                     key="oidc_token_claims",
                     name=f"{self.num}OIDC authorization filters",
-                    value=cast(
-                        dict[str, list[str]], cfg.get("oidc_token_claims", {})
-                    ),
+                    value=cast(list[str], cfg.get("oidc_token_claims", [])),
+                ),
+                False,
+            ),
+            oidc_admin_claims=(
+                self.add_widget_intelligent(
+                    DictInfo,
+                    section="freva_rest",
+                    key="oidc_admin_claims",
+                    name=f"{self.num}OIDC admin user filters",
+                    value=cast(list[str], cfg.get("oidc_admin_claims", [])),
+                ),
+                False,
+            ),
+            oidc_trusted_issuers=(
+                self.add_widget_intelligent(
+                    DictInfo,
+                    section="freva_rest",
+                    key="oidc_trusted_issuers",
+                    name=f"{self.num}OIDC trusted issuers",
+                    value=cast(list[str], cfg.get("oidc_trusted_issuers", [])),
                 ),
                 False,
             ),
@@ -826,9 +858,7 @@ class FrevaRestScreen(BaseForm):
                     section="freva_rest",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Pythonpath on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -860,9 +890,7 @@ class RunForm(npyscreen.FormMultiPageAction):
         """Define what happens once the `ok` for applying the deployment is hit."""
 
         if not self.project_name.value:
-            npyscreen.notify_confirm(
-                "You have to set a project name", title="ERROR"
-            )
+            npyscreen.notify_confirm("You have to set a project name", title="ERROR")
             return
         missing_form: None | str = self.parentApp.check_missing_config()
         if missing_form:
@@ -890,7 +918,9 @@ class RunForm(npyscreen.FormMultiPageAction):
                         and gen_keys is False
                     ):
                         if keyfile:
-                            msg = f"{key_type} certificate file `{key_file}` must exist."
+                            msg = (
+                                f"{key_type} certificate file `{key_file}` must exist."
+                            )
                         else:
                             msg = f"You must give a {key_type} certificate file"
                         npyscreen.notify_confirm(msg, title="ERROR")
@@ -938,9 +968,7 @@ class RunForm(npyscreen.FormMultiPageAction):
     def show_info(self, *args: Any, **kwargs: Any) -> None:
         """Display an info if present."""
         if isinstance(self.current_info, str):
-            npyscreen.notify_confirm(
-                self.current_info, title="Detailed Information"
-            )
+            npyscreen.notify_confirm(self.current_info, title="Detailed Information")
 
     def _add_widgets(self) -> None:
         """Add the widgets to the form."""

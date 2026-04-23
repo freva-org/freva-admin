@@ -248,13 +248,31 @@ mongodb_server_host = ""
 ### of the rest-api server.
 redis_host = ""
 
+### Set the user that should deploy and run redis_cache service
+### if left blank it'll default to `ansible_become_user` for freva-rest
+redis_deploy_user = "root"
+
+### Set the user that should login to the redis_cache service host.
+### if left blank it will default to `ansible_user` of freva-rest.
+redis_login_user = ""
+
 ### Set the hostname(s) for the data-loading portal. The data-loading portal
 ### is a services that provisions data via zarr. The data-loading portal is
 ### a distributed system, meaning that you can set multiple hostnames that
 ### form a distributed memory. The first entry will be used as the master
 ### scheduler and the consecutive ones as workers. If you leave this blank
-## then the service will be disabled.
+### then the service will be disabled.
 data_loader_portal_hosts = ""
+
+### Set the user that should deploy and run data_loader_portal service
+### if left blank it'll default to `ansible_become_user` for freva-rest
+data_loader_deploy_user = "root"
+
+### Set the user that should login to the data_loader_server host.
+### if left blank it will default to `ansible_user` of freva-rest.
+data_loader_login_user = ""
+
+
 
 ## Set the amount of memory allocated to the search engine (Solr).
 solr_mem = "4g"
@@ -314,13 +332,20 @@ oidc_client_secret = ""
 ## will default to the user that deploys the service
 admin_user = ""
 
-# A dict of claim-based filters in {<key1.key2> = [<pattern>]}. Each filter
-# matches if the decoded JWT contains the specified claim
-# (e.g., group, role) and its value includes the given pattern. Patterns can
-# be plain substrings or regular expressions.
-# Nested claims are defined by '.' separation.
-oidc_token_claims = {}
+## A list of token claim filters. Each entry represents a role that needs to
+## match the JWT roles claims.
+## matches if the decoded JWT contains the specified claim
+oidc_token_claims = []
 
+
+## Same as `oidc_token_claims` but for admin users, meaning those claims will
+## define admin users.
+oidc_admin_claims = []
+
+## If you want to setup a token federation via a network of token trust
+## you can define a list of ``trusted_issuers`` all issuers matching the
+## ``iss`` JWT claim will be trusted.
+oidc_trusted_issuers = []
 
 [core]
 ## Specify the host name were the client should be deployed
