@@ -5,12 +5,10 @@ import json
 import os
 import ssl
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List
 from urllib.request import urlopen
 
-from appdirs import user_cache_dir
 from packaging.version import Version
 from rich import print as pprint
 from rich.prompt import Prompt
@@ -38,7 +36,6 @@ def display_versions() -> str:
     minimum_version = get_versions()
     lookup = {
         "freva_rest": "freva-rest API",
-        "core": "freva-core",
         "solr": "Apache Solr",
         "web": "webUI",
         "vault": "Freva Vault",
@@ -66,9 +63,7 @@ def get_versions(_versions: List[Dict[str, str]] = []) -> Dict[str, str]:
     if _versions:
         return _versions[0]
 
-    _versions.append(
-        json.loads((Path(__file__).parent / "versions.json").read_text())
-    )
+    _versions.append(json.loads((Path(__file__).parent / "versions.json").read_text()))
     url = (
         "https://raw.githubusercontent.com/freva-org/freva-service-config"
         "/refs/heads/main/{service}/requirements.txt"
@@ -98,7 +93,7 @@ def get_steps_from_versions(detected_versions: Dict[str, str]) -> List[str]:
     """
     minimum_version = get_versions()
     steps = []
-    for service in ("web", "vault", "freva_rest", "core"):
+    for service in ("web", "vault", "freva_rest"):
         if service == "vault":
             service_name = "db"
         else:

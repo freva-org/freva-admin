@@ -97,27 +97,3 @@
     - name: Display vault version
       debug:
         msg: "{{ version_cmd.stdout }}"
-
-
-- hosts: core
-  vars:
-    ansible_user: "{{ core_ansible_user }}"
-    ansible_become: false
-    ansible_facts_become: false
-  become: false
-  gather_facts: false
-  tasks:
-    - name: Get core version
-      register: core
-      shell:
-        cmd: >
-          {{ core_install_dir | regex_replace('^~', lookup('env', 'HOME')) }}/bin/freva
-          -V 2> /dev/null | awk '{print $NF}';
-      environment:
-        PATH: "{{ core_install_dir }}/bin:{{ ansible_env.PATH }}"
-      become: false
-
-    - name: Display core version
-      debug:
-        msg: "{{ core.stdout }}"
-      become: false
