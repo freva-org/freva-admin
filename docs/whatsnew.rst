@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2604.6.0
+~~~~~~~~
+* Bumped version of freva-nextgen to 2604.1.1
+
+
+
 v2604.5.0
 ~~~~~~~~
 * Bumped version of freva-nextgen to 2604.1.0
