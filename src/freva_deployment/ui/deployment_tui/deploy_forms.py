@@ -13,7 +13,7 @@ from .base import (
     BaseForm,
     CheckboxInfo,
     ComboInfo,
-    DictInfo,
+    ListInfo,
     FileInfo,
     TextInfo,
 )
@@ -68,11 +68,10 @@ class CoreScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys: list[str] = []
         cfg = self.get_config(self.step)
         arch = cast(str, cfg.get("arch", AVAILABLE_CONDA_ARCHS[0]))
         arch_idx = get_index(AVAILABLE_CONDA_ARCHS, arch, 0)
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             core_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -230,14 +229,8 @@ class WebScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys = "imprint", "scheduler_host", "allowed_hosts"
         cfg = self.get_config(self.step)
-
-        for key in self.list_keys:
-            if key in cfg and isinstance(cfg[key], str):
-                value = cast(str, cfg[key])
-                cfg[key] = [v.strip() for v in value.split(",") if v.strip()]
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             web_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -352,23 +345,21 @@ class WebScreen(BaseForm):
             ),
             imprint=(
                 self.add_widget_intelligent(
-                    TextInfo,
+                    ListInfo,
                     section="web",
                     key="imprint",
                     name=f"{self.num}Institution address - comma separated",
-                    value=",".join(
-                        cast(
-                            List[str],
-                            cfg.get(
-                                "imprint",
-                                [
-                                    "freva",
-                                    "German Climate Computing Centre (DKRZ)",
-                                    "Bundesstr. 45a",
-                                    "20146 Hamburg",
-                                    "Germany",
-                                ],
-                            ),
+                    value=cast(
+                        List[str],
+                        cfg.get(
+                            "imprint",
+                            [
+                                "freva",
+                                "German Climate Computing Centre (DKRZ)",
+                                "Bundesstr. 45a",
+                                "20146 Hamburg",
+                                "Germany",
+                            ],
                         ),
                     ),
                 ),
@@ -410,30 +401,26 @@ class WebScreen(BaseForm):
             ),
             scheduler_host=(
                 self.add_widget_intelligent(
-                    TextInfo,
+                    ListInfo,
                     section="web",
                     key="scheduler_host",
                     name=f"{self.num}Scheduler hostname(s) - comma separated",
-                    value=",".join(
-                        cast(
-                            List[str],
-                            cfg.get("scheduler_host", ["levante.dkrz.de"]),
-                        )
+                    value=cast(
+                        List[str],
+                        cfg.get("scheduler_host", ["levante.dkrz.de"]),
                     ),
                 ),
                 True,
             ),
             allowed_hosts=(
                 self.add_widget_intelligent(
-                    TextInfo,
+                    ListInfo,
                     section="web",
                     key="allowed_hosts",
                     name=f"{self.num}Set additional hostnames django can serve",
-                    value=",".join(
-                        cast(
-                            List[str],
-                            cfg.get("allowed_hosts", ["localhost"]),
-                        ),
+                    value=cast(
+                        List[str],
+                        cfg.get("allowed_hosts", ["localhost"]),
                     ),
                 ),
                 True,
@@ -481,7 +468,6 @@ class DBScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys: list[str] = []
         cfg = self.get_config(self.step)
         db_ports: list[int] = list(range(3300, 3320))
         port_idx = get_index(
@@ -489,7 +475,7 @@ class DBScreen(BaseForm):
             str(cfg.get("port", 3306)),
             6,
         )
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             db_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -617,7 +603,6 @@ class FrevaRestScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys: list[str] = []
         cfg = self.get_config(self.step)
         freva_rest_ports: list[int] = list(range(7770, 7780))
         solr_mem_values = [f"{i}g" for i in range(1, 10)]
@@ -629,7 +614,7 @@ class FrevaRestScreen(BaseForm):
             str(cfg.get("freva_rest_port", 7777)),
             7,
         )
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             freva_rest_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -811,7 +796,7 @@ class FrevaRestScreen(BaseForm):
             ),
             oidc_token_claims=(
                 self.add_widget_intelligent(
-                    DictInfo,
+                    ListInfo,
                     section="freva_rest",
                     key="oidc_token_claims",
                     name=f"{self.num}OIDC authorization filters",
@@ -821,7 +806,7 @@ class FrevaRestScreen(BaseForm):
             ),
             oidc_admin_claims=(
                 self.add_widget_intelligent(
-                    DictInfo,
+                    ListInfo,
                     section="freva_rest",
                     key="oidc_admin_claims",
                     name=f"{self.num}OIDC admin user filters",
@@ -831,7 +816,7 @@ class FrevaRestScreen(BaseForm):
             ),
             oidc_trusted_issuers=(
                 self.add_widget_intelligent(
-                    DictInfo,
+                    ListInfo,
                     section="freva_rest",
                     key="oidc_trusted_issuers",
                     name=f"{self.num}OIDC trusted issuers",

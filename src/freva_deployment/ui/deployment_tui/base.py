@@ -43,6 +43,29 @@ class TextInfo(InfoMixin, npyscreen.TitleText):
     """Extend the TitleText widget by an infobox."""
 
 
+class ListInfo(npyscreen.TitleText):
+    """Extend the TitleText widget by an infobox for list inputs."""
+
+    def __init__(
+        self,
+        *args: Any,
+        section: str = "",
+        key: str = "",
+        info: str = "",
+        value: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        value = value.split(",") if isinstance(value, str) else value or []
+        name = kwargs.get("name", "Select")
+        kwargs["name"] = f"{name}. Press Ctrl+F for more info."
+        self.info = info or AD.get_config_info(section, key)
+        super().__init__(
+            *args,
+            value=", ".join([s.strip() for s in value if s.strip()]),
+            **kwargs,
+        )
+
+
 class DictInfo(npyscreen.TitleText):
     """Extend the TitleText widget by an infobox."""
 
@@ -245,6 +268,8 @@ class BaseForm(
         for key, (obj, mandatory) in self.input_fields.items():
             if hasattr(obj, "dict_value"):
                 value = obj.dict_value
+            elif isinstance(obj, ListInfo):
+                value = [v.strip() for v in obj.value.split(",") if v.strip()]
             elif hasattr(obj, "values"):
                 value = obj.values[obj.value]
             else:
@@ -257,9 +282,6 @@ class BaseForm(
             config[key] = value
         cfg = config.copy()
         cfg = config
-        for key, value in cfg.items():
-            if key in self.list_keys:
-                cfg[key] = value.split(",")
         return cfg
 
     def draw_form(self) -> None:
