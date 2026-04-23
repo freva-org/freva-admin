@@ -2,6 +2,7 @@
 import argparse
 import os
 import shlex
+import socket
 import shutil
 import subprocess
 import sys
@@ -12,6 +13,7 @@ SYSTEMD_TMPL = dict(
     Unit=dict(
         Description="Start/Stop freva services containers",
         After="network-online.target",
+        ConditionHost=socket.gethostname(),
     ),
     Service=dict(
         TimeoutStartSec="35s",

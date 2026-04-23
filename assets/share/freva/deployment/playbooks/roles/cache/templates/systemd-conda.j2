@@ -1,6 +1,7 @@
 [Unit]
 Description=Freva cache service
 After=network.target
+ConditionHost={{ ansible_hostname }}
 
 [Service]
 Type=simple
