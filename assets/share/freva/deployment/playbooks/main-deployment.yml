@@ -56,6 +56,7 @@
   vars:
     loader_service: "scheduler"
     ansible_become_user: "{{ data_portal_scheduler_ansible_become_user | default('root') }}"
+    force: "{{ data_portal_scheduler_force | default('false') | bool }}"
   become: "{{ data_portal_scheduler_ansible_become_user is defined and data_portal_scheduler_ansible_become_user != '' }}"
   become_user: "{{ data_portal_scheduler_ansible_become_user | default('root') }}"
   roles:
@@ -71,6 +72,7 @@
   vars:
     loader_service: "worker"
     ansible_become_user: "{{ data_portal_hosts_ansible_become_user | default('root') }}"
+    force: "{{ data_portal_hosts_force | default('false') | bool }}"
   become: "{{ data_portal_hosts_ansible_become_user is defined and data_portal_hosts_ansible_become_user != '' }}"
   become_user: "{{ data_portal_hosts_ansible_become_user | default('root') }}"
   roles:
