@@ -139,6 +139,7 @@ class RunnerDir(TemporaryDirectory):
     def create_config(self, **kwargs: str) -> None:
         """Create an ansible config."""
         self.ansible_config_file.parent.mkdir(exist_ok=True, parents=True)
+        pretty_results = str(os.getenv("ANSIBLE_PRETTY_RESULTS", "1") == "1")
         with open(self.ansible_config_file, "w", encoding="utf-8") as stream:
             stream.write("[defaults]\n")
             for key, value in kwargs.items():
@@ -148,7 +149,9 @@ class RunnerDir(TemporaryDirectory):
             stream.write("skip = green\n")
             stream.write("[callback]\n")
             stream.write("result_format=yaml\n")
-            stream.write("pretty_results=True\n")
+            stream.write(f"pretty_results={pretty_results}\n")
+            stream.write("[ssh_connection]\n")
+            stream.write("pipelining=True\n")
 
     def create_playbook(self, content: List[Dict[str, Any]]) -> str:
         """Dump the content of a playbook into the playbook file."""
@@ -256,9 +259,7 @@ class RunnerDir(TemporaryDirectory):
                     file_content = stdout.read().decode("utf-8").strip()
                     break
         except Exception as error:
-            logger.critical(
-                "Couldn't establish connection to %s: %s", host, error
-            )
+            logger.critical("Couldn't establish connection to %s: %s", host, error)
         finally:
             ssh.close()
         return file_content
@@ -327,9 +328,7 @@ class RunnerDir(TemporaryDirectory):
         logger.debug("Running ansible command %s", " ".join(command))
         # Run the command
         if hide_output and verbosity == 0:
-            result = run_command_with_spinner(
-                str(working_dir), command, envvars, text
-            )
+            result = run_command_with_spinner(str(working_dir), command, envvars, text)
         else:
             result = run_command(
                 str(working_dir), command, env=envvars, capture_output=False
