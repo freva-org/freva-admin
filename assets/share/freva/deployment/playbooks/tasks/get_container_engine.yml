@@ -5,7 +5,7 @@
   ignore_errors: true
   changed_when: false
   environment:
-    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
 - name: Check for podman binary
   command: which podman
@@ -13,7 +13,7 @@
   ignore_errors: true
   changed_when: false
   environment:
-    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
 - name: Check for podman-compose binary
   command: which podman-compose
@@ -21,7 +21,7 @@
   ignore_errors: true
   changed_when: false
   environment:
-    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
 - name: Set available engines
   set_fact:
@@ -81,7 +81,7 @@
       register: podman_compose_check_post
       changed_when: false
       environment:
-        PATH: "/usr/local/bin:{{ ansible_facts.env.HOME }}"
+        PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
     - name: Set compose_bin to installed podman-compose
       set_fact:
@@ -113,7 +113,7 @@
           register: docker_compose_check_post
           changed_when: false
           environment:
-            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
         - name: Set compose_bin to docker-compose binary
           set_fact:
@@ -138,7 +138,7 @@
           register: docker_compose_check_post_pip
           changed_when: false
           environment:
-            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
         - name: Set compose_bin to pip-installed docker-compose
           set_fact:
