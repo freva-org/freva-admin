@@ -1,6 +1,7 @@
 [Unit]
 Description=Freva Search backend server
 After=network.target
+ConditionHost={{ ansible_hostname }}
 
 [Service]
 Type=simple

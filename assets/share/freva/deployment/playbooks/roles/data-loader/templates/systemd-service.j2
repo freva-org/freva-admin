@@ -1,6 +1,7 @@
 [Unit]
 Description=Start the dask %i service.
 After=network.target
+ConditionHost={{ ansible_hostname }}
 
 [Service]
 Type=simple

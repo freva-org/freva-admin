@@ -2,6 +2,7 @@
 Description=Freva rest API server
 After=network.target
 Wants=network.target
+ConditionHost={{ ansible_hostname }}
 
 [Service]
 Type=simple

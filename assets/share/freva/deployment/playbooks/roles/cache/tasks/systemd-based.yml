@@ -63,7 +63,7 @@
     - name: Playing the {{ cache_deployment_method }} tasks
       include_tasks:
         file: "{{ deployment_file | trim }}"
-  when: not config_path.stat.exists
+  when: not config_path.stat.exists or (force | default(false) | bool)
 
 
 - name: Copy cache config to {{ cache_secrets }}
