@@ -278,12 +278,7 @@ class DeployFactory:
 
     def _prep_data_loader(self) -> None:
         """Prepare the data-loader."""
-        data_path = Path(
-            cast(
-                str,
-                self.cfg["freva_rest"].get("data_path", "/opt/freva"),
-            )
-        )
+        data_path = cast(str, self.cfg["freva_rest"].get("data_path", "/opt/freva"))
         redis_host = (
             self.cfg["freva_rest"].get("redis_host", "")
             or self.cfg["freva_rest"]["freva_rest_host"]
