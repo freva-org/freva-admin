@@ -17,3 +17,4 @@
         {{ docker_bin }} run --rm -v {{ item }}:/data:rw alpine
         chown -R {{uid}}:{{gid}} /data
       loop: "{{ volume_names  | default([]) }}"
+      when: ansible_become and ansible_become_user == "root"
