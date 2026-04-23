@@ -333,6 +333,18 @@ class DeployFactory:
         self._config_keys.append("redis")
         self._config_keys.append("data_portal_hosts")
         self._config_keys.append("data_portal_scheduler")
+        data_portal_user = self.cfg["freva_rest"].get(
+            "data_loader_login_user"
+        ) or self.cfg["freva_rest"].get("ansible_user")
+        data_portal_become = self.cfg["freva_rest"].get(
+            "data_loader_deploy_user", "root"
+        )
+        redis_user = self.cfg["freva_rest"].get("redis_login_user") or self.cfg[
+            "freva_rest"
+        ].get("ansible_user")
+        redis_become = self.cfg["freva_rest"].get("redis_deploy_user", "root")
+        if redis_become != "root":
+            data_path = "~/.local/share/freva"
         if not scheduler_host:
             self.cfg["data_portal_scheduler"] = self.cfg["redis"] = self.cfg[
                 "data_portal_hosts"
@@ -344,22 +356,18 @@ class DeployFactory:
             "information": redis_information_enc,
             "admin_user": self.cfg["freva_rest"].get("admin_user", ""),
             "is_worker": False,
-            "ansible_become_user": self.cfg["freva_rest"].get(
-                "ansible_become_user", "root"
-            ),
-            "ansible_user": self.cfg["freva_rest"].get("ansible_user", getuser()),
+            "ansible_become_user": data_portal_become,
+            "ansible_user": data_portal_user or getuser(),
+            "force": str(self.cfg["freva_rest"].get("wipe", False)).lower(),
         }
         if data_portal_hosts[1:]:
             self.cfg["data_portal_hosts"] = {
                 "data_portal_hosts": ",".join(data_portal_hosts[1:]),
                 "information": redis_information_enc,
                 "admin_user": self.cfg["freva_rest"].get("admin_user", ""),
-                "ansible_become_user": self.cfg["freva_rest"].get(
-                    "ansible_become_user", "root"
-                ),
-                "ansible_user": self.cfg["freva_rest"].get(
-                    "ansible_user", getuser()
-                ),
+                "ansible_become_user": data_portal_become,
+                "ansible_user": data_portal_user or getuser(),
+                "force": str(self.cfg["freva_rest"].get("wipe", False)).lower(),
             }
         self.cfg["redis"] = {
             "redis_host": redis_host,
@@ -368,11 +376,9 @@ class DeployFactory:
             "port": redis_port,
             "admin_user": self.cfg["freva_rest"].get("admin_user", ""),
             "data_path": str(data_path),
-            "ansible_become_user": self.cfg["freva_rest"].get(
-                "ansible_become_user", "root"
-            ),
-            "ansible_user": self.cfg["freva_rest"].get("ansible_user", getuser()),
-            "information": redis_information_enc,
+            "ansible_become_user": redis_become,
+            "ansible_user": redis_user or getuser(),
+            "force": str(self.cfg["freva_rest"].get("wipe", False)).lower(),
         }
 
     def _prep_freva_rest(self, prep_web=True) -> None:
@@ -402,26 +408,37 @@ class DeployFactory:
         )
         self.cfg["freva_rest"]["data_path"] = str(data_path)
         for key, default in dict(solr_mem="4g", freva_rest_port=7777).items():
-            self.cfg["freva_rest"][key] = (
-                self.cfg["freva_rest"].get(key) or default
-            )
+            self.cfg["freva_rest"][key] = self.cfg["freva_rest"].get(key) or default
         self.cfg["freva_rest"]["email"] = self.cfg["web"].get("contacts", "")
         self.cfg["freva_rest"].setdefault("oidc_url", "")
         self.cfg["freva_rest"].setdefault("oidc_client", "freva")
         self.cfg["freva_rest"].setdefault("oidc_client_secret", "")
-        token_claims = self.cfg["freva_rest"].get("oidc_token_claims") or {}
+        token_claims: Union[str, list[str], Dict[str, list[str]]] = (
+            self.cfg["freva_rest"].get("oidc_token_claims") or []
+        )
+        admin_claims = self.cfg["freva_rest"].get("oidc_admin_claims") or []
+        trusted_issuers = self.cfg["freva_rest"].get("oidc_trusted_issuers") or []
+        if isinstance(admin_claims, str):
+            self.cfg["freva_rest"]["oidc_admin_claims"] = admin_claims
+        else:
+            self.cfg["freva_rest"]["oidc_admin_claims"] = ",".join(admin_claims)
+        if isinstance(trusted_issuers, str):
+            self.cfg["freva_rest"]["oidc_trusted_issuers"] = trusted_issuers
+        else:
+            self.cfg["freva_rest"]["oidc_trusted_issuers"] = ",".join(trusted_issuers)
+
         if isinstance(token_claims, str):
             self.cfg["freva_rest"]["oidc_token_claims"] = token_claims
         else:
             token_claims_str = []
-            for key, values in token_claims.items():
-                if isinstance(values, str):
-                    values = [values]
-                for v in values:
-                    token_claims_str.append(f"{key}:{v}")
-            self.cfg["freva_rest"]["oidc_token_claims"] = ",".join(
-                token_claims_str
-            )
+            for values in (
+                token_claims.values()
+                if isinstance(token_claims, dict)
+                else token_claims
+            ):
+                for v in [values] if isinstance(values, str) else values:
+                    token_claims_str.append(v)
+            self.cfg["freva_rest"]["oidc_token_claims"] = ",".join(token_claims_str)
         self.cfg["freva_rest"]["services"] = ",".join(services)
         if prep_web:
             self._prep_web(False)
@@ -1094,11 +1111,12 @@ class DeployFactory:
         hosts = []
         for tasks in playbook_tmpl:
             step = tasks["hosts"]
+            if step == "core":
+                continue
             if step in steps:
                 playbook.append(tasks)
                 host_var = cfg[step][f"{step}_host"]
-                if step != "core":
-                    hosts.append(host_var)
+                hosts.append(host_var)
                 config[step] = {}
                 config[step]["hosts"] = host_var
                 ansible_user = cfg[step].get("ansible_user") or os.getenv(
@@ -1122,12 +1140,6 @@ class DeployFactory:
                     f"{step.replace('-', '_')}_version": versions[step],
                 }
                 self._set_python_interpreter(step, config)
-        config.setdefault("core", {})
-        config["core"].setdefault("vars", {})
-        config["core"]["vars"]["core_install_dir"] = cfg["core"]["install_dir"]
-        core_host: Optional[str] = config.get("core", {}).get("hosts")
-        if core_host and core_host in hosts:
-            config["core"]["hosts"] = gethostbyname(core_host) or ""
         result = self._td.run_ansible_playbook(
             playbook=playbook,
             inventory=config,
@@ -1150,6 +1162,20 @@ class DeployFactory:
         logger.debug("Detected versions: %s", versions)
         additional_steps = get_steps_from_versions(versions)
         return additional_steps
+
+    def inspect(
+        self, extra: Optional[Dict[str, str]] = None, tags: Optional[list[str]] = None
+    ) -> None:
+        """Print the config parameters and exit."""
+        _master_pass = self._master_pass
+        try:
+            self._master_pass = "foo"
+            steps = [s for s in self.steps]
+            tags = [t for t in tags or steps]
+            extra = extra or {}
+            self.parse_config(steps, **extra)
+        finally:
+            self._master_pass = _master_pass
 
     def _play(
         self,
