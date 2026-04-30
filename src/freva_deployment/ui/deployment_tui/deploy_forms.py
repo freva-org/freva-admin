@@ -13,8 +13,8 @@ from .base import (
     BaseForm,
     CheckboxInfo,
     ComboInfo,
-    ListInfo,
     FileInfo,
+    ListInfo,
     TextInfo,
 )
 
