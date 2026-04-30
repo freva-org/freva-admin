@@ -280,9 +280,11 @@ def _create_new_config(inp_file: Path) -> Path:
             "oidc_client_secret",
             "oidc_token_claims",
             "oidc_admin_claims",
-            "oidc_trusted_issuers",
+            "oidc_systemuser_claim",
+            "oidc_systemuser_claim",
             "data_loader_portal_hosts",
             "admin_user",
+            "skip_deployments",
         ],
         "web": [
             "web_host",

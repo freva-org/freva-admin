@@ -232,6 +232,10 @@ admin_user = ""
 ## Specify the host name were the ferva-rest-api server should be deployed
 freva_rest_host = "localhost"
 
+## Use the skip_tasks list to entirely skip deployments of parts of the
+## freva-rest micro serives.
+skip_deployments = []
+
 ## To search for data the freva-rest-api needs a metadata index service.
 ## Typically this services apache solr. You can set the host where this
 ## index server should be running at. Leave empty to deploy the service
@@ -346,6 +350,11 @@ oidc_admin_claims = []
 ## you can define a list of ``trusted_issuers`` all issuers matching the
 ## ``iss`` JWT claim will be trusted.
 oidc_trusted_issuers = []
+
+## Se JMESPath expression to extract the authoritative local username from the
+## IDP's `userinfo` response. This username is used for filesystem permission
+## checks  (e.g. can this user read the requested file?).
+oidc_systemuser_claim = "preferred_username"
 
 [core]
 ## Specify the host name were the client should be deployed

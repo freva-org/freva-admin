@@ -62,22 +62,6 @@
   roles:
     - data-loader
 
-- name: Setup data-loader worker
-  hosts: data_portal_hosts
-  tags:
-    - freva_rest
-    - data-loader
-  vars_files:
-    - "./vars.yml"
-  vars:
-    loader_service: "worker"
-    ansible_become_user: "{{ data_portal_hosts_ansible_become_user | default('root') }}"
-    force: "{{ data_portal_hosts_force | default('false') | bool }}"
-  become: "{{ data_portal_hosts_ansible_become_user is defined and data_portal_hosts_ansible_become_user != '' }}"
-  become_user: "{{ data_portal_hosts_ansible_become_user | default('root') }}"
-  roles:
-    - data-loader
-
 - name: Setup mongodb server
   hosts: mongodb_server
   tags:
@@ -155,30 +139,3 @@
       ignore_errors: true
       failed_when: false
       when: deployment_method in ["conda", "docker", "podman"]
-
-- name: Add monogDB secrets to vault
-  hosts: freva_rest
-  gather_facts: false
-  vars:
-    body:
-      mongo.user: "{{ freva_rest_db_user }}"
-      mongo.db: "search_stats"
-      mongo.passwd: "{{ freva_rest_db_passwd }}"
-      mongo.url: "mongodb://{{freva_rest_db_user}}:{{freva_rest_db_passwd}}@{{freva_rest_db_host}}:27017?timeoutMS=2000"
-  tags:
-    - freva_rest
-    - freva-rest
-    - mongodb
-  tasks:
-    - name: POST request
-      uri:
-        url: "http://{{ freva_rest_vault_host }}:5002/vault/data"
-        method: POST
-        headers:
-          password: "{{ root_passwd }}"
-          Content-Type: "application/json"
-        body: "{{ body | to_json }}"
-        body_format: json
-        timeout: 3
-        return_content: true
-        status_code: 201

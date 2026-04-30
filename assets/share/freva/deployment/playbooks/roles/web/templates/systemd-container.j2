@@ -1,0 +1,21 @@
+[Unit]
+Description=Start/Stop freva services containers
+{% if 'docker' in docker_bin %}
+After=network-online.target docker.service
+Requires=docker.service
+{% else %}
+After=network-online.target
+{% endif %}
+[Service]
+TimeoutStartSec=35s
+TimeoutStopSec=35s
+ExecStartPre=/bin/sh -c "{{ compose_bin }} --project-name {{ project_name }}-web -f {{ compose_file }}-$COMPOSE_PROFILES.yml down --remove-orphans"
+ExecStart=/bin/sh -c "{{ compose_bin }} --project-name {{ project_name }}-web -f {{ compose_file }}-$COMPOSE_PROFILES.yml up --remove-orphans"
+ExecStop=/bin/sh -c "{{ compose_bin }} --project-name {{project_name }}-web -f {{ compose_file }}-$COMPOSE_PROFILES.yml down --remove-orphans"
+Restart=on-failure
+RestartSec=5
+Environment="COMPOSE_PROFILES=app"
+EnvironmentFile=-{{docker_env_path}}
+StartLimitBurst=5
+[Install]
+WantedBy=default.target

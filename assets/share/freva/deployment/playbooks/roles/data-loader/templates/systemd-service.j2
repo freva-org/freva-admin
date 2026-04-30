@@ -1,5 +1,5 @@
 [Unit]
-Description=Start the dask %i service.
+Description=Start the freva data-loader %i service.
 After=network.target
 ConditionHost={{ ansible_hostname }}
 
@@ -10,9 +10,13 @@ NoNewPrivileges=true
 KillSignal=SIGTERM
 ExecStartPre={{ python_bin }} -c "import getpass,urllib.request; urllib.request.urlretrieve('https://raw.githubusercontent.com/freva-org/freva-nextgen/main/freva-data-portal-worker/data-loader', f'/tmp/data-loader-{getpass.getuser()}')"
 ExecStart=/bin/sh -c "/bin/sh /tmp/data-loader-$(whoami) %i"
+Environment="API_LOGLEVEL=INFO"
 Restart=on-failure
 RestartSec=5
 StartLimitBurst=5
+StandardOutput=journal
+StandardError=journal
+Environment=PYTHONUNBUFFERED=1
 UMask=007
 
 [Install]

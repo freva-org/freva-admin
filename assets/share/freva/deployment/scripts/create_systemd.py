@@ -7,7 +7,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 SYSTEMD_TMPL = dict(
     Unit=dict(
@@ -55,6 +55,13 @@ def parse_args() -> Tuple[str, str, List[str], bool]:
         default=False,
         help="Only print the unit that would be created and started.",
     )
+    app.add_argument(
+        "--extra-env",
+        action="append",
+        default=[],
+        nargs=3,
+        help="Add extra arguments to the systemd unit file.",
+    )
     args, other = app.parse_known_args()
     enable = args.enable
     if os.environ.get("DEBUG", "false").lower() == "true":
@@ -66,6 +73,7 @@ def parse_args() -> Tuple[str, str, List[str], bool]:
         enable,
         args.gracious,
         args.print_unit_only,
+        args.extra_env or None,
     )
 
 
@@ -178,8 +186,10 @@ def create_unit(
     enable: bool,
     gracious: bool,
     print_unit_only: bool = False,
+    extra_arguments: Optional[List[Tuple[str, str, str]]] = None,
 ) -> None:
     """Create the systemd unit."""
+    extra_arguments = extra_arguments or []
     container_cmd, container_args = get_container_cmd(args)
     cmd = shlex.split(args)
     if "compose" in cmd and "up" in cmd:
@@ -201,6 +211,10 @@ def create_unit(
         SYSTEMD_TMPL["Unit"]["After"] += " docker.service"
     # else:
     #    SYSTEMD_TMPL["Service"]["Environment"] = "PODMAN_USERNS=keep-id"
+    for sec, key, value in extra_arguments:
+        sec = sec[0].upper() + sec[1:].lower()
+        SYSTEMD_TMPL.setdefault(sec, {})
+        SYSTEMD_TMPL[sec][key] = value
     for key in ("ExecStart",):
         SYSTEMD_TMPL["Service"][key] = SYSTEMD_TMPL["Service"][key].format(
             container_cmd=container_cmd,

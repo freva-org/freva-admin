@@ -1,12 +1,4 @@
 ---
-- name: Ensure required paths exist
-  include_tasks: "{{ role_path }}/tasks/check-path.yml"
-  loop:
-    - { desc: "plugin results dir", path: "{{ core_preview_path }}" }
-    - { desc: "core config file", path: "{{ core_root_dir }}/freva/evaluation_system.conf" }
-  loop_control:
-    label: "{{ item.desc }}"
-
 - name: Running common tasks
   include_tasks: "common_tasks.yml"
 

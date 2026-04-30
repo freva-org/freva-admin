@@ -10,7 +10,8 @@ web_name: "{{ project_name }}-web"
 web_cache_name: "{{ project_name }}-web-cache"
 web_proxy_name: "{{ project_name }}-web-proxy"
 web_config_file: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}/freva/web/freva_web_conf.toml"
-compose_file: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{web_name}}-compose.yml'
+compose_file: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{web_name}}-compose'
+docker_env_path: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/{{project_name}}-web.env'
 old_compose_dir: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/compose_services'
 data_dir: '{{ base_path }}/{{ project_name }}/services/{{service}}'
 conda_path: '{{ data_dir }}/app/conda'

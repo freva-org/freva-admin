@@ -824,6 +824,18 @@ class FrevaRestScreen(BaseForm):
                 ),
                 False,
             ),
+            oidc_systemuser_claim=(
+                self.add_widget_intelligent(
+                    TextInfo,
+                    section="freva_rest",
+                    key="oidc_systemuser_claim",
+                    name=f"{self.num}OIDC system user claim",
+                    value=cast(
+                        str, cfg.get("oidc_systemuser_claim", "preferred_username")
+                    ),
+                ),
+                False,
+            ),
             ansible_become_user=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -854,6 +866,16 @@ class FrevaRestScreen(BaseForm):
                     key="ansible_user",
                     name=f"{self.num}Username for remote machine",
                     value=cfg.get("ansible_user", getuser()),
+                ),
+                False,
+            ),
+            skip_deployments=(
+                self.add_widget_intelligent(
+                    ListInfo,
+                    section="freva_rest",
+                    key="skip_deployments",
+                    name=f"{self.num}Do not deploy those services",
+                    value=cast(list[str], cfg.get("skip_deployments", [])),
                 ),
                 False,
             ),

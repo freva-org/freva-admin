@@ -339,6 +339,7 @@ class DeployFactory:
             ] = {}
             return
         # Update the config.
+        skip = self.cfg["freva_rest"].get("skip_deployments", [])
         self.cfg["data_portal_scheduler"] = {
             "data_portal_scheduler_host": scheduler_host or "",
             "information": redis_information_enc,
@@ -347,6 +348,7 @@ class DeployFactory:
             "ansible_become_user": data_portal_become,
             "ansible_user": data_portal_user or getuser(),
             "force": str(self.cfg["freva_rest"].get("wipe", False)).lower(),
+            "skip": "data-loader" in skip,
         }
         if data_portal_hosts[1:]:
             self.cfg["data_portal_hosts"] = {
@@ -356,6 +358,7 @@ class DeployFactory:
                 "ansible_become_user": data_portal_become,
                 "ansible_user": data_portal_user or getuser(),
                 "force": str(self.cfg["freva_rest"].get("wipe", False)).lower(),
+                "skip": "data-loader" in skip,
             }
         self.cfg["redis"] = {
             "redis_host": redis_host,
@@ -407,16 +410,16 @@ class DeployFactory:
         admin_claims = self.cfg["freva_rest"].get("oidc_admin_claims") or []
         trusted_issuers = self.cfg["freva_rest"].get("oidc_trusted_issuers") or []
         if isinstance(admin_claims, str):
+            self.cfg["freva_rest"]["oidc_admin_claims"] = [admin_claims]
+        else:
             self.cfg["freva_rest"]["oidc_admin_claims"] = admin_claims
-        else:
-            self.cfg["freva_rest"]["oidc_admin_claims"] = ",".join(admin_claims)
         if isinstance(trusted_issuers, str):
-            self.cfg["freva_rest"]["oidc_trusted_issuers"] = trusted_issuers
+            self.cfg["freva_rest"]["oidc_trusted_issuers"] = [trusted_issuers]
         else:
-            self.cfg["freva_rest"]["oidc_trusted_issuers"] = ",".join(trusted_issuers)
+            self.cfg["freva_rest"]["oidc_trusted_issuers"] = trusted_issuers
 
         if isinstance(token_claims, str):
-            self.cfg["freva_rest"]["oidc_token_claims"] = token_claims
+            self.cfg["freva_rest"]["oidc_token_claims"] = [token_claims]
         else:
             token_claims_str = []
             for values in (
@@ -426,7 +429,7 @@ class DeployFactory:
             ):
                 for v in [values] if isinstance(values, str) else values:
                     token_claims_str.append(v)
-            self.cfg["freva_rest"]["oidc_token_claims"] = ",".join(token_claims_str)
+            self.cfg["freva_rest"]["oidc_token_claims"] = token_claims_str
         self.cfg["freva_rest"]["services"] = ",".join(services)
         if prep_web:
             self._prep_web(False)
