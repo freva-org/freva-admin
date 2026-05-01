@@ -9,13 +9,14 @@ After=network-online.target
 [Service]
 TimeoutStartSec=35s
 TimeoutStopSec=35s
-ExecStartPre=/bin/sh -c "{{ compose_bin }} --project-name {{ project_name }}-web -f {{ compose_file }}-$COMPOSE_PROFILES.yml down --remove-orphans"
-ExecStart=/bin/sh -c "{{ compose_bin }} --project-name {{ project_name }}-web -f {{ compose_file }}-$COMPOSE_PROFILES.yml up --remove-orphans"
-ExecStop=/bin/sh -c "{{ compose_bin }} --project-name {{project_name }}-web -f {{ compose_file }}-$COMPOSE_PROFILES.yml down --remove-orphans"
+ExecStartPre=/bin/sh -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
+ExecStart=/bin/sh -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F up --remove-orphans"
+ExecStop=/bin/sh -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
 Restart=on-failure
 RestartSec=5
-Environment="COMPOSE_PROFILES=app"
-EnvironmentFile=-{{docker_env_path}}
+Environment="FREVA_MAINTENANCE_MODE=0"
+Environment="COMPOSE_PROJECT_NAME={{ project_name }}-web"
+EnvironmentFile=-{{ env_path }}
 StartLimitBurst=5
 [Install]
 WantedBy=default.target

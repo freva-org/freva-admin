@@ -5,12 +5,12 @@
 - name: Creating environment file
   template:
     src: "service.env.j2"
-    dest: "{{ data_dir }}/config/service.env"
+    dest: "{{ env_path }}"
     owner: "{{ uid }}"
     group: "{{ gid }}"
   vars:
     service_name: "{{ search_server_name }}"
-    env_vars:
+    _env_vars:
       API_SOLR_PORT: "8983"
       API_SOLR_HEAP: "{{ search_server_solr_mem | default('4g') }}"
       SOLR_JETTY_HOST: "0.0.0.0"
@@ -18,7 +18,9 @@
       SOLR_PID_DIR: "{{ data_dir }}/config"
       SOLR_LOGS_DIR: "{{ data_dir }}/solr"
       API_LOG_DIR: "{{ data_dir }}/logs"
+      LOG_DIR: "{{ data_dir }}/logs"
       API_DATA_DIR: "{{ data_dir }}/data"
+      DATA_DIR: "{{ data_dir }}/data"
       API_CONFIG_DIR: "{{ conda_path }}/share/freva-rest-server/{{ search_server_service }}"
 
 - name: Creating systemd unit service

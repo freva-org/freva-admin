@@ -18,13 +18,14 @@
 - name: Creating volumes
   include_tasks: "container-volumes.yml"
 
-- name: Creating compose directory structure
+- name: Creating directories
   file:
     path: '{{ base_path }}/{{ project_name }}/compose_services'
     state: directory
     recurse: true
     owner: "{{ uid }}"
     group: "{{ gid }}"
+
 
 
 - name: Removing old compose file
@@ -37,7 +38,7 @@
     src: "{{ item.src }}"
     dest: "{{ item.dest }}"
   loop:
-    - dest:  "{{ compose_file }}-app.yml"
+    - dest: "{{ compose_file }}-app.yml"
       src: web-compose-app.j2
     - dest: "{{ compose_file }}-maintenance.yml"
       src: web-compose-maintenance.j2
@@ -48,14 +49,11 @@
   copy:
     content: |
       # Controls which compose profile is active.
-      # Set to "maintenance" to start only nginx with a maintenance page.
-      # Set to "app" for normal operation (all services).
-      COMPOSE_PROFILES=app
-      # COMPOSE_PROFILES=maintenance
-      # Set to 1 in maintenance mode so nginx can serve a maintenance page.
+      # Set to FREVA_MAINTENANCE_MODE to "1" to start only nginx with
+      # a maintenance page.
+      # Set to "0" for normal operation (all services).
       FREVA_MAINTENANCE_MODE=0
-      # FREVA_MAINTENANCE_MODE=1
-    dest: "{{ docker_env_path }}"
+    dest: "{{ env_path }}"
     mode: "0600"
     owner: "{{ uid }}"
     group: "{{ gid }}"
@@ -63,7 +61,7 @@
 
 - name: Reload systemd
   systemd:
-    daemon_reload: yes
+    daemon_reload: true
     scope: "{{ 'system' if ansible_become is true else 'user' }}"
 
 - name: Enable and start web services

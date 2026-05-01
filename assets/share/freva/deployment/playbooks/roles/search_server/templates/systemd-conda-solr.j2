@@ -1,7 +1,6 @@
 [Unit]
 Description=Freva Search backend server
 After=network.target
-ConditionHost={{ ansible_hostname }}
 
 [Service]
 Type=simple
@@ -9,7 +8,7 @@ PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
 ExecStart={{ bash_cmd }} -c "{{ conda_path }}/bin/start-freva-service -s {{search_server_service}}"
-EnvironmentFile={{ data_dir }}/config/service.env
+EnvironmentFile={{ env_path }}
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal
 StandardError=journal

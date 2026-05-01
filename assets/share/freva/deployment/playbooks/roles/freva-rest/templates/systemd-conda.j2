@@ -2,7 +2,9 @@
 Description=Freva rest API server
 After=network.target
 Wants=network.target
+{% if not ansible_become %}
 ConditionHost={{ ansible_hostname }}
+{% endif %}
 
 [Service]
 Type=simple
@@ -15,7 +17,7 @@ ExecStart={{ bash_cmd }} -c "{{ conda_path }}/bin/freva-rest-server --dev"
 ExecStart={{bash_cmd }} -c "{{ conda_path }}/bin/freva-rest-server"
 {% endif %}
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
-EnvironmentFile={{ data_dir }}/config/service.env
+EnvironmentFile=-{{ env_path }}
 Restart=on-failure
 RestartSec=5
 StartLimitBurst=5

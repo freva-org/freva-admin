@@ -2,20 +2,20 @@
 - name: Running common conda tasks
   include_tasks: "conda.yml"
 
+- name: Create nginx runtime folder
+  file:
+    path: "{{ data_dir }}/nginx"
+    state: directory
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+
+
 - name: Get the web app
   unarchive:
     src: https://github.com/freva-org/freva-web/releases/download/{{ web_version }}/freva-web-bundle.tar.gz
     dest: "{{ data_dir }}/app"
     remote_src: true
     keep_newer: false
-
-- name: Installing conda dependencies
-  shell:
-    cmd: |
-      {{conda_path}}/bin/mamba env update -p {{conda_path}} -y --file {{ data_dir }}/app/conda-env.yml
-      {{conda_path}}/bin/mamba install -c conda-forge --override-channels -y -q jinja2
-  environment:
-    MAMBA_ROOT_PREFIX: "{{conda_path}}"
 
 - name: Install pip dependencies
   shell:
@@ -43,12 +43,12 @@
 - name: Creating environment file for redis
   template:
     src: "service.env.j2"
-    dest: "{{ data_dir }}/config/service-redis.env"
+    dest: "{{ env_dir }}/redis.env"
     owner: "{{ uid }}"
     group: "{{ gid }}"
   vars:
     service_name: "{{ web_cache_name }}"
-    env_vars:
+    _web_env_vars:
       API_LOG_DIR: "{{ data_dir }}/logs"
       API_CONFIG_DIR: "{{ data_dir }}/config"
       CONDA_PREFIX: "{{ conda_path }}"
@@ -59,12 +59,12 @@
 - name: Creating environment file for web app
   template:
     src: "service.env.j2"
-    dest: "{{ data_dir }}/config/service-web.env"
+    dest: "{{ env_path }}"
     owner: "{{ uid }}"
     group: "{{ gid }}"
   vars:
     service_name: "{{ web_name }}"
-    env_vars:
+    _web_env_vars:
       ALLOWED_HOSTS: "{{web_allowed_hosts | join(',')}}"
       API_LOG_DIR: "{{ data_dir }}/logs"
       API_CONFIG_DIR: "{{ conda_path }}/share/freva-rest-server/nginx"
@@ -102,6 +102,7 @@
       WEB_SERVER_NAME: "localhost"
       WEB_SERVER_PORT: "8000"
       FREVA_MAINTENANCE_MODE: "0"
+      RUNTIME_DIR: "{{ data_dir }}/nginx"
 
 
 - name: Create systemd services
@@ -128,18 +129,6 @@
     - "{{ web_proxy_name }}.service"
     - "{{ web_cache_name }}.service"
     - "{{ web_name }}.service"
-
-- name: Run health checks
-  shell:
-    cmd: "{{ item }}"
-    chdir: "{{ data_dir }}/app"
-  environment:
-    GIT_PYTHON_REFRESH: "quiet"
-    EVALUATION_SYSTEM_CONFIG_FILE: "{{core_root_dir|regex_replace('^~', ansible_facts.env.HOME)}}/freva/evaluation_system.conf"
-    NGINX_PORT: "{{ web_port_httpsd }}"
-  loop:
-    - "{{ conda_path }}/libexec/freva-rest-server/healthchecks.sh -s nginx"
-    - "{{ conda_path }}/bin/python manage.py check"
 
 - name: Create Django user via manage.py shell
   when: debug | default(false)

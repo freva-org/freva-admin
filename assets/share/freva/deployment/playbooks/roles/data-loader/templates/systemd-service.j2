@@ -1,7 +1,9 @@
 [Unit]
 Description=Start the freva data-loader %i service.
 After=network.target
+%{ if not ansible_become }
 ConditionHost={{ ansible_hostname }}
+%{ endif }
 
 [Service]
 Type=simple

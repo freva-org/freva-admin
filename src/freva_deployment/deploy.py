@@ -371,6 +371,7 @@ class DeployFactory:
             "ansible_user": redis_user or getuser(),
             "force": str(self.cfg["freva_rest"].get("wipe", False)).lower(),
         }
+        self.cfg["freva_rest"]["redis_information"] = redis_information_enc
 
     def _prep_freva_rest(self, prep_web=True) -> None:
         """prepare the freva_rest service."""
@@ -838,7 +839,12 @@ class DeployFactory:
             for tag in entry.get("tags", []):
                 if tag in self.steps + ["vault"]:
                     tags.append(entry["hosts"])
-        no_prepend = ("root_passwd", "deployment_method", "expose_method")
+        no_prepend = (
+            "root_passwd",
+            "deployment_method",
+            "expose_method",
+            "redis_information",
+        )
         for step in set(self._config_keys):
             config[step] = {}
             if self.cfg.get(step, {}).get(f"{step}_host"):

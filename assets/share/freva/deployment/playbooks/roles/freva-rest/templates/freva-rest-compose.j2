@@ -18,8 +18,8 @@ services:
       - API_OIDC_CLIENT_SECRET={{freva_rest_oidc_client_secret}}
       - API_OIDC_TOKEN_CLAIMS={{ freva_rest_oidc_token_claims | join(',')}}
       - API_ADMIN_CLAIMS={{ freva_rest_oidc_admin_claims | join(',')}}
-      - API_OIDC_SYSTEMUSER_CLAIM={{ freva_rest_systemuser_claim }}
-      - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issers | join(',') }}
+      - API_OIDC_SYSTEMUSER_CLAIM={{ freva_rest_oidc_systemuser_claim }}
+      - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issuers | join(',') }}
 {% if freva_rest_data_loader == true %}
       - API_REDIS_HOST={{cache_information.host}}
       - API_REDIS_PASSWORD={{cache_information.passwd}}

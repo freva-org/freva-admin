@@ -1,7 +1,9 @@
 [Unit]
 Description=Freva vault server
 After=network.target
+{% if not ansible_become %}
 ConditionHost={{ ansible_hostname }}
+{% endif %}
 
 [Service]
 Type=simple
@@ -14,7 +16,7 @@ ExecStartPre={{ bash_cmd }} -c "PATH={{ conda_path }}/bin:$PATH \
 ExecStart={{ bash_cmd }} -c "{{conda_path}}/bin/uvicorn --workers 2 --app-dir \
     {{ conda_path }}/libexec/freva-rest-server/vault \
     --host 0.0.0.0 --port 5002 runserver:app"
-EnvironmentFile={{ data_dir }}/config/service.env
+EnvironmentFile={{ env_path }}
 Restart=on-failure
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal

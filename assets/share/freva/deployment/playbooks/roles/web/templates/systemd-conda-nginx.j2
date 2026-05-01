@@ -1,6 +1,9 @@
 [Unit]
 Description=Freva web Porxy server
 After=network.target
+{% if not ansible_become %}
+ConditionHost={{ ansible_hostname }}
+{% endif %}
 
 [Service]
 Type=simple
@@ -10,13 +13,13 @@ ProtectSystem=full
 {% endif %}
 RuntimeDirectory=nginx-tmp
 RuntimeDirectoryMode=0755
-Environment=RUNTIME_DIR=/run/nginx-tmp
-ReadWritePaths={{conda_path }}
+Environment="RUNTIME_DIR=/run/nginx-tmp"
+ReadWritePaths={{ conda_path }}
 PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
-ExecStart={{bash_cmd }} -c "{{conda_path}}/bin/start-freva-service -s nginx"
-EnvironmentFile={{ data_dir }}/config/service-web.env
+ExecStart={{bash_cmd }} -x {{conda_path}}/bin/start-freva-service -s nginx
+EnvironmentFile=-{{ env_path }}
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal
 StandardError=journal
