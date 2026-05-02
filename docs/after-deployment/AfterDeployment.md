@@ -127,7 +127,7 @@ location, for example:
 
 
 
-### Environment variables for configuration
+## Environment variables for configuration
 
 All services are configured via environment variables.
 The mechanism differs by deployment type: Conda-based deployments
@@ -143,7 +143,7 @@ For Conda-based deployments, every service has its own environment
 file. Container-based deployments only create a `web.env` file,
 which is used to configure maintenance mode (see below).
 
-#### Web maintenance mode
+### Web maintenance mode
 
 If the web application becomes unavailable due to an upstream
 service outage or disk failure, a maintenance mode can be enabled.
