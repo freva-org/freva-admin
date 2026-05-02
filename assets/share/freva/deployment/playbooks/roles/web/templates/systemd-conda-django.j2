@@ -11,8 +11,9 @@ Type=simple
 PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
-ExecStart={{ bash_cmd }} -x init_django.sh
+ExecStart={{bash_cmd}} -c 'if [ "$$FREVA_MAINTENANCE_MODE" = "1" ]; then echo "Maintenance mode - Django not starting"; exit 0; fi; exec {{ bash_cmd }} -x init_django.sh'
 WorkingDirectory={{ data_dir }}/app
+Environment="FREVA_MAINTENANCE_MODE=0"
 EnvironmentFile=-{{ env_path}}
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal

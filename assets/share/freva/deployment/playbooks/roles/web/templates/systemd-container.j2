@@ -9,9 +9,9 @@ After=network-online.target
 [Service]
 TimeoutStartSec=35s
 TimeoutStopSec=35s
-ExecStartPre=/bin/sh -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
-ExecStart=/bin/sh -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F up --remove-orphans"
-ExecStop=/bin/sh -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
+ExecStartPre={{bash_cmd}} -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
+ExecStart={{bash_cmd}} -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F up --remove-orphans"
+ExecStop={{bash_cmd}} -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
 Restart=on-failure
 RestartSec=5
 Environment="FREVA_MAINTENANCE_MODE=0"

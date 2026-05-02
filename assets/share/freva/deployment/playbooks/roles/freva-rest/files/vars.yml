@@ -12,7 +12,7 @@ compose_file: '{{freva_rest_data_path|regex_replace("^~", ansible_facts.env.HOME
 old_compose_dir: '{{freva_rest_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/compose_services'
 data_dir: '{{freva_rest_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{ project_name }}/services/{{service}}'
 conda_packages:
-  - freva-rest-server
+  - freva-rest-server>={{freva_rest_version}}
 volume_names:
   - "{{ freva_rest_name }}_logs"
 
