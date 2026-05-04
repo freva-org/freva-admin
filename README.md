@@ -9,8 +9,8 @@ environments. The general strategy is to split the deployment into
 - Deploy a Hashicorp Vault service for storing and retrieving passwords
   and other sensitive data via docker
   (this step get automatically activated once the MariaDB service is set)
-- Deploy [Databrowser API](https://github.com/freva-org/freva-netxgen) service via docker
-- Deploy command line interface backend ([evaluation_system](https://github.com/freva-org/freva))
+- Deploy [Databrowser API](https://github.com/freva-org/freva-nextgen) service via docker
+- Deploy command line interface backend ([evaluation_system](https://github.com/freva-org/freva-legacy))
 - Deploy web front end ([freva_web](https://github.com/freva-org/freva-web))
 
 
@@ -49,7 +49,7 @@ There are different option to install the deployment software.
 
 ## 1. Using pre-built binaries.
 You can download the pre-built binaries for your specific OS and architecture
-from the [release page]((https://github.com/freva-org/freva-deployment/releases).
+from the [release page]((https://github.com/freva-org/freva-admin/releases).
 
 ### Available Binaries
 
@@ -164,7 +164,7 @@ A complete freva instance will need the following services:
 - backendservers (hostname(s) where the command line interface will be installed)
 
 Two typical server topography could look the following:
-| ![](docs/Topography.png) |
+| ![](docs/architecture/_static/Topography.png) |
 |:--:|
 | *Two different server structures*. In setup I the services are running on the same host that serve 4 docker containers. The backend is installed on a hpc login node with access to a gpfs/lustre file system. Setup II deploys the MariaDB, Solr services and the website on dedicated servers. The command line interfaces are also deployed on independent servers.|
 ---
