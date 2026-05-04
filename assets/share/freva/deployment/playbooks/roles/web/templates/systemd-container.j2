@@ -1,0 +1,22 @@
+[Unit]
+Description=Start/Stop freva services containers
+{% if 'docker' in docker_bin %}
+After=network-online.target docker.service
+Requires=docker.service
+{% else %}
+After=network-online.target
+{% endif %}
+[Service]
+TimeoutStartSec=35s
+TimeoutStopSec=35s
+ExecStartPre={{bash_cmd}} -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
+ExecStart={{bash_cmd}} -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F up --remove-orphans"
+ExecStop={{bash_cmd}} -c "F={{ compose_file }}-$$([ \"$$FREVA_MAINTENANCE_MODE\" = \"1\" ] && echo maintenance || echo app).yml; {{ compose_bin }} -f $$F down --remove-orphans"
+Restart=on-failure
+RestartSec=5
+Environment="FREVA_MAINTENANCE_MODE=0"
+Environment="COMPOSE_PROJECT_NAME={{ project_name }}-web"
+EnvironmentFile=-{{ env_path }}
+StartLimitBurst=5
+[Install]
+WantedBy=default.target

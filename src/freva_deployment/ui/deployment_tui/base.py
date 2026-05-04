@@ -43,6 +43,29 @@ class TextInfo(InfoMixin, npyscreen.TitleText):
     """Extend the TitleText widget by an infobox."""
 
 
+class ListInfo(npyscreen.TitleText):
+    """Extend the TitleText widget by an infobox for list inputs."""
+
+    def __init__(
+        self,
+        *args: Any,
+        section: str = "",
+        key: str = "",
+        info: str = "",
+        value: Optional[list[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        value = value.split(",") if isinstance(value, str) else value or []
+        name = kwargs.get("name", "Select")
+        kwargs["name"] = f"{name}. Press Ctrl+F for more info."
+        self.info = info or AD.get_config_info(section, key)
+        super().__init__(
+            *args,
+            value=", ".join([s.strip() for s in value if s.strip()]),
+            **kwargs,
+        )
+
+
 class DictInfo(npyscreen.TitleText):
     """Extend the TitleText widget by an infobox."""
 
@@ -187,9 +210,7 @@ def selectFile(starting_value: str = "", *args, **keywords):
     F.set_colors()
     F.wCommand.show_bold = True
     if starting_value:
-        if not os.path.exists(
-            os.path.abspath(os.path.expanduser(starting_value))
-        ):
+        if not os.path.exists(os.path.abspath(os.path.expanduser(starting_value))):
             F.value = os.getcwd()
         else:
             F.value = starting_value
@@ -201,7 +222,9 @@ def selectFile(starting_value: str = "", *args, **keywords):
     return F.wCommand.value
 
 
-class BaseForm(npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus):
+class BaseForm(
+    npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus, npyscreen.FormMultiPage
+):
     """Base class for forms."""
 
     _num: int = 0
@@ -245,6 +268,8 @@ class BaseForm(npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus):
         for key, (obj, mandatory) in self.input_fields.items():
             if hasattr(obj, "dict_value"):
                 value = obj.dict_value
+            elif isinstance(obj, ListInfo):
+                value = [v.strip() for v in obj.value.split(",") if v.strip()]
             elif hasattr(obj, "values"):
                 value = obj.values[obj.value]
             else:
@@ -257,9 +282,6 @@ class BaseForm(npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus):
             config[key] = value
         cfg = config.copy()
         cfg = config
-        for key, value in cfg.items():
-            if key in self.list_keys:
-                cfg[key] = value.split(",")
         return cfg
 
     def draw_form(self) -> None:
@@ -338,9 +360,7 @@ class BaseForm(npyscreen.FormMultiPageWithMenus, npyscreen.FormWithMenus):
     def show_info(self, *args: Any, **kwargs: Any) -> None:
         """Display an info if present."""
         if isinstance(self.current_info, str):
-            npyscreen.notify_confirm(
-                self.current_info, title="Detailed Information"
-            )
+            npyscreen.notify_confirm(self.current_info, title="Detailed Information")
 
     def create(self) -> None:
         """Setup the form."""
@@ -444,7 +464,7 @@ class VarForm(npyscreen.FormMultiPageActionWithMenus):
         self.keys.append(
             self.add_widget_intelligent(
                 npyscreen.TitleText,
-                name=f"Set a new key:",
+                name="Set a new key:",
                 value="",
                 editable=True,
             )
@@ -452,7 +472,7 @@ class VarForm(npyscreen.FormMultiPageActionWithMenus):
         self.values.append(
             self.add_widget_intelligent(
                 npyscreen.TitleText,
-                name=f"Set a the according value:",
+                name="Set a the according value:",
                 value="",
                 editable=True,
             )

@@ -12,6 +12,7 @@ mongo_name: "{{ project_name }}-mongo"
 compose_file: '{{mongodb_server_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{mongo_name}}-compose.yml'
 old_compose_dir: '{{mongodb_server_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/compose_services'
 data_dir: "{{ base_path }}/{{ project_name }}/services/{{service}}"
+wipe: "{{ mongodb_server_wipe }}"
 conda_packages:
   - pymongo
   - mongodb

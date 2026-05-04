@@ -90,6 +90,7 @@ services:
 networks:
   {{web_name}}:
     driver: bridge
+    enable_ipv6: true
 
 volumes:
     django-static:

@@ -18,7 +18,7 @@
 - name: Creating environment file
   template:
     src: "service.env.j2"
-    dest: "{{ data_dir }}/config/service.env"
+    dest: "{{ env_path }}"
     owner: "{{ uid }}"
     group: "{{ gid }}"
   vars:
@@ -37,7 +37,10 @@
       API_MONGO_PASSWORD: "{{ freva_rest_db_passwd }}"
       API_MONGO_DB: "search_stats"
       API_MONGO_USER: "{{ freva_rest_db_user }}"
-      API_OIDC_TOKEN_CLAIMS: "{{ freva_rest_oidc_token_claims }}"
+      API_OIDC_TOKEN_CLAIMS: "{{ freva_rest_oidc_token_claims | join(',')}}"
+      API_ADMIN_CLAIMS: "{{ freva_rest_oidc_admin_claims | join(',')}}"
+      API_OIDC_SYSTEMUSER_CLAIM: "{{ freva_rest_oidc_systemuser_claim }}"
+      API_OIDC_TRUSTED_ISSUERS: "{{ freva_rest_oidc_trusted_issuers | join(',') }}"
       API_SERVICES: "{{ freva_rest_services }}"
       CONDA_PREFIX: "{{ conda_path }}"
     redis_env_vars: >-

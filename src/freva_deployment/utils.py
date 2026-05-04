@@ -60,12 +60,8 @@ class AssetDir:
 
     def __init__(self):
         self._inventory_content = None
-        self._user_asset_dir = (
-            Path(appdirs.user_data_dir()) / "freva" / "deployment"
-        )
-        self._user_config_dir = (
-            Path(appdirs.user_config_dir()) / "freva" / "deployment"
-        )
+        self._user_asset_dir = Path(appdirs.user_data_dir()) / "freva" / "deployment"
+        self._user_config_dir = Path(appdirs.user_config_dir()) / "freva" / "deployment"
 
     @staticmethod
     def is_bundeled() -> bool:
@@ -210,9 +206,7 @@ def get_cache_information(
     """Create all information we need to setup the redis cache and the data portal."""
     user = ssl_cert = ssl_key = ""
     if redis_host:
-        keys = RandomKeys(
-            common_name=redis_host.rpartition("//")[-1].partition(":")[0]
-        )
+        keys = RandomKeys(common_name=redis_host.rpartition("//")[-1].partition(":")[0])
         user = petname.generate()
         ssl_cert = keys.certificate_chain.decode("utf-8")
         ssl_key = keys.private_key_pem.decode("utf-8")
@@ -285,8 +279,12 @@ def _create_new_config(inp_file: Path) -> Path:
             "oidc_client",
             "oidc_client_secret",
             "oidc_token_claims",
+            "oidc_admin_claims",
+            "oidc_systemuser_claim",
+            "oidc_trusted_issuers",
             "data_loader_portal_hosts",
             "admin_user",
+            "skip_deployments",
         ],
         "web": [
             "web_host",
@@ -297,9 +295,7 @@ def _create_new_config(inp_file: Path) -> Path:
         "core": ["core_host"],
     }
     create_backup = False
-    config_tmpl = cast(
-        Dict[str, Any], tomlkit.loads(AD.inventory_file.read_text())
-    )
+    config_tmpl = cast(Dict[str, Any], tomlkit.loads(AD.inventory_file.read_text()))
     # Legacy keys:
     if "solr" in config or "databrowser" in config:
         create_backup = True
@@ -312,16 +308,14 @@ def _create_new_config(inp_file: Path) -> Path:
                     ]["config"].pop(key)
         else:
             config["freva_rest"] = config.pop("databrowser")
-            config["freva_rest"]["config"]["freva_rest_port"] = config[
-                "freva_rest"
-            ]["config"].pop("databrowser_port", "")
+            config["freva_rest"]["config"]["freva_rest_port"] = config["freva_rest"][
+                "config"
+            ].pop("databrowser_port", "")
 
     for section, keys in keys_to_check.items():
         if isinstance(config[section].get("config"), dict):
             create_backup = True
-            config[section]["config"][f"{section}_host"] = str(
-                config[section]["hosts"]
-            )
+            config[section]["config"][f"{section}_host"] = str(config[section]["hosts"])
             config[section] = config[section]["config"]  # type: ignore
         config[section].pop(f"{section}_playbook", "")
         for key in keys:
@@ -360,9 +354,7 @@ def load_config(inp_file: str | Path, convert: bool = False) -> dict[str, Any]:
     return config
 
 
-def get_setup_for_service(
-    service: str, setups: list[ServiceInfo]
-) -> tuple[str, str]:
+def get_setup_for_service(service: str, setups: list[ServiceInfo]) -> tuple[str, str]:
     """Get the setup of a service configuration."""
     for setup in setups:
         if setup.name == service:
@@ -397,9 +389,7 @@ def get_email_credentials() -> tuple[str, str]:
         if not username:
             username = Prompt.ask("[green b]Username[/] for mail server")
         if not password:
-            password = Prompt.ask(
-                "[green b]Password[/] for mail server", password=True
-            )
+            password = Prompt.ask("[green b]Password[/] for mail server", password=True)
     return username, password
 
 
@@ -457,9 +447,7 @@ def _create_passwd(min_characters: int, msg: str = "") -> str:
     """Create passwords."""
     master_pass = Prompt.ask(msg or password_prompt, password=True)
     _passwd_is_good(master_pass, min_characters)
-    master_pass_2 = Prompt.ask(
-        "[bold green]re-enter[/] master password", password=True
-    )
+    master_pass_2 = Prompt.ask("[bold green]re-enter[/] master password", password=True)
     if master_pass != master_pass_2:
         raise ValueError("Passwords do not match")
     return master_pass

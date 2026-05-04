@@ -18,7 +18,7 @@
 - name: Creating volumes
   include_tasks: "container-volumes.yml"
 
-- name: Creating compose directory structure
+- name: Creating directories
   file:
     path: '{{ base_path }}/{{ project_name }}/compose_services'
     state: directory
@@ -27,33 +27,60 @@
     group: "{{ gid }}"
 
 
-- name: Creating compose file
-  template:
-    src: "web-compose.j2"
-    dest: "{{ compose_file }}"
 
-- name: Creating {{web_name}} service
-  script: >
-    {{ asset_dir }}/scripts/create_systemd.py
-    {{ web_name }} compose --enable --project-name {{ project_name }}-web
-    -f {{ compose_file }} up --remove-orphans
-  environment:
-    PREFER: "{{ deployment_method }}"
+- name: Removing old compose file
+  file:
+    path: "{{ compose_file }}.yml"
+    state: absent
+
+- name: Rendering templates
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - dest: "{{ compose_file }}-app.yml"
+      src: web-compose-app.j2
+    - dest: "{{ compose_file }}-maintenance.yml"
+      src: web-compose-maintenance.j2
+    - dest: "{{ systemd_unit_dir }}/{{ web_name }}.service"
+      src: systemd-container.j2
+
+- name: Create environment file
+  copy:
+    content: |
+      # Controls which compose profile is active.
+      # Set to FREVA_MAINTENANCE_MODE to "1" to start only nginx with
+      # a maintenance page.
+      # Set to "0" for normal operation (all services).
+      FREVA_MAINTENANCE_MODE=0
+    dest: "{{ env_path }}"
+    mode: "0600"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    force: false
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: true
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+
+- name: Enable and start web services
+  systemd:
+    name: "{{ web_name }}.service"
+    enabled: true
+    state: started
+    scope: "{{ 'system' if ansible_become is true else 'user'}}"
 
 - pause: seconds=30
 
-- name: Run container health checks
-  loop:
-    - container: "{{ web_cache_name }}"
-      command: "healthchecks -s redis"
-      env: ""
-    - container: "{{ web_proxy_name }}"
-      command: "healthchecks -s nginx"
-      env: ""
-    - container: "{{ web_name }}"
-      command: "/opt/conda/envs/freva-web/bin/python manage.py check"
-      env: "-e GIT_PYTHON_REFRESH=quiet"
-  shell: >
-    {{ docker_bin }} exec {{ item.env }} {{ item.container }} {{ item.command }}
-  loop_control:
-    label: "{{ item.container }}"
+- name: Check if service is running
+  systemd:
+    name: "{{ web_name }}"
+    scope: "{{ 'system' if ansible_become is true else 'user'}}"
+  register: service_status
+  ignore_errors: true
+
+- name: Fail if service is not running
+  fail:
+    msg: "{{ project_name }}-web service is not running"
+  when: service_status.status.ActiveState != "active"

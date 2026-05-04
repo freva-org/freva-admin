@@ -47,6 +47,7 @@ Environment="HOME=/var/lib/prefect"
 Environment="PREFECT_HOME=/var/lib/prefect"
 Environment="PREFECT_API_DATABASE_CONNECTION_URL=sqlite+aiosqlite:////var/lib/prefect/prefect.db?timeout=30"
 Environment="PREFECT_API_URL=http://127.0.0.1:8888/api"
+Environment="ANSIBLE_PRETTY_RESULTS=0"
 StandardOutput=journal
 StandardError=journal
 StateDirectory=prefect
@@ -72,9 +73,7 @@ freva = "{path}"
 
 def load_env_configs() -> List[Path]:
     env_var = "FREVA_DEPLOYMENT_CONFIG"
-    return [
-        Path(f.strip()) for f in os.getenv(env_var, "").split(",") if f.strip()
-    ]
+    return [Path(f.strip()) for f in os.getenv(env_var, "").split(",") if f.strip()]
 
 
 def mock_decorator(func: Callable[P, F]) -> Callable[P, F]:
@@ -117,9 +116,7 @@ class BootstrapConda:
             env.pop("_CALLED_FROM_BOOTSTRAP", None)
             subprocess.check_call(cmd, env=env)
 
-    def __init__(
-        self, prefix: Path, extra_pkgs: Optional[List[str]] = None
-    ) -> None:
+    def __init__(self, prefix: Path, extra_pkgs: Optional[List[str]] = None) -> None:
         extra_pkgs = extra_pkgs or []
         prefix = prefix.expanduser().absolute()
         micromamba = prefix / "bin" / "micromamba"
@@ -179,9 +176,7 @@ class BootstrapConda:
 
 __version__ = "0.1.0"
 SCRIPT_URL = "https://raw.githubusercontent.com/freva-org/freva-admin/refs/heads/main/automation/automation-setup.py"
-SCRIPT_CHECKSUM = (
-    "c2bcfa7702a46d753748fea4c8a21daf2c79b32ef924cef280c1c53d6f9fdf89"
-)
+SCRIPT_CHECKSUM = "c2bcfa7702a46d753748fea4c8a21daf2c79b32ef924cef280c1c53d6f9fdf89"
 
 Steps = Literal["core", "freva-rest", "db", "web"]
 
@@ -228,7 +223,7 @@ def run_scripts(script_path: Path, prefix: str = "*"):
     for path in script_path.glob(f"{prefix}.sh"):
         try:
             PrefectServer.execute(["sh", str(path.absolute())])
-        except subprocess.CalledProcessError as error:
+        except subprocess.CalledProcessError:
             logger.error("Could not execute script: %s", path)
 
 
@@ -288,9 +283,7 @@ def freva_deployment_flow(
     if os.getenv("SCRIPT_PATH"):
         run_scripts(Path(os.getenv("SCRIPT_PATH")))
     steps = steps or ["auto"]
-    config = toml.loads(
-        (Path(__file__).parent / "freva-automation.toml").read_text()
-    )
+    config = toml.loads((Path(__file__).parent / "freva-automation.toml").read_text())
     run_deployment(
         config[project],
         steps,
@@ -357,9 +350,7 @@ class PrefectServer:
         endpoint: Optional[str] = None,
     ) -> None:
 
-        self.caddy_bin = shutil.which(
-            "caddy", path=str(Path(sys.executable).parent)
-        )
+        self.caddy_bin = shutil.which("caddy", path=str(Path(sys.executable).parent))
         self.username = os.getenv("FREVA_AUTOMATION_USERNAME")
         self.password = os.getenv("FREVA_AUTOMATION_PASSWORD")
         if not self.username or not self.password:
@@ -388,9 +379,7 @@ class PrefectServer:
         self.prefect_api_url = f"http://127.0.0.1:{self.port}/api"
         self.env["PREFECT_API_URL"] = self.prefect_api_url
         if endpoint:
-            self.env["PREFECT_UI_API_URL"] = (
-                f"https://{self.caddy_host}/{endpoint}/api"
-            )
+            self.env["PREFECT_UI_API_URL"] = f"https://{self.caddy_host}/{endpoint}/api"
         else:
             self.env["PREFECT_UI_API_URL"] = f"https://{self.caddy_host}/api"
 
@@ -410,9 +399,7 @@ class PrefectServer:
         self.server_log.close()
         self.agent_log.close()
 
-    def prep_server(
-        self, script_path: Path, user_var: Optional[str] = None
-    ) -> None:
+    def prep_server(self, script_path: Path, user_var: Optional[str] = None) -> None:
         """Prepare the server startup."""
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", "freva-deployment"]
@@ -497,7 +484,7 @@ class PrefectServer:
             stderr=self.caddy_log,
             env=self.env,
         )
-        print("[INFO] Reverse proxy started visit: " f"https://{self.caddy_host}")
+        print(f"[INFO] Reverse proxy started visit: https://{self.caddy_host}")
 
     def stop_server(self) -> None:
         """Stop all services."""
@@ -587,9 +574,7 @@ async def delete_existing_deployment(name: str):
     """Delete existing deployments."""
     async with get_client() as client:
         deployments = await client.read_deployments(
-            deployment_filter=DeploymentFilter(
-                name=DeploymentFilterName(any_=[name])
-            )
+            deployment_filter=DeploymentFilter(name=DeploymentFilterName(any_=[name]))
         )
         for dep in deployments:
             await client.delete_deployment(dep.id)
@@ -645,9 +630,7 @@ def main():
         "-p",
         help="The path where the automation should be deployed to.",
         type=Path,
-        default=Path(
-            os.getenv("FREVA_AUTOMATION_PREFIX_DIR") or Path(__file__).parent
-        ),
+        default=Path(os.getenv("FREVA_AUTOMATION_PREFIX_DIR") or Path(__file__).parent),
     )
     parser.add_argument(
         "--config",
@@ -679,8 +662,7 @@ def main():
         "--extra-pkg",
         type=str,
         default=os.getenv("FREVA_AUTOMATION_EXTRA_PGKS") or None,
-        help="Extra conda-forge packages that need to be installed. "
-        "',' separated.",
+        help="Extra conda-forge packages that need to be installed. ',' separated.",
     )
     parser.add_argument(
         "--script-directory",
@@ -746,9 +728,7 @@ def main():
         if not config.is_file():
             config.write_text(
                 CONFIG.format(
-                    path=os.getenv(
-                        "FREVA_CONFIG_PATH", "/path/to/freva-config.toml"
-                    )
+                    path=os.getenv("FREVA_CONFIG_PATH", "/path/to/freva-config.toml")
                 )
             )
         BootstrapConda(args.prefix, extra_pkgs)

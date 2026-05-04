@@ -64,12 +64,12 @@
 - name: Creating environment file
   template:
     src: "service.env.j2"
-    dest: "{{ data_dir }}/config/service.env"
+    dest: "{{ env_path }}"
     owner: "{{ uid }}"
     group: "{{ gid }}"
   vars:
     service_name: "{{ vault_name }}"
-    env_vars:
+    _vault_env_vars:
       KEY_FILE: "{{ data_dir }}/data/keys"
       ROOT_PW: "{{ root_passwd }}"
       VERSION: "{{ vault_version }}"

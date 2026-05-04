@@ -136,6 +136,12 @@ class BatchParser:
             help="Add/Override inventory settings.",
         )
         self.parser.add_argument(
+            "--inspect",
+            "-i",
+            action="store_true",
+            help="Inspect all config values and exit.",
+        )
+        self.parser.add_argument(
             "--cowsay",
             action="store_true",
             help="Let the cow speak!",
@@ -162,6 +168,9 @@ class BatchParser:
             _cowsay=args.cowsay,
         ) as DF:
             try:
+                if args.inspect:
+                    DF.inspect(extra=extra, tags=args.tags or None)
+                    return
                 DF.play(
                     args.ask_pass,
                     args.verbose,

@@ -13,8 +13,8 @@ from .base import (
     BaseForm,
     CheckboxInfo,
     ComboInfo,
-    DictInfo,
     FileInfo,
+    ListInfo,
     TextInfo,
 )
 
@@ -68,11 +68,10 @@ class CoreScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys: list[str] = []
         cfg = self.get_config(self.step)
         arch = cast(str, cfg.get("arch", AVAILABLE_CONDA_ARCHS[0]))
         arch_idx = get_index(AVAILABLE_CONDA_ARCHS, arch, 0)
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             core_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -129,9 +128,7 @@ class CoreScreen(BaseForm):
                     section="core",
                     key="scheduler_system",
                     name=f"{self.num}Workload manager",
-                    value=self.scheduler_index(
-                        cast(str, cfg.get("scheduler_system"))
-                    ),
+                    value=self.scheduler_index(cast(str, cfg.get("scheduler_system"))),
                     values=self.scheduler_systems,
                 ),
                 True,
@@ -199,9 +196,7 @@ class CoreScreen(BaseForm):
                     section="core",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Python path on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -234,14 +229,8 @@ class WebScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys = "imprint", "scheduler_host", "allowed_hosts"
         cfg = self.get_config(self.step)
-
-        for key in self.list_keys:
-            if key in cfg and isinstance(cfg[key], str):
-                value = cast(str, cfg[key])
-                cfg[key] = [v.strip() for v in value.split(",") if v.strip()]
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             web_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -356,23 +345,21 @@ class WebScreen(BaseForm):
             ),
             imprint=(
                 self.add_widget_intelligent(
-                    TextInfo,
+                    ListInfo,
                     section="web",
                     key="imprint",
                     name=f"{self.num}Institution address - comma separated",
-                    value=",".join(
-                        cast(
-                            List[str],
-                            cfg.get(
-                                "imprint",
-                                [
-                                    "freva",
-                                    "German Climate Computing Centre (DKRZ)",
-                                    "Bundesstr. 45a",
-                                    "20146 Hamburg",
-                                    "Germany",
-                                ],
-                            ),
+                    value=cast(
+                        List[str],
+                        cfg.get(
+                            "imprint",
+                            [
+                                "freva",
+                                "German Climate Computing Centre (DKRZ)",
+                                "Bundesstr. 45a",
+                                "20146 Hamburg",
+                                "Germany",
+                            ],
                         ),
                     ),
                 ),
@@ -408,38 +395,32 @@ class WebScreen(BaseForm):
                     section="web",
                     key="homepage_heading",
                     name=f"{self.num}A brief description of the project",
-                    value=cfg.get(
-                        "homepage_heading", "Lorem ipsum dolor sit amet"
-                    ),
+                    value=cfg.get("homepage_heading", "Lorem ipsum dolor sit amet"),
                 ),
                 True,
             ),
             scheduler_host=(
                 self.add_widget_intelligent(
-                    TextInfo,
+                    ListInfo,
                     section="web",
                     key="scheduler_host",
                     name=f"{self.num}Scheduler hostname(s) - comma separated",
-                    value=",".join(
-                        cast(
-                            List[str],
-                            cfg.get("scheduler_host", ["levante.dkrz.de"]),
-                        )
+                    value=cast(
+                        List[str],
+                        cfg.get("scheduler_host", ["levante.dkrz.de"]),
                     ),
                 ),
                 True,
             ),
             allowed_hosts=(
                 self.add_widget_intelligent(
-                    TextInfo,
+                    ListInfo,
                     section="web",
                     key="allowed_hosts",
                     name=f"{self.num}Set additional hostnames django can serve",
-                    value=",".join(
-                        cast(
-                            List[str],
-                            cfg.get("allowed_hosts", ["localhost"]),
-                        ),
+                    value=cast(
+                        List[str],
+                        cfg.get("allowed_hosts", ["localhost"]),
                     ),
                 ),
                 True,
@@ -463,9 +444,7 @@ class WebScreen(BaseForm):
                     section="web",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Pythonpath on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -489,7 +468,6 @@ class DBScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys: list[str] = []
         cfg = self.get_config(self.step)
         db_ports: list[int] = list(range(3300, 3320))
         port_idx = get_index(
@@ -497,7 +475,7 @@ class DBScreen(BaseForm):
             str(cfg.get("port", 3306)),
             6,
         )
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             db_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -601,9 +579,7 @@ class DBScreen(BaseForm):
                     section="db",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Pythonpath on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -627,7 +603,6 @@ class FrevaRestScreen(BaseForm):
 
     def _add_widgets(self) -> None:
         """Add widgets to the screen."""
-        self.list_keys: list[str] = []
         cfg = self.get_config(self.step)
         freva_rest_ports: list[int] = list(range(7770, 7780))
         solr_mem_values = [f"{i}g" for i in range(1, 10)]
@@ -639,7 +614,7 @@ class FrevaRestScreen(BaseForm):
             str(cfg.get("freva_rest_port", 7777)),
             7,
         )
-        self.input_fields: dict[str, tuple[npyscreen.TitleText, bool]] = dict(
+        self.input_fields: dict[str, tuple[Any, bool]] = dict(
             freva_rest_host=(
                 self.add_widget_intelligent(
                     TextInfo,
@@ -657,12 +632,11 @@ class FrevaRestScreen(BaseForm):
                 self.add_widget_intelligent(
                     TextInfo,
                     section="freva_rest",
-                    key="redis_host",
+                    key="freva_rest_host",
                     name=f"{self.num} Set the index server host name",
                     value=cast(
                         str,
-                        cfg.get("search_server_host")
-                        or cfg.get("freva_rest_host"),
+                        cfg.get("search_server_host") or cfg.get("freva_rest_host"),
                     ),
                 ),
                 False,
@@ -671,12 +645,11 @@ class FrevaRestScreen(BaseForm):
                 self.add_widget_intelligent(
                     TextInfo,
                     section="freva_rest",
-                    key="redis_host",
+                    key="mongodb_server_host",
                     name=f"{self.num} Set the mongoDB host name",
                     value=cast(
                         str,
-                        cfg.get("mongodb_server_host")
-                        or cfg.get("freva_rest_host"),
+                        cfg.get("mongodb_server_host") or cfg.get("freva_rest_host"),
                     ),
                 ),
                 False,
@@ -690,6 +663,32 @@ class FrevaRestScreen(BaseForm):
                     value=cast(
                         str,
                         cfg.get("redis_host") or cfg.get("freva_rest_host"),
+                    ),
+                ),
+                False,
+            ),
+            redis_deploy_user=(
+                self.add_widget_intelligent(
+                    TextInfo,
+                    section="freva_rest",
+                    key="redis_deploy_user",
+                    name=f"{self.num} Set the redis deploy user",
+                    value=cast(
+                        str,
+                        cfg.get("redis_deploy_user") or cfg.get("ansible_user"),
+                    ),
+                ),
+                False,
+            ),
+            redis_login_user=(
+                self.add_widget_intelligent(
+                    TextInfo,
+                    section="freva_rest",
+                    key="redis_login_user",
+                    name=f"{self.num} Set the redis login user",
+                    value=cast(
+                        str,
+                        cfg.get("redis_login_user") or cfg.get("ansible_become_user"),
                     ),
                 ),
                 False,
@@ -797,12 +796,42 @@ class FrevaRestScreen(BaseForm):
             ),
             oidc_token_claims=(
                 self.add_widget_intelligent(
-                    DictInfo,
+                    ListInfo,
                     section="freva_rest",
                     key="oidc_token_claims",
                     name=f"{self.num}OIDC authorization filters",
+                    value=cast(list[str], cfg.get("oidc_token_claims", [])),
+                ),
+                False,
+            ),
+            oidc_admin_claims=(
+                self.add_widget_intelligent(
+                    ListInfo,
+                    section="freva_rest",
+                    key="oidc_admin_claims",
+                    name=f"{self.num}OIDC admin user filters",
+                    value=cast(list[str], cfg.get("oidc_admin_claims", [])),
+                ),
+                False,
+            ),
+            oidc_trusted_issuers=(
+                self.add_widget_intelligent(
+                    ListInfo,
+                    section="freva_rest",
+                    key="oidc_trusted_issuers",
+                    name=f"{self.num}OIDC trusted issuers",
+                    value=cast(list[str], cfg.get("oidc_trusted_issuers", [])),
+                ),
+                False,
+            ),
+            oidc_systemuser_claim=(
+                self.add_widget_intelligent(
+                    TextInfo,
+                    section="freva_rest",
+                    key="oidc_systemuser_claim",
+                    name=f"{self.num}OIDC system user claim",
                     value=cast(
-                        dict[str, list[str]], cfg.get("oidc_token_claims", {})
+                        str, cfg.get("oidc_systemuser_claim", "preferred_username")
                     ),
                 ),
                 False,
@@ -826,9 +855,7 @@ class FrevaRestScreen(BaseForm):
                     section="freva_rest",
                     key="ansible_python_interpreter",
                     name=f"{self.num}Pythonpath on remote machine",
-                    value=cfg.get(
-                        "ansible_python_interpreter", "/usr/bin/python3"
-                    ),
+                    value=cfg.get("ansible_python_interpreter", "/usr/bin/python3"),
                 ),
                 False,
             ),
@@ -839,6 +866,16 @@ class FrevaRestScreen(BaseForm):
                     key="ansible_user",
                     name=f"{self.num}Username for remote machine",
                     value=cfg.get("ansible_user", getuser()),
+                ),
+                False,
+            ),
+            skip_deployments=(
+                self.add_widget_intelligent(
+                    ListInfo,
+                    section="freva_rest",
+                    key="skip_deployments",
+                    name=f"{self.num}Do not deploy those services",
+                    value=cast(list[str], cfg.get("skip_deployments", [])),
                 ),
                 False,
             ),
@@ -860,9 +897,7 @@ class RunForm(npyscreen.FormMultiPageAction):
         """Define what happens once the `ok` for applying the deployment is hit."""
 
         if not self.project_name.value:
-            npyscreen.notify_confirm(
-                "You have to set a project name", title="ERROR"
-            )
+            npyscreen.notify_confirm("You have to set a project name", title="ERROR")
             return
         missing_form: None | str = self.parentApp.check_missing_config()
         if missing_form:
@@ -890,7 +925,9 @@ class RunForm(npyscreen.FormMultiPageAction):
                         and gen_keys is False
                     ):
                         if keyfile:
-                            msg = f"{key_type} certificate file `{key_file}` must exist."
+                            msg = (
+                                f"{key_type} certificate file `{key_file}` must exist."
+                            )
                         else:
                             msg = f"You must give a {key_type} certificate file"
                         npyscreen.notify_confirm(msg, title="ERROR")
@@ -938,9 +975,7 @@ class RunForm(npyscreen.FormMultiPageAction):
     def show_info(self, *args: Any, **kwargs: Any) -> None:
         """Display an info if present."""
         if isinstance(self.current_info, str):
-            npyscreen.notify_confirm(
-                self.current_info, title="Detailed Information"
-            )
+            npyscreen.notify_confirm(self.current_info, title="Detailed Information")
 
     def _add_widgets(self) -> None:
         """Add the widgets to the form."""

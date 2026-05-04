@@ -1,17 +1,20 @@
 [Unit]
 Description=Freva Web Redis server
 After=network.target
+{% if not ansible_become %}
+ConditionHost={{ ansible_hostname }}
+{% endif %}
 
 [Service]
 Type=simple
 PermissionsStartOnly=true
 NoNewPrivileges=true
 KillSignal=SIGTERM
-ExecStart={{ bash_cmd }} -c "{{conda_path}}/bin/start-freva-service -s redis"
+ExecStart={{ bash_cmd }}  {{conda_path}}/bin/start-freva-service -s redis
 Environment="PATH={{conda_path}}/bin:{{ ansible_env.PATH }}"
 StandardOutput=journal
 StandardError=journal
-EnvironmentFile={{ data_dir }}/config/service-redis.env
+EnvironmentFile={{ env_dir }}/redis.env
 Restart=on-failure
 RestartSec=5
 StartLimitBurst=5

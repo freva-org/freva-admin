@@ -4,24 +4,27 @@
   register: docker_check
   ignore_errors: true
   changed_when: false
+  failed_when: false
   environment:
-    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
 - name: Check for podman binary
   command: which podman
   register: podman_check
   ignore_errors: true
   changed_when: false
+  failed_when: false
   environment:
-    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
 - name: Check for podman-compose binary
   command: which podman-compose
   register: podman_compose_check
   ignore_errors: true
   changed_when: false
+  failed_when: false
   environment:
-    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+    PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
 - name: Set available engines
   set_fact:
@@ -80,8 +83,9 @@
       command: which podman-compose
       register: podman_compose_check_post
       changed_when: false
+      failed_when: false
       environment:
-        PATH: "/usr/local/bin:{{ ansible_facts.env.HOME }}"
+        PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
     - name: Set compose_bin to installed podman-compose
       set_fact:
@@ -96,6 +100,7 @@
       command: "{{ docker_bin }} compose version"
       register: docker_compose_plugin_check
       ignore_errors: true
+      failed_when: false
       changed_when: false
 
     - name: Set compose_bin to 'docker compose' plugin
@@ -113,7 +118,7 @@
           register: docker_compose_check_post
           changed_when: false
           environment:
-            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
         - name: Set compose_bin to docker-compose binary
           set_fact:
@@ -138,7 +143,7 @@
           register: docker_compose_check_post_pip
           changed_when: false
           environment:
-            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}"
+            PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
         - name: Set compose_bin to pip-installed docker-compose
           set_fact:

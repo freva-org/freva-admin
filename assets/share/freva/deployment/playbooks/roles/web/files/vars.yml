@@ -10,16 +10,33 @@ web_name: "{{ project_name }}-web"
 web_cache_name: "{{ project_name }}-web-cache"
 web_proxy_name: "{{ project_name }}-web-proxy"
 web_config_file: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}/freva/web/freva_web_conf.toml"
-compose_file: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{web_name}}-compose.yml'
+compose_file: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{web_name}}-compose'
+env_path: "{{ env_dir }}/{{service}}.env"
 old_compose_dir: '{{web_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/compose_services'
 data_dir: '{{ base_path }}/{{ project_name }}/services/{{service}}'
 conda_path: '{{ data_dir }}/app/conda'
 wipe: true
 
 conda_packages:
+  - bleach
+  - django-debug-toolbar
+  - django-ipware
+  - django-nose
+  - django-webpack-loader
+  - djangorestframework
+  - fabric
+  - freva
+  - git
+  - gunicorn
+  - mysqlclient
+  - paramiko
+  - pip
+  - pygtail
+  - redis-py
+  - toml
+  - unidecode
   - redis-server
   - nginx
-  - mamba
   - libxcrypt1
   - webpack-cli
   - nodejs

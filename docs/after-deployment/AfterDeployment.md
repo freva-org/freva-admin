@@ -49,6 +49,35 @@ systemclt --user restart clex-ces-web.service
 
 ## Access of service data on the host machine
 
+### Environment variables
+All services are configured via environment variables. *Conda* based deployment
+use the `EnvironmentFile` directive in the `systemd` unit of the service in
+question while *Container* based deployments define the environment variables
+directly in the `docker-compose.yml` file. The environment files are located
+in `<data_path>/<project_name>/<service>.env` for example:
+
+- `/opt/freva/clex-ces/web.env`
+
+
+For *Conda* based deployments *all* services define environment files. Container
+deployments only create a `web.env` service file where a so called maintenance
+mode can be configured.
+
+#### Web maintenance mode
+
+If the web-app is not available due to upstream service or disk failure a
+maintenance mode can be enabled. This can be realised by setting the
+
+- `FREVA_MAINTENANCE_MODE=1`
+
+in the `web.env` environment file (`<data_path>/<project_name>/web.env`) and
+restarting the service via `systemd`. This will prevent the web app from
+starting causing the `nginx` reverse proxy to display a message that the system
+is currently unavailable. Once the services are fully available
+again the entry can be set back to `FREVA_MAINTENANCE_MODE=0` and the web
+service can be restarted.
+
+
 ### Conda-forge base deployments
 The data of the services, like the database or databrowser cores
 should be persistent. The default location for all the service data
@@ -96,6 +125,48 @@ location, for example:
 
 - `/opt/freva/clex-ces/compose_services`
 
+
+
+## Environment variables for configuration
+
+All services are configured via environment variables.
+The mechanism differs by deployment type: Conda-based deployments
+load variables through the `EnvironmentFile` directive in each
+service's systemd unit, while container-based deployments define
+them directly in the `docker-compose.yml` file.
+
+Environment files are located at
+`<data_path>/<project_name>/<service>.env`, for example
+`/opt/freva/clex-ces/web.env`.
+
+For Conda-based deployments, every service has its own environment
+file. Container-based deployments only create a `web.env` file,
+which is used to configure maintenance mode (see below).
+
+### Web maintenance mode
+
+If the web application becomes unavailable due to an upstream
+service outage or disk failure, a maintenance mode can be enabled.
+In this mode, the Django application does not start and the nginx
+reverse proxy displays a message indicating that the system is
+temporarily unavailable.
+
+To enable maintenance mode, set the following in the `web.env`
+file (`<data_path>/<project_name>/web.env`):
+
+```
+FREVA_MAINTENANCE_MODE=1
+```
+
+Then restart the web service via `systemctl`. Once the underlying
+issue is resolved and all services are available again, set the
+value back to `0` and restart:
+
+```
+FREVA_MAINTENANCE_MODE=0
+```
+
+
 ## Simple backup scripts:
 Services with persistent data - `db`, `mongo` and `solr` offer a very simple
 backup script.
@@ -127,6 +198,7 @@ and replace it by a more sophisticated backup mechanism.
 If you have set up the services as an unprivileged user you can
 access the backup scripts using the `crontab` command.
 :::
+
 
 (the-web-ui-admin-panel)=
 ## The web UI admin Panel

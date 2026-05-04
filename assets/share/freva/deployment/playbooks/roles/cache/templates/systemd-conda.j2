@@ -1,6 +1,9 @@
 [Unit]
 Description=Freva cache service
 After=network.target
+{% if not ansible_become %}
+ConditionHost={{ ansible_hostname }}
+{% endif %}
 
 [Service]
 Type=simple
@@ -20,7 +23,7 @@ StandardError=journal
 Restart=on-failure
 RestartSec=5
 StartLimitBurst=5
-EnvironmentFile={{ data_dir }}/config/service.env
+EnvironmentFile=-{{ env_path }}
 UMask=007
 
 [Install]
