@@ -1,7 +1,7 @@
 import argparse
 from urllib.request import urlretrieve
 
-__version__ = "2604.11.0"
+__version__ = "2605.0.0"
 
 FREVA_PYTHON_VERSION = "3.13"
 AVAILABLE_PYTHON_VERSIONS = ["3.9", "3.10", "3.11", "3.12", "3.13"]
