@@ -10,12 +10,15 @@
   register: python3_env_cmd
   changed_when: false
   ignore_errors: true
+  failed_when: false
 
 - name: Check path to python
   command: which python
   register: python_env_cmd
   changed_when: false
   ignore_errors: true
+  failed_when: false
+
 
 - name: Fail if python is not available
   fail:

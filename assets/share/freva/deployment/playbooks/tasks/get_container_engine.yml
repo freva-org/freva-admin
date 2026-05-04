@@ -4,6 +4,7 @@
   register: docker_check
   ignore_errors: true
   changed_when: false
+  failed_when: false
   environment:
     PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
@@ -12,6 +13,7 @@
   register: podman_check
   ignore_errors: true
   changed_when: false
+  failed_when: false
   environment:
     PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
@@ -20,6 +22,7 @@
   register: podman_compose_check
   ignore_errors: true
   changed_when: false
+  failed_when: false
   environment:
     PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
@@ -80,6 +83,7 @@
       command: which podman-compose
       register: podman_compose_check_post
       changed_when: false
+      failed_when: false
       environment:
         PATH: "/usr/local/bin:{{ ansible_facts.env.PATH }}:{{ ansible_facts.env.HOME }}/.local/bin"
 
@@ -96,6 +100,7 @@
       command: "{{ docker_bin }} compose version"
       register: docker_compose_plugin_check
       ignore_errors: true
+      failed_when: false
       changed_when: false
 
     - name: Set compose_bin to 'docker compose' plugin

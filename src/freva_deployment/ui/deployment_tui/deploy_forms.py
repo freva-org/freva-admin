@@ -675,7 +675,7 @@ class FrevaRestScreen(BaseForm):
                     name=f"{self.num} Set the redis deploy user",
                     value=cast(
                         str,
-                        cfg.get("redis_deploy_user") or cfg.get("ansibl_user"),
+                        cfg.get("redis_deploy_user") or cfg.get("ansible_user"),
                     ),
                 ),
                 False,
@@ -688,7 +688,7 @@ class FrevaRestScreen(BaseForm):
                     name=f"{self.num} Set the redis login user",
                     value=cast(
                         str,
-                        cfg.get("redis_login_user") or cfg.get("ansibl_become_user"),
+                        cfg.get("redis_login_user") or cfg.get("ansible_become_user"),
                     ),
                 ),
                 False,
