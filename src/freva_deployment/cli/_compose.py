@@ -125,7 +125,7 @@ def create_compose(args: argparse.Namespace) -> None:
                 "  [b]python -m pip install freva-client freva[/b] (or) \n"
                 "  [b]conda -c conda-forge install freva-client freva [/b]\n\n"
                 "You should then set the "
-                "[b]EVALUATIO_SYSTEM_CONFIG_FILE[/b] env variable "
+                "[b]EVALUATION_SYSTEM_CONFIG_FILE[/b] env variable "
                 "for the [b]web-server[/b] section in the compose file to the "
                 "config file that was installed by conda/pip - e.g\n\n  "
                 "<base-path-to-python-env>/freva/"

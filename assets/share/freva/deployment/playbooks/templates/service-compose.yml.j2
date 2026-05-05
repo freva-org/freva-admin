@@ -49,7 +49,7 @@ services:
       - VAULT_ADD_VAR_MONGO_HOST={{ freva_rest_mongodb_server_host }}:27017
       - VAULT_ADD_VAR_MONGO_PASSWORD={{freva_rest_db_passwd}}
       - VAULT_ADD_VAR_MONGO_DB=search_stats
-      - VAULT_ADD_VAR_MONGO_URL="mongodb://{{freva_rest_db_user}}:{{freva_rest_db_passwd}}@{{freva_rest_db_host}}:27017?timeoutMS=2000"
+      - VAULT_ADD_VAR_MONGO_URL=mongodb://{{freva_rest_db_user}}:{{freva_rest_db_passwd}}@{{freva_rest_db_host}}:27017
       - VAULT_ADD_VAR_DB_USER={{db_user}}
       - VAULT_ADD_VAR_DB_PASSWD={{db_passwd}}
       - VAULT_ADD_VAR_DB_DB={{ db }}
@@ -199,10 +199,10 @@ services:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - freva-rest_logs:/tmp/logs:z
     depends_on:
-        mongo-server:
-            condition: service_healthy
-        search-server:
-            condition: service_healthy
+      mongo-server:
+        condition: service_healthy
+      search-server:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:7777/api/freva-nextgen/ping\")'"]
       interval: 5s
@@ -276,18 +276,18 @@ services:
       - web_logs:/data/logs:z
     tty: true
     depends_on:
-        cache-server:
-            condition: service_healthy
+      cache-server:
+        condition: service_healthy
 {% if use_core is false %}
-        web-prep:
-            condition: service_completed_successfully
+      web-prep:
+        condition: service_completed_successfully
 {% endif %}
-        database-server:
-            condition: service_healthy
-        vault-server:
-            condition: service_healthy
-        freva-rest-server:
-            condition: service_healthy
+      database-server:
+        condition: service_healthy
+      vault-server:
+        condition: service_healthy
+      freva-rest-server:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/\")'"]
       interval: 5s
@@ -335,7 +335,8 @@ services:
       - 80:80
       - 443:443
     depends_on:
-      - web-app
+      web-app:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "nginx"]
       interval: 5s
