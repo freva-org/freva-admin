@@ -74,7 +74,9 @@ def comment_entries(toml_str, entries_to_comment):
 def _get_nameservers() -> str:
     nameservers = dns.resolver.Resolver().nameservers
     nameservers_list: Sequence[str] = (
-        nameservers if isinstance(nameservers, list) else [nameservers]
+        list(map(str, nameservers))
+        if isinstance(nameservers, list)
+        else [str(nameservers)]
     )
     return " ".join(
         s for s in nameservers_list if re.findall(r"\d{1,3}(?:\.\d{1,3}){3}", s)
