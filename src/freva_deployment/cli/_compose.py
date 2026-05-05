@@ -100,6 +100,8 @@ def create_compose(args: argparse.Namespace) -> None:
             "redis_version": get_versions()["redis"],
             "current_nameservers": " ".join(args.dns_nameservers or []),
             "ansible_python_interpreter": sys.executable,
+            "data_loader_volumes": DF.cfg["freva_rest"].get("data_loader_volumes")
+            or [],
         }
         logger.info("Parsing configurations")
         inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))

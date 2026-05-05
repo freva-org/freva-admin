@@ -105,6 +105,12 @@ services:
       - API_REDIS_PASSWORD={{ redis_password }}
       - API_REDIS_HOST=cache-server
     command: ["bash", "-c", "python3 -m data_portal_worker"]
+{% if data_loader_volumes | default([]) | length > 0 %}
+    volumes:
+{% for vol in data_loader_volumes %}
+      - {{ vol }}:{{ vol }}:ro
+{% endfor %}
+{% endif %}
 
   mongo-server:
     user: {{uid}}
