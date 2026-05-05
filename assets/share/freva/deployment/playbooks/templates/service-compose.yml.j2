@@ -3,7 +3,7 @@ services:
   database-server:
     user: {{uid}}
     image: ghcr.io/freva-org/freva-mysql:{{db_version}}
-    hostname: databse-server
+    hostname: database-server
     networks:
       - {{ project_name }}
     environment:
@@ -23,7 +23,7 @@ services:
     ports:
       - {{db_port}}:3306
     healthcheck:
-      test: ["CMD-SHELL","for i in $(seq 1 30); do </dev/tcp/localhost/3306 && exit 0; sleep 1; done; exit 1"]
+      test: ["CMD", "healthchecks", "-s", "mysql"]
       interval: 5s
       timeout: 2s
       retries: 3
@@ -61,6 +61,13 @@ services:
     tty: true
     ports:
       - 5002:5002
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import urllib.request,json; res=urllib.request.urlopen(\"http://localhost:5002/vault/status\"); assert json.load(res)[\"status\"]==\"unsealed\"'"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
 
   cache-server:
     user: {{uid}}
@@ -75,6 +82,13 @@ services:
     environment:
       - REDIS_USERNAME={{ redis_username }}
       - REDIS_PASSWORD={{ redis_password }}
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "redis"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
 
   data-loader-server:
     user: {{uid}}
@@ -90,7 +104,7 @@ services:
       - API_REDIS_USER={{ redis_username }}
       - API_REDIS_PASSWORD={{ redis_password }}
       - API_REDIS_HOST=cache-server
-    command: ["bash", "-c", "sleep 20 && python3 -m data_portal_worker"]
+    command: ["bash", "-c", "python3 -m data_portal_worker"]
 
   mongo-server:
     user: {{uid}}
@@ -110,6 +124,13 @@ services:
       - mongo_logs:/data/logs:z
     container_name: mongo-server
     tty: true
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "mongo"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
 
   search-server:
     user: {{uid}}
@@ -128,6 +149,13 @@ services:
       - solr_logs:/data/logs:z
     container_name: search-server
     tty: true
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "solr"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
 
   freva-rest-server:
     user: {{uid}}
@@ -144,6 +172,9 @@ services:
       - API_OIDC_DISCOVERY_URL={{freva_rest_oidc_url}}
       - API_OIDC_CLIENT_SECRET={{freva_rest_oidc_client_secret}}
       - API_OIDC_TOKEN_CLAIMS={{ freva_rest_oidc_token_claims }}
+      - API_ADMIN_CLAIMS={{ freva_rest_oidc_admin_claims | join(',')}}
+      - API_OIDC_SYSTEMUSER_CLAIM={{ freva_rest_oidc_systemuser_claim }}
+      - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issuers | join(',') }}
       - API_REDIS_USER={{ redis_username }}
       - API_REDIS_PASSWORD={{ redis_password }}
       - API_REDIS_HOST=cache-server
@@ -162,9 +193,18 @@ services:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - freva-rest_logs:/tmp/logs:z
     depends_on:
-      - mongo-server
-      - search-server
+        mongo-server:
+            condition: service_healthy
+        search-server:
+            condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:7777/api/freva-nextgen/ping\")'"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
 
+{% if use_core is false %}
   web-prep:
     image: quay.io/curl/curl:latest
     user: root:0
@@ -178,6 +218,7 @@ services:
     entrypoint: ["sh", "-c",
                  "curl -Ssl https://raw.githubusercontent.com/freva-org/freva-admin/refs/heads/main/assets/share/freva/deployment/scripts/write-config.sh| sh"
     ]
+{% endif %}
 
   web-app:
     user: root:0
@@ -194,7 +235,11 @@ services:
 {% endif %}
       - DJANGO_SUPERUSER_PASSWORD={{ root_passwd }}
       - ALLOWED_HOSTS={{web_allowed_hosts | join(',')}}
+{% if use_core %}
+      - FREVA_WEB_CONFIG_FILE={{ core_root_dir }}/freva/web/freva_web_conf.toml
+{% else %}
       - FREVA_WEB_CONFIG_FILE=/data/config/web/freva_web.toml
+{% endif %}
       - SCHEDULER_HOST={{ web_scheduler_host | join(',') }}
       - CSRF_TRUSTED_ORIGINS={{ web_csrf_trusted_origins | join(',') }}
       - FREVA_BIN={{ web_freva_bin }}
@@ -213,7 +258,7 @@ services:
       - DB_NAME={{ db }}
       - DB_HOST=database-server
       - VAULT_URL=http://vault-server:5002
-    command: ["bash", "-c", "sleep 20 && ./init_django.sh"]
+    command: ["bash", "-c", "./init_django.sh"]
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
 {% if use_core is true %}
@@ -225,11 +270,26 @@ services:
       - web_logs:/data/logs:z
     tty: true
     depends_on:
-      - cache-server
-      - web-prep
-      - database-server
-      - vault-server
-      - freva-rest-server
+        cache-server:
+            condition: service_healthy
+{% if use_core is false %}
+        web-prep:
+            condition: service_completed_successfully
+{% endif %}
+        database-server:
+            condition: service_healthy
+        vault-server:
+            condition: service_healthy
+        freva-rest-server:
+            condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/\")'"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
+
 
   web-reverse-proxy:
     user: root:0
@@ -243,7 +303,7 @@ services:
       - web_django-static:/srv/static:z
       - web_proxy-logs:/data/logs:z
 {% if use_core is true %}
-      - {{ core_preview_path | regex_replace('^~', ansible_facts.env.HOME)}}:/srv/static/preview:ro
+      - {{ core_preview_path }}:/srv/static/preview:ro
 {% endif %}
     environment:
       - SERVER_ROOT=/srv/static
@@ -260,6 +320,7 @@ services:
       - REST_PROXY_HOST_NAME={{ web_chatbot_rest_api_url }}
       - FILL_COLOR={{ web_main_color }}
       - PROXY_USER=nobody
+      - PROXY_DNS={{ current_nameservers | default('8.8.8.8') }}
       - PROJECT_NAME={{ project_name }}
       - PORT_HTTPSD=443
       - PORT_HTTPD=80
@@ -269,6 +330,13 @@ services:
       - 443:443
     depends_on:
       - web-app
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "nginx"]
+      interval: 5s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
 
 networks:
   {{ project_name }}:
