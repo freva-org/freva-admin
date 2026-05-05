@@ -23,7 +23,7 @@ TASK = """---
 - name: Render compose file locally only
   hosts: all
   connection: local
-  gather_facts: yes
+  gather_facts: no
 
   tasks:
 
@@ -154,7 +154,9 @@ def get_pvcs_from_services(
     return pvcs
 
 
-def get_service_templates(services: List[str]) -> List[str]:
+def get_service_templates(
+    services: List[str], include_secrets: bool = False
+) -> List[str]:
     """Assigns the templates needed for each the services."""
     lookup = {
         "freva-rest": ["12-solr.yaml.j2", "14-mongo.yaml.j2", "20-rest.yaml.j2"],
@@ -168,10 +170,11 @@ def get_service_templates(services: List[str]) -> List[str]:
     ]
     templates: List[str] = [
         "00-namespace.yaml.j2",
-        "01-secrets.yaml.j2",
         "02-pvcs.yaml.j2",
         "30-ingress.yaml.j2",
     ]
+    if include_secrets:
+        templates.append("01-secrets.yaml.j2")
     for service in services:
         if service in lookup:
             templates += lookup[service]
@@ -204,13 +207,9 @@ def create_manifest(args: argparse.Namespace) -> None:
         local_debug=False,
         gen_keys=True,
     ) as DF:
-        out_dir = (
-            (args.output or Path.cwd() / DF.project_name).expanduser().absolute()
-        )
+        out_dir = (args.output or Path.cwd() / DF.project_name).expanduser().absolute()
         out_dir.mkdir(exist_ok=True, parents=True)
-        eval_conf_enc = b64encode(
-            DF.create_eval_config().read_text().encode()
-        ).decode()
+        eval_conf_enc = b64encode(DF.create_eval_config().read_text().encode()).decode()
         extra = {
             **{
                 "eval_config_content": eval_conf_enc,
@@ -222,10 +221,10 @@ def create_manifest(args: argparse.Namespace) -> None:
                 "fqdn": DF.cfg["kubernetes"]["ingress"]["fqdn"],
                 "out_dir": str(out_dir),
                 "image_pull_policy": "IfNotPresent",
-                "templates": get_service_templates(services),
-                "pvcs": get_pvcs_from_services(
-                    services, DF.cfg["kubernetes"]["pvc"]
+                "templates": get_service_templates(
+                    services, include_secrets=args.secrets
                 ),
+                "pvcs": get_pvcs_from_services(services, DF.cfg["kubernetes"]["pvc"]),
                 "resources": DF.cfg["kubernetes"]["resources"],
                 "ingress_hosts": get_ingress_hosts(
                     DF.project_name,
@@ -317,6 +316,16 @@ def kubernetes_parser(
         default=["db", "freva-rest", "web", "data-loader"],
         choices=["web", "db", "freva-rest", "data-loader"],
         help="The services to be deployed.",
+    )
+    parser.add_argument(
+        "--secrets",
+        "--with-secrets",
+        action="store_true",
+        help=(
+            "Create the secrets manifest. You only have to render the "
+            "secrets manifest once. Use the flag to include rendering of the"
+            " secrets manifest."
+        ),
     )
     parser.add_argument(
         "-o",

@@ -75,6 +75,9 @@ spec:
             - name: API_OIDC_CLIENT_SECRET
               valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_CLIENT_SECRET } }
             - {name: API_OIDC_TOKEN_CLAIMS, value: "{{ freva_rest_oidc_token_claims }}"}
+            - {name: API_ADMIN_CLAIMS, value: "{{ freva_rest_oidc_admin_claims }}"}
+            - {name: API_OIDC_SYSTEMUSER_CLAIM, value: "{{ freva_rest_oidc_systemuser_claim }}"}
+            - {name: API_OIDC_TRUSTED_ISSUERS, value: "{{ freva_rest_oidc_trusted_issuers | join(',') }}"}
             - name: API_REDIS_USER
               valueFrom: { secretKeyRef: {name: freva-secrets, key: REDIS_USERNAME } }
             - name: API_REDIS_PASSWORD
