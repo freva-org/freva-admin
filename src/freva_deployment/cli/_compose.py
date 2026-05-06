@@ -105,8 +105,13 @@ def create_compose(args: argparse.Namespace) -> None:
             "data_loader_volumes": DF.cfg["freva_rest"].get("data_loader_volumes")
             or [],
         }
+        level = logger.getEffectiveLevel()
         logger.info("Parsing configurations")
-        inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))
+        try:
+            logger.setLevel(0)
+            inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))
+        finally:
+            logger.setLevel(level)
         if args.no_plugins is True:
             web_config = base64.b64decode(
                 inventory["web"]["vars"]["web_config_content"]
@@ -182,17 +187,17 @@ def create_compose(args: argparse.Namespace) -> None:
                     project_name=DF.project_name, engine=args.container_engine
                 )
             )
-        RichConsole.print(
-            (
-                "\n\nA systemd service file was created. Set the path"
-                " to the compose file on the server and place it "
-                f"into [b]/etc/systemd/system/{service_file.name}[/]"
-                "\n"
-                "then use:\n\n"
-                "  [b]sudo systemctl daemon-reload\n"
-                f"  sudo systemctl enable --now {service_file.name}[/b]\n"
+            RichConsole.print(
+                (
+                    "\n\nA systemd service file was created. Set the path"
+                    " to the compose file on the server and place it "
+                    f"into [b]/etc/systemd/system/{service_file.name}[/]"
+                    "\n"
+                    "then use:\n\n"
+                    "  [b]sudo systemctl daemon-reload\n"
+                    f"  sudo systemctl enable --now {service_file.name}[/b]\n"
+                )
             )
-        )
 
 
 def compose_parser(
