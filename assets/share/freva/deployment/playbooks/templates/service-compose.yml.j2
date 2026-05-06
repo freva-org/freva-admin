@@ -24,11 +24,10 @@ services:
       - {{db_port}}:3306
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "mysql"]
-      interval: 5s
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
-
 
   vault-server:
     user: root
@@ -63,14 +62,12 @@ services:
       - 5002:5002
     healthcheck:
       test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import urllib.request,json; res=urllib.request.urlopen(\"http://localhost:5002/vault/status\"); assert json.load(res)[\"status\"]==\"unsealed\"'"]
-      interval: 5s
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
 
-
   cache-server:
-    user: {{uid}}
     image: ghcr.io/freva-org/freva-redis:{{redis_version}}
     hostname: cache-server
     networks:
@@ -84,14 +81,12 @@ services:
       - REDIS_PASSWORD={{ redis_password }}
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "redis"]
-      interval: 5s
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
 
-
   data-loader-server:
-    user: {{uid}}
     image: ghcr.io/freva-org/freva-data-loader:latest
     hostname: data-loader-server
     networks:
@@ -99,18 +94,18 @@ services:
     container_name: data-loader-server
     tty: true
     environment:
-      - API_CONFIG=/tmp/data-loader.conf
-      - API_LOGDIR=/tmp/data-loader.logs
+      - API_LOGDIR=/tmp/logs
       - API_REDIS_USER={{ redis_username }}
       - API_REDIS_PASSWORD={{ redis_password }}
-      - API_REDIS_HOST=cache-server
-    command: ["bash", "-c", "python3 -m data_portal_worker"]
-{% if data_loader_volumes | default([]) | length > 0 %}
+      - API_REDIS_HOST=redis://cache-server:6379
+      - API_LOGLEVEL=INFO
+    command: ["data-loader-worker"]
     volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - freva-rest_logs:/tmp/logs:z
 {% for vol in data_loader_volumes %}
       - {{ vol }}:{{ vol }}:ro
 {% endfor %}
-{% endif %}
 
   mongo-server:
     user: {{uid}}
@@ -132,11 +127,10 @@ services:
     tty: true
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "mongo"]
-      interval: 5s
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
-
 
   search-server:
     user: {{uid}}
@@ -157,11 +151,10 @@ services:
     tty: true
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "solr"]
-      interval: 5s
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
-
 
   freva-rest-server:
     user: {{uid}}
@@ -183,14 +176,14 @@ services:
       - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issuers | join(',') }}
       - API_REDIS_USER={{ redis_username }}
       - API_REDIS_PASSWORD={{ redis_password }}
-      - API_REDIS_HOST=cache-server
+      - API_REDIS_HOST=redis://cache-server:6379
       - API_LOGDIR=/tmp/logs
       - API_SOLR_HOST=search-server:8983
       - API_MONGO_USER={{freva_rest_db_user}}
       - API_MONGO_HOST=mongo-server:27017
       - API_MONGO_PASSWORD={{freva_rest_db_passwd}}
       - API_MONGO_DB=search_stats
-      - API_SERVICES={{ freva_rest_services }}
+      - API_SERVICES=databrowser,stacapi,zarr-stream
     ports:
       - {{freva_rest_port}}:{{freva_rest_port}}
     container_name: freva-rest-server
@@ -204,13 +197,13 @@ services:
       search-server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:7777/api/freva-nextgen/ping\")'"]
-      interval: 5s
+      test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import socket; s=socket.create_connection((\"localhost\",7777),2); s.close()'"]
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
-
 {% if use_core is false %}
+
   web-prep:
     image: quay.io/curl/curl:latest
     user: root:0
@@ -290,12 +283,10 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/\")'"]
-      interval: 5s
+      interval: 35s
       timeout: 2s
       retries: 3
-      start_period: 15s
-
-
+      start_period: 35s
 
   web-reverse-proxy:
     user: root:0
@@ -339,7 +330,7 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "nginx"]
-      interval: 5s
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
