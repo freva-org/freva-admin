@@ -235,7 +235,7 @@ def compose_parser(
         "-u",
         "--user",
         type=str,
-        help="User name that should run the services insight the container.",
+        help="User name that should run the services inside the container.",
         default="root",
     )
     parser.add_argument(
