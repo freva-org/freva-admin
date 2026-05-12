@@ -106,6 +106,9 @@ services:
 {% for vol in data_loader_volumes %}
       - {{ vol }}:{{ vol }}:ro
 {% endfor %}
+    depends_on:
+        cache-server:
+            condition: service_healthy
 
   mongo-server:
     user: {{uid}}
@@ -235,7 +238,7 @@ services:
       - DJANGO_SUPERUSER_PASSWORD={{ root_passwd }}
       - ALLOWED_HOSTS={{web_allowed_hosts | join(',')}}
 {% if use_core %}
-      - FREVA_WEB_CONFIG_FILE={{ core_root_dir }}/freva/web/freva_web_conf.toml
+      - FREVA_WEB_CONFIG_FILE={{ core_root_dir }}/freva/web/freva_web.toml
 {% else %}
       - FREVA_WEB_CONFIG_FILE=/data/config/web/freva_web.toml
 {% endif %}
