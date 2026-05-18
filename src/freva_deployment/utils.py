@@ -283,6 +283,7 @@ def _create_new_config(inp_file: Path) -> Path:
             "oidc_systemuser_claim",
             "oidc_trusted_issuers",
             "data_loader_portal_hosts",
+            "data_loader_volumes",
             "admin_user",
             "skip_deployments",
         ],

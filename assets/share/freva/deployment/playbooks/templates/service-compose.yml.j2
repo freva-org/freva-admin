@@ -3,7 +3,7 @@ services:
   database-server:
     user: {{uid}}
     image: ghcr.io/freva-org/freva-mysql:{{db_version}}
-    hostname: databse-server
+    hostname: database-server
     networks:
       - {{ project_name }}
     environment:
@@ -23,12 +23,11 @@ services:
     ports:
       - {{db_port}}:3306
     healthcheck:
-      test: ["CMD-SHELL","for i in $(seq 1 30); do </dev/tcp/localhost/3306 && exit 0; sleep 1; done; exit 1"]
-      interval: 5s
+      test: ["CMD", "healthchecks", "-s", "mysql"]
+      interval: 35s
       timeout: 2s
       retries: 3
       start_period: 15s
-
 
   vault-server:
     user: root
@@ -49,7 +48,7 @@ services:
       - VAULT_ADD_VAR_MONGO_HOST={{ freva_rest_mongodb_server_host }}:27017
       - VAULT_ADD_VAR_MONGO_PASSWORD={{freva_rest_db_passwd}}
       - VAULT_ADD_VAR_MONGO_DB=search_stats
-      - VAULT_ADD_VAR_MONGO_URL="mongodb://{{freva_rest_db_user}}:{{freva_rest_db_passwd}}@{{freva_rest_db_host}}:27017?timeoutMS=2000"
+      - VAULT_ADD_VAR_MONGO_URL=mongodb://{{freva_rest_db_user}}:{{freva_rest_db_passwd}}@{{freva_rest_db_host}}:27017
       - VAULT_ADD_VAR_DB_USER={{db_user}}
       - VAULT_ADD_VAR_DB_PASSWD={{db_passwd}}
       - VAULT_ADD_VAR_DB_DB={{ db }}
@@ -61,9 +60,14 @@ services:
     tty: true
     ports:
       - 5002:5002
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import urllib.request,json; res=urllib.request.urlopen(\"http://localhost:5002/vault/status\"); assert json.load(res)[\"status\"]==\"unsealed\"'"]
+      interval: 35s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
 
   cache-server:
-    user: {{uid}}
     image: ghcr.io/freva-org/freva-redis:{{redis_version}}
     hostname: cache-server
     networks:
@@ -75,9 +79,14 @@ services:
     environment:
       - REDIS_USERNAME={{ redis_username }}
       - REDIS_PASSWORD={{ redis_password }}
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "redis"]
+      interval: 35s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
 
   data-loader-server:
-    user: {{uid}}
     image: ghcr.io/freva-org/freva-data-loader:latest
     hostname: data-loader-server
     networks:
@@ -85,12 +94,21 @@ services:
     container_name: data-loader-server
     tty: true
     environment:
-      - API_CONFIG=/tmp/data-loader.conf
-      - API_LOGDIR=/tmp/data-loader.logs
+      - API_LOGDIR=/tmp/logs
       - API_REDIS_USER={{ redis_username }}
       - API_REDIS_PASSWORD={{ redis_password }}
-      - API_REDIS_HOST=cache-server
-    command: ["bash", "-c", "sleep 20 && python3 -m data_portal_worker"]
+      - API_REDIS_HOST=redis://cache-server:6379
+      - API_LOGLEVEL=INFO
+    command: ["data-loader-worker"]
+    volumes:
+      - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+      - freva-rest_logs:/tmp/logs:z
+{% for vol in data_loader_volumes %}
+      - {{ vol }}:{{ vol }}:ro
+{% endfor %}
+    depends_on:
+        cache-server:
+            condition: service_healthy
 
   mongo-server:
     user: {{uid}}
@@ -110,6 +128,12 @@ services:
       - mongo_logs:/data/logs:z
     container_name: mongo-server
     tty: true
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "mongo"]
+      interval: 35s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
 
   search-server:
     user: {{uid}}
@@ -128,6 +152,12 @@ services:
       - solr_logs:/data/logs:z
     container_name: search-server
     tty: true
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "solr"]
+      interval: 35s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
 
   freva-rest-server:
     user: {{uid}}
@@ -144,16 +174,19 @@ services:
       - API_OIDC_DISCOVERY_URL={{freva_rest_oidc_url}}
       - API_OIDC_CLIENT_SECRET={{freva_rest_oidc_client_secret}}
       - API_OIDC_TOKEN_CLAIMS={{ freva_rest_oidc_token_claims }}
+      - API_ADMIN_CLAIMS={{ freva_rest_oidc_admin_claims | join(',')}}
+      - API_OIDC_SYSTEMUSER_CLAIM={{ freva_rest_oidc_systemuser_claim }}
+      - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issuers | join(',') }}
       - API_REDIS_USER={{ redis_username }}
       - API_REDIS_PASSWORD={{ redis_password }}
-      - API_REDIS_HOST=cache-server
+      - API_REDIS_HOST=redis://cache-server:6379
       - API_LOGDIR=/tmp/logs
       - API_SOLR_HOST=search-server:8983
       - API_MONGO_USER={{freva_rest_db_user}}
       - API_MONGO_HOST=mongo-server:27017
       - API_MONGO_PASSWORD={{freva_rest_db_passwd}}
       - API_MONGO_DB=search_stats
-      - API_SERVICES={{ freva_rest_services }}
+      - API_SERVICES=databrowser,stacapi,zarr-stream
     ports:
       - {{freva_rest_port}}:{{freva_rest_port}}
     container_name: freva-rest-server
@@ -162,8 +195,17 @@ services:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - freva-rest_logs:/tmp/logs:z
     depends_on:
-      - mongo-server
-      - search-server
+      mongo-server:
+        condition: service_healthy
+      search-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/conda/bin/python3 -c 'import socket; s=socket.create_connection((\"localhost\",7777),2); s.close()'"]
+      interval: 35s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+{% if use_core is false %}
 
   web-prep:
     image: quay.io/curl/curl:latest
@@ -178,6 +220,7 @@ services:
     entrypoint: ["sh", "-c",
                  "curl -Ssl https://raw.githubusercontent.com/freva-org/freva-admin/refs/heads/main/assets/share/freva/deployment/scripts/write-config.sh| sh"
     ]
+{% endif %}
 
   web-app:
     user: root:0
@@ -194,7 +237,11 @@ services:
 {% endif %}
       - DJANGO_SUPERUSER_PASSWORD={{ root_passwd }}
       - ALLOWED_HOSTS={{web_allowed_hosts | join(',')}}
+{% if use_core %}
+      - FREVA_WEB_CONFIG_FILE={{ core_root_dir }}/freva/web/freva_web.toml
+{% else %}
       - FREVA_WEB_CONFIG_FILE=/data/config/web/freva_web.toml
+{% endif %}
       - SCHEDULER_HOST={{ web_scheduler_host | join(',') }}
       - CSRF_TRUSTED_ORIGINS={{ web_csrf_trusted_origins | join(',') }}
       - FREVA_BIN={{ web_freva_bin }}
@@ -213,7 +260,7 @@ services:
       - DB_NAME={{ db }}
       - DB_HOST=database-server
       - VAULT_URL=http://vault-server:5002
-    command: ["bash", "-c", "sleep 20 && ./init_django.sh"]
+    command: ["bash", "-c", "./init_django.sh"]
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
 {% if use_core is true %}
@@ -225,11 +272,24 @@ services:
       - web_logs:/data/logs:z
     tty: true
     depends_on:
-      - cache-server
-      - web-prep
-      - database-server
-      - vault-server
-      - freva-rest-server
+      cache-server:
+        condition: service_healthy
+{% if use_core is false %}
+      web-prep:
+        condition: service_completed_successfully
+{% endif %}
+      database-server:
+        condition: service_healthy
+      vault-server:
+        condition: service_healthy
+      freva-rest-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python3 -c 'import urllib.request; urllib.request.urlopen(\"http://localhost:8000/\")'"]
+      interval: 35s
+      timeout: 2s
+      retries: 3
+      start_period: 35s
 
   web-reverse-proxy:
     user: root:0
@@ -243,7 +303,7 @@ services:
       - web_django-static:/srv/static:z
       - web_proxy-logs:/data/logs:z
 {% if use_core is true %}
-      - {{ core_preview_path | regex_replace('^~', ansible_facts.env.HOME)}}:/srv/static/preview:ro
+      - {{ core_preview_path }}:/srv/static/preview:ro
 {% endif %}
     environment:
       - SERVER_ROOT=/srv/static
@@ -260,6 +320,7 @@ services:
       - REST_PROXY_HOST_NAME={{ web_chatbot_rest_api_url }}
       - FILL_COLOR={{ web_main_color }}
       - PROXY_USER=nobody
+      - PROXY_DNS={{ current_nameservers | default('8.8.8.8') }}
       - PROJECT_NAME={{ project_name }}
       - PORT_HTTPSD=443
       - PORT_HTTPD=80
@@ -268,11 +329,21 @@ services:
       - 80:80
       - 443:443
     depends_on:
-      - web-app
+      web-app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthchecks", "-s", "nginx"]
+      interval: 35s
+      timeout: 2s
+      retries: 3
+      start_period: 15s
+
 
 networks:
   {{ project_name }}:
     driver: bridge
+    enable_ipv6: true
+
 
 volumes:
   web_django-static:

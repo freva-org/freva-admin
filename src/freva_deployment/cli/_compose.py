@@ -5,10 +5,12 @@ from __future__ import annotations
 import argparse
 import base64
 import re
+import sys
 from base64 import b64encode
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Sequence
 
+import dns.resolver
 import petname
 import yaml
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
@@ -18,12 +20,13 @@ from freva_deployment import __version__
 from ..deploy import DeployFactory
 from ..logger import logger, set_log_level
 from ..utils import RichConsole, asset_dir, config_dir
+from ..versions import get_versions
 
 COMPOSE_TASK = """---
 - name: Render compose file locally only
   hosts: all
   connection: local
-  gather_facts: no
+  gather_facts: false
 
   tasks:
     - name: Template out docker-compose.yml
@@ -68,6 +71,18 @@ def comment_entries(toml_str, entries_to_comment):
     return "\n".join(result)
 
 
+def _get_nameservers() -> str:
+    nameservers = dns.resolver.Resolver().nameservers
+    nameservers_list: Sequence[str] = (
+        list(map(str, nameservers))
+        if isinstance(nameservers, list)
+        else [str(nameservers)]
+    )
+    return " ".join(
+        s for s in nameservers_list if re.findall(r"\d{1,3}(?:\.\d{1,3}){3}", s)
+    )
+
+
 def create_compose(args: argparse.Namespace) -> None:
     """Create a compose file."""
     set_log_level(args.verbose)
@@ -77,19 +92,26 @@ def create_compose(args: argparse.Namespace) -> None:
         local_debug=False,
         gen_keys=True,
     ) as DF:
-
-        eval_conf_enc = b64encode(
-            DF.create_eval_config().read_text().encode()
-        ).decode()
+        eval_conf_enc = b64encode(DF.create_eval_config().read_text().encode()).decode()
         extra = {
             "eval_config_content": eval_conf_enc,
             "use_core": args.no_plugins is False,
             "uid": args.user,
             "redis_password": DF._create_random_passwd(30, 10),
             "redis_username": petname.generate(),
+            "redis_version": get_versions()["redis"],
+            "current_nameservers": " ".join(args.dns_nameservers or []),
+            "ansible_python_interpreter": sys.executable,
+            "data_loader_volumes": DF.cfg["freva_rest"].get("data_loader_volumes")
+            or [],
         }
+        level = logger.getEffectiveLevel()
         logger.info("Parsing configurations")
-        inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))
+        try:
+            logger.setLevel(0)
+            inventory = yaml.safe_load(DF.parse_config(DF.steps, **extra))
+        finally:
+            logger.setLevel(level)
         if args.no_plugins is True:
             web_config = base64.b64decode(
                 inventory["web"]["vars"]["web_config_content"]
@@ -108,7 +130,7 @@ def create_compose(args: argparse.Namespace) -> None:
                 "  [b]python -m pip install freva-client freva[/b] (or) \n"
                 "  [b]conda -c conda-forge install freva-client freva [/b]\n\n"
                 "You should then set the "
-                "[b]EVALUATIO_SYSTEM_CONFIG_FILE[/b] env variable "
+                "[b]EVALUATION_SYSTEM_CONFIG_FILE[/b] env variable "
                 "for the [b]web-server[/b] section in the compose file to the "
                 "config file that was installed by conda/pip - e.g\n\n  "
                 "<base-path-to-python-env>/freva/"
@@ -160,23 +182,22 @@ def create_compose(args: argparse.Namespace) -> None:
         )
 
         if args.systemd_service:
-
             service_file.write_text(
                 SYSTEMD_TMPL.format(
                     project_name=DF.project_name, engine=args.container_engine
                 )
             )
-        RichConsole.print(
-            (
-                "\n\nA systemd service file was created. Set the path"
-                " to the compose file on the server and place it "
-                f"into [b]/etc/systemd/system/{service_file.name}[/]"
-                "\n"
-                "then use:\n\n"
-                "  [b]sudo systemctl daemon-reload\n"
-                f"  sudo systemctl enable --now {service_file.name}[/b]\n"
+            RichConsole.print(
+                (
+                    "\n\nA systemd service file was created. Set the path"
+                    " to the compose file on the server and place it "
+                    f"into [b]/etc/systemd/system/{service_file.name}[/]"
+                    "\n"
+                    "then use:\n\n"
+                    "  [b]sudo systemctl daemon-reload\n"
+                    f"  sudo systemctl enable --now {service_file.name}[/b]\n"
+                )
             )
-        )
 
 
 def compose_parser(
@@ -214,8 +235,15 @@ def compose_parser(
         "-u",
         "--user",
         type=str,
-        help="User name that should run the services insight the container.",
+        help="User name that should run the services inside the container.",
         default="root",
+    )
+    parser.add_argument(
+        "--dns-nameservers",
+        type=str,
+        default=_get_nameservers().split(),
+        nargs="+",
+        help="Set dns nameserver entries for the nginx reverse proxy",
     )
     parser.add_argument(
         "--no-plugins",

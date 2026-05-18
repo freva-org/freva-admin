@@ -276,6 +276,10 @@ data_loader_deploy_user = "root"
 ### if left blank it will default to `ansible_user` of freva-rest.
 data_loader_login_user = ""
 
+## Set this the paths that will be mounted into the data-loader container
+## as a bind mount. This will only have an effect you're using the `compose`
+## sub command.
+data_loader_volumes = []
 
 
 ## Set the amount of memory allocated to the search engine (Solr).
