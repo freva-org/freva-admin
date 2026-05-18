@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>Example deployment configuration &#8212; freva-deployment 2604.0.1 documentation</title>
+    <title>Example deployment configuration &#8212; freva-deployment 2605.1.0 documentation</title>
   
   
   
@@ -35,20 +35,20 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link rel="stylesheet" type="text/css" href="../_static/togglebutton.css?v=9c3e77be" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
-    <script src="../_static/documentation_options.js?v=c9409b13"></script>
+    <script src="../_static/documentation_options.js?v=e19d6a15"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -86,7 +86,9 @@
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -138,8 +140,8 @@
       
     
     
-    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2604.0.1 documentation - Home"/>
-    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2604.0.1 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2605.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2605.1.0 documentation - Home"/>
   
   
 </a></div>
@@ -716,6 +718,10 @@ under a normal user on a login node of a HPC system.</p>
 <span class="c1">## Specify the host name were the ferva-rest-api server should be deployed</span>
 <span class="n">freva_rest_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;localhost&quot;</span>
 
+<span class="c1">## Use the skip_tasks list to entirely skip deployments of parts of the</span>
+<span class="c1">## freva-rest micro serives.</span>
+<span class="n">skip_deployments</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+
 <span class="c1">## To search for data the freva-rest-api needs a metadata index service.</span>
 <span class="c1">## Typically this services apache solr. You can set the host where this</span>
 <span class="c1">## index server should be running at. Leave empty to deploy the service</span>
@@ -732,13 +738,35 @@ under a normal user on a login node of a HPC system.</p>
 <span class="c1">### of the rest-api server.</span>
 <span class="n">redis_host</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
 
+<span class="c1">### Set the user that should deploy and run redis_cache service</span>
+<span class="c1">### if left blank it&#39;ll default to `ansible_become_user` for freva-rest</span>
+<span class="n">redis_deploy_user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;root&quot;</span>
+
+<span class="c1">### Set the user that should login to the redis_cache service host.</span>
+<span class="c1">### if left blank it will default to `ansible_user` of freva-rest.</span>
+<span class="n">redis_login_user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+
 <span class="c1">### Set the hostname(s) for the data-loading portal. The data-loading portal</span>
 <span class="c1">### is a services that provisions data via zarr. The data-loading portal is</span>
 <span class="c1">### a distributed system, meaning that you can set multiple hostnames that</span>
 <span class="c1">### form a distributed memory. The first entry will be used as the master</span>
 <span class="c1">### scheduler and the consecutive ones as workers. If you leave this blank</span>
-<span class="c1">## then the service will be disabled.</span>
+<span class="c1">### then the service will be disabled.</span>
 <span class="n">data_loader_portal_hosts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+
+<span class="c1">### Set the user that should deploy and run data_loader_portal service</span>
+<span class="c1">### if left blank it&#39;ll default to `ansible_become_user` for freva-rest</span>
+<span class="n">data_loader_deploy_user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;root&quot;</span>
+
+<span class="c1">### Set the user that should login to the data_loader_server host.</span>
+<span class="c1">### if left blank it will default to `ansible_user` of freva-rest.</span>
+<span class="n">data_loader_login_user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+
+<span class="c1">## Set this the paths that will be mounted into the data-loader container</span>
+<span class="c1">## as a bind mount. This will only have an effect you&#39;re using the `compose`</span>
+<span class="c1">## sub command.</span>
+<span class="n">data_loader_volumes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+
 
 <span class="c1">## Set the amount of memory allocated to the search engine (Solr).</span>
 <span class="n">solr_mem</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;4g&quot;</span>
@@ -798,13 +826,25 @@ under a normal user on a login node of a HPC system.</p>
 <span class="c1">## will default to the user that deploys the service</span>
 <span class="n">admin_user</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
 
-<span class="c1"># A dict of claim-based filters in {&lt;key1.key2&gt; = [&lt;pattern&gt;]}. Each filter</span>
-<span class="c1"># matches if the decoded JWT contains the specified claim</span>
-<span class="c1"># (e.g., group, role) and its value includes the given pattern. Patterns can</span>
-<span class="c1"># be plain substrings or regular expressions.</span>
-<span class="c1"># Nested claims are defined by &#39;.&#39; separation.</span>
-<span class="n">oidc_token_claims</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{}</span>
+<span class="c1">## A list of token claim filters. Each entry represents a role that needs to</span>
+<span class="c1">## match the JWT roles claims.</span>
+<span class="c1">## matches if the decoded JWT contains the specified claim</span>
+<span class="n">oidc_token_claims</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
 
+
+<span class="c1">## Same as `oidc_token_claims` but for admin users, meaning those claims will</span>
+<span class="c1">## define admin users.</span>
+<span class="n">oidc_admin_claims</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+
+<span class="c1">## If you want to setup a token federation via a network of token trust</span>
+<span class="c1">## you can define a list of ``trusted_issuers`` all issuers matching the</span>
+<span class="c1">## ``iss`` JWT claim will be trusted.</span>
+<span class="n">oidc_trusted_issuers</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+
+<span class="c1">## Se JMESPath expression to extract the authoritative local username from the</span>
+<span class="c1">## IDP&#39;s `userinfo` response. This username is used for filesystem permission</span>
+<span class="c1">## checks  (e.g. can this user read the requested file?).</span>
+<span class="n">oidc_systemuser_claim</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;preferred_username&quot;</span>
 
 <span class="k">[core]</span>
 <span class="c1">## Specify the host name were the client should be deployed</span>
@@ -1050,8 +1090,8 @@ under a normal user on a login node of a HPC system.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1085,7 +1125,7 @@ under a normal user on a login node of a HPC system.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
 </p></div>
       
     </div>
