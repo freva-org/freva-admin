@@ -156,8 +156,14 @@ def get_container_cmd(args: str) -> Tuple[str, str]:
             container_cmd = "podman-compose"
             args_list = [a for a in args_list if a != "compose"]
         if proc.returncode != 0:
-            _ = args_list.pop(args_list.index("compose"))
-            compose_cmd = f"{container_cmd}-compose"
+            try:
+                _ = args_list.pop(args_list.index("compose"))
+            except (IndexError, ValueError):
+                pass
+            if "podman" in container_cmd:
+                compose_cmd = "podman-compose"
+            else:
+                compose_cmd = "docker-compose"
             command = shutil.which(compose_cmd)
             if not command:
                 for cmd in ("ensurepip", f"pip install {compose_cmd}"):
