@@ -1,10 +1,10 @@
-name: CLI Test
+name: Trigger Release
 run-name: ${{ github.actor }} is creating a new release 🧉
 
 on: [workflow_dispatch]
 
 jobs:
-  linting-and-testing:
+  trigger-release:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
