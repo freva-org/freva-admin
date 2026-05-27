@@ -18,4 +18,4 @@ jobs:
           python3 -m pip install tox flit
 
       - name: Triggering release pipeline with tox
-        run: tox release
+        run: tox -e release
