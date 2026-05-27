@@ -1,0 +1,21 @@
+name: CLI Test
+run-name: ${{ github.actor }} is creating a new release 🧉
+
+on: [workflow_dispatch]
+
+jobs:
+  linting-and-testing:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+
+      - name: Install packages
+        run: |
+          python3 -m pip install tox flit
+
+      - name: Triggering release pipeline with tox
+        run: tox release
