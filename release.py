@@ -32,9 +32,7 @@ logger = logging.getLogger("create-release")
 class Release:
     """Abstract class for defining release jobs."""
 
-    version_pattern: str = (
-        r"__version__\s*=\s*['\"](\d+(\.\d+)*(-[a-zA-Z0-9]+)?)[\"']"
-    )
+    version_pattern: str = r"__version__\s*=\s*['\"](\d+(\.\d+)*(-[a-zA-Z0-9]+)?)[\"']"
 
     @abc.abstractmethod
     def __init__(
@@ -55,17 +53,13 @@ class Release:
 def cli(temp_dir: str) -> "Release":
     """Command line interface."""
 
-    parser = argparse.ArgumentParser(
-        description="Prepare the release of a package."
-    )
+    parser = argparse.ArgumentParser(description="Prepare the release of a package.")
     subparser = parser.add_subparsers(help="Available commands:")
     tag_parser = subparser.add_parser("tag", help="Create a new tag")
     deploy_parser = subparser.add_parser(
         "deploy", help="Update the version in the deployment repository"
     )
-    rc_parser = subparser.add_parser(
-        "rc", help="Check the release candidate version"
-    )
+    rc_parser = subparser.add_parser("rc", help="Check the release candidate version")
     rc_parser.add_argument(
         "release-candidate", type=int, help="The release candidate number"
     )
@@ -170,14 +164,10 @@ class Bump(Release):
             self.repo_dir,
             branch,
         )
-        self.git_repo = git.Repo.clone_from(
-            self.repo_url, self.repo_dir, branch=branch
-        )
+        self.git_repo = git.Repo.clone_from(self.repo_url, self.repo_dir, branch=branch)
         # Ensure commits are authored by the bot identity
         with self.git_repo.config_writer() as cw:
-            cw.set_value(
-                "user", "name", os.getenv("BOT_COMMIT_NAME", "freva-bot[bot]")
-            )
+            cw.set_value("user", "name", os.getenv("BOT_COMMIT_NAME", "freva-bot[bot]"))
             cw.set_value(
                 "user",
                 "email",
@@ -233,9 +223,7 @@ class Bump(Release):
 
         if header_match:
             # Section exists: work only inside this section
-            section_start = (
-                header_match.end()
-            )  # index right after underline + newline
+            section_start = header_match.end()  # index right after underline + newline
 
             # Find start of the next version header (or EOF)
             next_header_match = re.search(
@@ -266,13 +254,9 @@ class Bump(Release):
                 new_section_body = new_section_body.rstrip() + "\n\n"
             else:
                 # Append new bullet at the end of the section
-                new_section_body = (
-                    section_body.rstrip() + "\n" + bullet_line + "\n"
-                )
+                new_section_body = section_body.rstrip() + "\n" + bullet_line + "\n"
 
-            new_text = (
-                text[:section_start] + new_section_body + text[section_end:]
-            )
+            new_text = text[:section_start] + new_section_body + text[section_end:]
             file.write_text(new_text)
             return
 
@@ -298,7 +282,7 @@ class Bump(Release):
         if major > version_tuple[0]:
             new_version = Version(f"{major}.0.0")
         else:
-            new_version = Version(f"{version_tuple[0]}.{version_tuple[1]+1}.0")
+            new_version = Version(f"{version_tuple[0]}.{version_tuple[1] + 1}.0")
         return new_version
 
     @cached_property
@@ -396,24 +380,26 @@ class Tag(Release):
     ) -> None:
         self.branch = branch
         self.package_name = package_name
-        self.repo_dir = Path(repo_dir)
+        if os.environ.get("GITHUB_ACTIONS") == "true":
+            self.repo_dir = Path.cwd()
+            self._gh_actions = True
+        else:
+            self.repo_dir = Path(repo_dir)
+            self._gh_actions = False
         self.search_path = search_path
-        logger.info(
-            "Searching for packages/config with the name: %s", package_name
-        )
-        logger.debug("Reading current git config")
-        self.git_config = (
-            Path(git.Repo(search_parent_directories=True).git_dir) / "config"
-        ).read_text()
-        if os.environ.get("GIT_USER"):
-            append = """[user]
-    name = {user}
-    email = {user}@users.noreply.github.com
-    """.format(
-                user=os.environ.get("GIT_USER")
-            )
-            self.git_config += "\n"
-            self.git_config += append
+        logger.info("Searching for packages/config with the name: %s", package_name)
+        if self._gh_actions is False:
+            logger.debug("Reading current git config")
+            self.git_config = (
+                Path(git.Repo(search_parent_directories=True).git_dir) / "config"
+            ).read_text()
+            if os.environ.get("GIT_USER"):
+                append = """[user]
+name = {user}
+email = {user}@users.noreply.github.com
+""".format(user=os.environ.get("GIT_USER"))
+                self.git_config += "\n"
+                self.git_config += append
 
     def tag_version(self) -> None:
         """Tag the latest git version."""
@@ -448,9 +434,10 @@ class Tag(Release):
     def version(self) -> Version:
         """Get the version of the current software."""
         logger.debug("Searching for software version.")
-        pck_dirs = Path(self.search_path) / Path("src") / self.package_name, Path(
-            self.search_path
-        ) / Path("src") / self.package_name.replace("-", "_")
+        pck_dirs = (
+            Path(self.search_path) / Path("src") / self.package_name,
+            Path(self.search_path) / Path("src") / self.package_name.replace("-", "_"),
+        )
         files = [
             self.repo_dir / f[1] / f[0]
             for f in product(("_version.py", "__init__.py"), pck_dirs)
@@ -522,6 +509,46 @@ class Tag(Release):
 
     def main(self) -> None:
         """Tag a new git version."""
+        if self._gh_actions is True:
+            self._run_remote()
+        else:
+            self._run_locally()
+
+    def _run_remote(self) -> None:
+
+        token = os.environ["GITHUB_TOKEN"]
+        repo = os.environ["GITHUB_REPOSITORY"]  # e.g. "owner/repo"
+        sha = os.environ["GITHUB_SHA"]
+        api = f"https://api.github.com/repos/{repo}"
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+        }
+        if self.version <= self.git_tag:
+            raise Exit(
+                "Tag version: {} is the same as current version {}"
+                ", you need to bump the version number first and "
+                "push the changes to the {} branch".format(
+                    self.version,
+                    self.git_tag,
+                    self.branch,
+                )
+            )
+        self._check_change_log_file()
+        logger.info("Creating tag for version v%s", self.version)
+        tag_name = "v{self.version}"
+        try:
+            resp = requests.post(
+                f"{api}/git/refs",
+                headers=headers,
+                json={"ref": f"refs/tags/{tag_name}", "sha": sha},
+            )
+            resp.raise_for_status()
+        except git.GitCommandError as error:
+            raise Exit("Could not create tag: {}".format(error))
+        logger.info("Tags created.")
+
+    def _run_locally(self) -> None:
         self._clone_repo_from_branch(self.branch)
         cloned_repo = git.Repo(self.repo_dir)
         remote = cloned_repo.remote(name="origin")
@@ -593,9 +620,7 @@ class ReleaseCandidate(Tag):
             try:
                 # Get the latest tag on the main branch
                 return Version(
-                    repo.git.describe("--tags", "--abbrev=0", self.branch).lstrip(
-                        "v"
-                    )
+                    repo.git.describe("--tags", "--abbrev=0", self.branch).lstrip("v")
                 )
             except git.exc.GitCommandError:
                 logger.debug("No tag found")
