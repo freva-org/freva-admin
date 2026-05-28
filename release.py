@@ -7,7 +7,7 @@ import logging
 import os
 import re
 import tempfile
-from datetime import date
+from datetime import date, datetime
 from functools import cached_property
 from itertools import product
 from pathlib import Path
@@ -541,7 +541,16 @@ email = {user}@users.noreply.github.com
             resp = requests.post(
                 f"{api}/git/refs",
                 headers=headers,
-                json={"ref": f"refs/tags/{tag_name}", "sha": sha},
+                json={
+                    "ref": f"refs/tags/{tag_name}",
+                    "sha": sha,
+                    "type": "commit",
+                    "tagger": {
+                        "name": "CI Bot",
+                        "email": "ci@freva.bot",
+                        "date": datetime.isoformat(datetime.now()),
+                    },
+                },
             )
             resp.raise_for_status()
         except git.GitCommandError as error:
