@@ -380,12 +380,12 @@ class Tag(Release):
     ) -> None:
         self.branch = branch
         self.package_name = package_name
+        self._gh_actions = False
         if os.environ.get("GITHUB_ACTIONS") == "true":
             self.repo_dir = Path.cwd()
-            self._gh_actions = True
+            # self._gh_actions = True
         else:
             self.repo_dir = Path(repo_dir)
-            self._gh_actions = False
         self.search_path = search_path
         logger.info("Searching for packages/config with the name: %s", package_name)
         if self._gh_actions is False:
