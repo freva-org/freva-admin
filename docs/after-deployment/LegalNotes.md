@@ -33,6 +33,11 @@ statement. Below you'll find examples of a privacy statement and terms of use.
 <h3 id="freva-registration-and-use">Freva: Registration and use</h3>
 <p>To be able to use the current instance of Freva, you must register as a user via <a href="https://luv.dkrz.de/">DKRZ's LDAP system</a>. On this occasion, we also collect personal data like given name (First Name), surname, e-mail address, user name as well as, optionally: the second given name (Middle Name), Organisation, City (State -) country (State), country (Country). Besides, you must select a separate password; this is stored encoded, of course. The thus collected information is stored on a server of the DKRZ.</p>
 <p>The thus collected data are stored only on our servers for the purpose and for the duration of the use of the Freva server operated by us and are not disclosed to any third party.</p>
+<h3 id="use-of-the-chatbot">Freva: Use of the chatbot</h3>
+<p>Freva may provide a chatbot interface based on large language model (LLM) technology. Depending on system configuration, user inputs submitted to the chatbot may be processed by external AI service providers operated by third parties in order to generate responses.</p>
+<p>In such cases, user queries may be transmitted to and processed on servers operated by these providers solely for the purpose of providing the requested service. Such processing is governed by contractual agreements between DKRZ and the respective provider. According to these agreements, submitted content is not used for training purposes and is not stored on third-party servers beyond what is necessary to generate the response.</p>
+<p>DKRZ may review and use submitted inputs and generated responses internally for the purpose of improving the chatbot service.</p>
+<p>Users should avoid submitting personal or confidential information through the chatbot unless this is necessary for their request.</p>
 <h3 id="withdrawal-of-consent-for-the-collection-processing-and-use-of-your-data">Withdrawal of consent for the collection, processing and use of your data</h3>
 <p>You have the option to revoke your consent for the collection, processing and use of personal data at any time with effect for the future. A revocation must be sent to:</p>
 <p><br />
