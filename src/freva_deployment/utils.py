@@ -276,6 +276,7 @@ def _create_new_config(inp_file: Path) -> Path:
             "mongodb_server_host",
             "redis_host",
             "oidc_url",
+            "oidc_scopes",
             "oidc_client",
             "oidc_client_secret",
             "oidc_token_claims",

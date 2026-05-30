@@ -804,6 +804,15 @@ class FrevaRestScreen(BaseForm):
                 ),
                 False,
             ),
+            oidc_scopes=(
+                self.add_widget_intelligent(
+                    TextInfo,
+                    section="freva_rest",
+                    key="oidc_scopes",
+                    name=f"{self.num}OIDC scopes to request from the IDP",
+                    value=cast(str, cfg.get("oidc_scopes", "profile email")),
+                )
+            ),
             oidc_admin_claims=(
                 self.add_widget_intelligent(
                     ListInfo,

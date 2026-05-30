@@ -7,6 +7,13 @@ jobs:
   trigger-release:
     runs-on: ubuntu-latest
     steps:
+
+      - uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ variables.FREVA_BOT_APP_ID }}
+          private-key: ${{ secrets.FREVA_BOT_PRIVATE_KEY }}
+
       - name: Checkout
         uses: actions/checkout@v4
 

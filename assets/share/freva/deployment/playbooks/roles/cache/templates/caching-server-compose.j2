@@ -9,7 +9,6 @@ services:
     image: ghcr.io/freva-org/freva-redis:{{redis_version}}
     hostname: {{cache_name}}
     container_name: {{cache_name}}
-    tty: true
     ports:
       - "6379:6379"
     volumes:

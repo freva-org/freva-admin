@@ -19,7 +19,6 @@ services:
       - db_data:/data/db:z
       - db_logs:/data/logs:z
     container_name: database-server
-    tty: true
     ports:
       - {{db_port}}:3306
     healthcheck:
@@ -57,7 +56,6 @@ services:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - vault_data:/vault:z
     container_name: vault-server
-    tty: true
     ports:
       - 5002:5002
     healthcheck:
@@ -73,7 +71,6 @@ services:
     networks:
       - {{ project_name }}
     container_name: cache-server
-    tty: true
     ports:
       - "6379:6379"
     environment:
@@ -92,7 +89,6 @@ services:
     networks:
       - {{ project_name }}
     container_name: data-loader-server
-    tty: true
     environment:
       - API_LOGDIR=/tmp/logs
       - API_REDIS_USER={{ redis_username }}
@@ -127,7 +123,6 @@ services:
       - mongo_data:/data/db:z
       - mongo_logs:/data/logs:z
     container_name: mongo-server
-    tty: true
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "mongo"]
       interval: 35s
@@ -151,7 +146,6 @@ services:
       - solr_data:/data/db:z
       - solr_logs:/data/logs:z
     container_name: search-server
-    tty: true
     healthcheck:
       test: ["CMD", "healthchecks", "-s", "solr"]
       interval: 35s
@@ -177,6 +171,7 @@ services:
       - API_ADMIN_CLAIMS={{ freva_rest_oidc_admin_claims | join(',')}}
       - API_OIDC_SYSTEMUSER_CLAIM={{ freva_rest_oidc_systemuser_claim }}
       - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issuers | join(',') }}
+      - API_OIDC_SCOPES={{ freva_rest_oidc_scopes }}
       - API_REDIS_USER={{ redis_username }}
       - API_REDIS_PASSWORD={{ redis_password }}
       - API_REDIS_HOST=redis://cache-server:6379
@@ -190,7 +185,6 @@ services:
     ports:
       - {{freva_rest_port}}:{{freva_rest_port}}
     container_name: freva-rest-server
-    tty: true
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - freva-rest_logs:/tmp/logs:z
@@ -250,9 +244,6 @@ services:
       - FREVA_REST_URL=http://freva-rest-server:7777
       - REDIS_PASSWD={{ redis_password }}
       - REDIS_USER={{ redis_username }}
-      - OIDC_DISCOVERY_URL={{ web_oidc_url }}
-      - OIDC_CLIENT_SECRET={{ web_oidc_client_secret }}
-      - OIDC_CLIENT_ID={{ web_oidc_client }}
       - CHATBOT_HOST={{ web_chatbot_host.replace("http://", "") }}
       - STAC_BROWSER=1
       - DB_USER={{ db_user }}
@@ -270,7 +261,6 @@ services:
       - web_django-static:/opt/freva_web/static:z
       - web_config:/data/config:z
       - web_logs:/data/logs:z
-    tty: true
     depends_on:
       cache-server:
         condition: service_healthy
