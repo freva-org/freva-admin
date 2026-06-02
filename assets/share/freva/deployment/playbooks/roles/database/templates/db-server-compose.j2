@@ -20,7 +20,6 @@ services:
       - data:/data/db:z
       - logs:/data/logs:z
     container_name: {{db_name}}
-    tty: true
     ports:
       - {{db_port}}:3306
 volumes:

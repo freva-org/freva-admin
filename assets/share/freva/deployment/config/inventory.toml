@@ -350,6 +350,10 @@ oidc_token_claims = []
 ## define admin users.
 oidc_admin_claims = []
 
+
+## Define the default scopes that are requested for from the IDP token endpoint
+oidc_scopes = "profile email"
+
 ## If you want to setup a token federation via a network of token trust
 ## you can define a list of ``trusted_issuers`` all issuers matching the
 ## ``iss`` JWT claim will be trusted.

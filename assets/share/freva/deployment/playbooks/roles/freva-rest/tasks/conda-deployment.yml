@@ -38,6 +38,7 @@
       API_MONGO_DB: "search_stats"
       API_MONGO_USER: "{{ freva_rest_db_user }}"
       API_OIDC_TOKEN_CLAIMS: "{{ freva_rest_oidc_token_claims | join(',')}}"
+      API_OIDC_SCOPES: "{{ freva_rest_oidc_scopes }}"
       API_ADMIN_CLAIMS: "{{ freva_rest_oidc_admin_claims | join(',')}}"
       API_OIDC_SYSTEMUSER_CLAIM: "{{ freva_rest_oidc_systemuser_claim }}"
       API_OIDC_TRUSTED_ISSUERS: "{{ freva_rest_oidc_trusted_issuers | join(',') }}"

@@ -20,6 +20,7 @@ services:
       - API_ADMIN_CLAIMS={{ freva_rest_oidc_admin_claims | join(',')}}
       - API_OIDC_SYSTEMUSER_CLAIM={{ freva_rest_oidc_systemuser_claim }}
       - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issuers | join(',') }}
+      - API_OIDC_SCOPES={{ freva_rest_oidc_scopes }}
 {% if freva_rest_data_loader == true %}
       - API_REDIS_HOST={{cache_information.host}}
       - API_REDIS_PASSWORD={{cache_information.passwd}}
@@ -39,7 +40,6 @@ services:
     ports:
       - {{freva_rest_port}}:{{freva_rest_port}}
     container_name: {{freva_rest_name}}
-    tty: true
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - logs:/tmp/logs:z

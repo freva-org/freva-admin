@@ -403,6 +403,9 @@ class DeployFactory:
             self.cfg["freva_rest"][key] = self.cfg["freva_rest"].get(key) or default
         self.cfg["freva_rest"]["email"] = self.cfg["web"].get("contacts", "")
         self.cfg["freva_rest"].setdefault("oidc_url", "")
+        self.cfg["freva_rest"].setdefault("oidc_scopes", "profile email").replace(
+            ",", " "
+        )
         self.cfg["freva_rest"].setdefault("oidc_client", "freva")
         self.cfg["freva_rest"].setdefault("oidc_client_secret", "")
         token_claims: Union[str, list[str], Dict[str, list[str]]] = (
