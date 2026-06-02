@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>Example deployment configuration &#8212; freva-deployment 2605.8.0 documentation</title>
+    <title>Example deployment configuration &#8212; freva-deployment 2606.1.0 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
-    <script src="../_static/documentation_options.js?v=a8007e06"></script>
+    <script src="../_static/documentation_options.js?v=3d7c2d9e"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -140,8 +140,8 @@
       
     
     
-    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2605.8.0 documentation - Home"/>
-    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2605.8.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2606.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2606.1.0 documentation - Home"/>
   
   
 </a></div>
@@ -845,6 +845,10 @@ under a normal user on a login node of a HPC system.</p>
 <span class="c1">## Same as `oidc_token_claims` but for admin users, meaning those claims will</span>
 <span class="c1">## define admin users.</span>
 <span class="n">oidc_admin_claims</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+
+
+<span class="c1">## Define the default scopes that are requested for from the IDP token endpoint</span>
+<span class="n">oidc_scopes</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;profile email&quot;</span>
 
 <span class="c1">## If you want to setup a token federation via a network of token trust</span>
 <span class="c1">## you can define a list of ``trusted_issuers`` all issuers matching the</span>
