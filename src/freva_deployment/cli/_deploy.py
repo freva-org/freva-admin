@@ -128,6 +128,13 @@ class BatchParser:
             ),
         )
         self.parser.add_argument(
+            "--secrets-file",
+            "--secrets_file",
+            type=Path,
+            default=None,
+            help="Set a secrets file to read sensitive variables from.",
+        )
+        self.parser.add_argument(
             "-e",
             "--extra",
             type=str,
@@ -163,6 +170,7 @@ class BatchParser:
         with DeployFactory(
             steps=steps,
             config_file=args.config,
+            secrets_file=args.secrets_file,
             local_debug=args.debug,
             gen_keys=args.gen_keys,
             _cowsay=args.cowsay,
