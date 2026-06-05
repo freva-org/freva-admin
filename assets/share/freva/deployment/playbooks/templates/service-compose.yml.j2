@@ -167,7 +167,7 @@ services:
       - API_OIDC_CLIENT_ID={{freva_rest_oidc_client}}
       - API_OIDC_DISCOVERY_URL={{freva_rest_oidc_url}}
       - API_OIDC_CLIENT_SECRET={{freva_rest_oidc_client_secret}}
-      - API_OIDC_TOKEN_CLAIMS={{ freva_rest_oidc_token_claims }}
+      - API_OIDC_TOKEN_CLAIMS={{ freva_rest_oidc_token_claims | join(',') }}
       - API_ADMIN_CLAIMS={{ freva_rest_oidc_admin_claims | join(',')}}
       - API_OIDC_SYSTEMUSER_CLAIM={{ freva_rest_oidc_systemuser_claim }}
       - API_OIDC_TRUSTED_ISSUERS={{ freva_rest_oidc_trusted_issuers | join(',') }}
