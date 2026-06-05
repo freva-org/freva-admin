@@ -356,6 +356,41 @@ def load_config(inp_file: str | Path, convert: bool = False) -> dict[str, Any]:
     return config
 
 
+def merge_toml_documents(
+    *documents: tomlkit.TOMLDocument | None,
+) -> tomlkit.TOMLDocument:
+    """Merge multiple TOML documents into one.
+
+    Later documents take precedence over earlier ones for duplicate keys.
+
+    Parameters
+    ----------
+    documents:
+        List of tomlkit TOMLDocuments to merge.
+
+    Returns
+    -------
+    tomlkit.TOMLDocument:
+        The merged TOML document.
+    """
+
+    def deep_merge(
+        base: tomlkit.TOMLDocument, override: tomlkit.TOMLDocument
+    ) -> tomlkit.TOMLDocument:
+        for key, value in override.items():
+            if key in base and isinstance(base[key], dict) and isinstance(value, dict):
+                deep_merge(base[key], value)
+            else:
+                base[key] = value
+        return base
+
+    merged = tomlkit.document()
+    for doc in documents:
+        if doc:
+            deep_merge(merged, doc)
+    return merged
+
+
 def get_setup_for_service(service: str, setups: list[ServiceInfo]) -> tuple[str, str]:
     """Get the setup of a service configuration."""
     for setup in setups:

@@ -42,6 +42,7 @@ from .utils import (
     get_cache_information,
     get_passwd,
     load_config,
+    merge_toml_documents,
 )
 from .versions import get_steps_from_versions, get_versions
 
@@ -131,6 +132,7 @@ class DeployFactory:
         The components that are going to be deployed.
     config_file: os.PathLike, default: None
         Path to any existing deployment configuration file.
+    secrets_file: os.PathLike, default: None
     local_debug: bool, default: False
         Run deployment only on local machine, debug mode.
     gen_keys: bool, default: False
@@ -157,6 +159,7 @@ class DeployFactory:
         self,
         steps: list[str] | None = None,
         config_file: Path | str | None = None,
+        secrets_file: Path | str | None = None,
         local_debug: bool = False,
         gen_keys: bool = False,
         _cowsay: bool = False,
@@ -175,6 +178,7 @@ class DeployFactory:
         if self._steps in (["auto"], "auto"):
             self._steps = []
         self._inv_tmpl = Path(config_file or config_dir / "inventory.toml")
+        self._secrets_file = secrets_file
         self._cfg_tmpl = self.aux_dir / "evaluation_system.conf.tmpl"
         self.cfg = self._read_cfg()
         self.project_name = self.cfg.pop("project_name", None)
@@ -678,7 +682,14 @@ class DeployFactory:
             "search_server": "freva_rest",
         }
         try:
-            config = dict(load_config(self._inv_tmpl, convert=True).items())
+            if self._secrets_file:
+                secrets = tomlkit.loads(Path(self._secrets_file).read_text())
+            else:
+                secrets = None
+            config = dict(
+                merge_toml_documents(load_config(self._inv_tmpl, convert=True), secrets)
+            )
+            self._master_pass = cast(str, config.pop("master_password", ""))
             for dest, source in mapper.items():
                 host = (
                     config[source].get(f"{dest}_host")

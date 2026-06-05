@@ -772,7 +772,7 @@ class FrevaRestScreen(BaseForm):
                     name=(f"{self.num}Config url of the OIDC service"),
                     value=cast(str, cfg.get("oidc_url", "")),
                 ),
-                True,
+                False,
             ),
             oidc_client=(
                 self.add_widget_intelligent(
@@ -782,7 +782,7 @@ class FrevaRestScreen(BaseForm):
                     name=(f"{self.num}Name of the OIDC client (app name)"),
                     value=cast(str, cfg.get("oidc_client", "freva")),
                 ),
-                True,
+                False,
             ),
             oidc_client_secret=(
                 self.add_widget_intelligent(
@@ -811,7 +811,8 @@ class FrevaRestScreen(BaseForm):
                     key="oidc_scopes",
                     name=f"{self.num}OIDC scopes to request from the IDP",
                     value=cast(str, cfg.get("oidc_scopes", "profile email")),
-                )
+                ),
+                False,
             ),
             oidc_admin_claims=(
                 self.add_widget_intelligent(
@@ -956,6 +957,7 @@ class RunForm(npyscreen.FormMultiPageAction):
             "skip_version_check": bool(self.skip_version_check.value),
             "local_debug": bool(self.local_debug.value),
             "gen_keys": bool(gen_keys),
+            "secrets_file": self.secrets_file.value or None,
         }
         self.parentApp.thread_stop.set()
         self.parentApp.exit_application(
@@ -1038,6 +1040,11 @@ class RunForm(npyscreen.FormMultiPageAction):
             max_height=2,
             value=self.parentApp._read_cache("gen_keys", False),
             name=f"{self.num}Generate a pair web certificates, debugging",
+        )
+        self.secrets_file = self.add_widget_intelligent(
+            npyscreen.TitleFilename,
+            name=f"{self.num}A secrets file to read sensitive variables from.",
+            value=self.parentApp._read_cache("secrets_file") or None,
         )
         self.k8s_deploy_host = self.add_widget_intelligent(
             TextInfo,

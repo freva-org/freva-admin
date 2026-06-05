@@ -89,21 +89,24 @@ def create_compose(args: argparse.Namespace) -> None:
     with DeployFactory(
         steps=None,
         config_file=args.config_file,
+        secrets_file=args.secrets_file,
         local_debug=False,
         gen_keys=True,
     ) as DF:
         eval_conf_enc = b64encode(DF.create_eval_config().read_text().encode()).decode()
         extra = {
-            "eval_config_content": eval_conf_enc,
-            "use_core": args.no_plugins is False,
-            "uid": args.user,
-            "redis_password": DF._create_random_passwd(30, 10),
-            "redis_username": petname.generate(),
-            "redis_version": get_versions()["redis"],
-            "current_nameservers": " ".join(args.dns_nameservers or []),
-            "ansible_python_interpreter": sys.executable,
-            "data_loader_volumes": DF.cfg["freva_rest"].get("data_loader_volumes")
-            or [],
+            **{
+                "eval_config_content": eval_conf_enc,
+                "use_core": args.no_plugins is False,
+                "uid": args.user,
+                "redis_password": DF._create_random_passwd(30, 10),
+                "redis_username": petname.generate(),
+                "redis_version": get_versions()["redis"],
+                "current_nameservers": " ".join(args.dns_nameservers or []),
+                "ansible_python_interpreter": sys.executable,
+                "data_loader_volumes": DF.cfg["freva_rest"].get("data_loader_volumes")
+                or [],
+            },
         }
         level = logger.getEffectiveLevel()
         logger.info("Parsing configurations")
@@ -249,6 +252,14 @@ def compose_parser(
         "--no-plugins",
         action="store_true",
         help="Do not setup core library to use plugins.",
+    )
+    parser.add_argument(
+        "--secrets-file",
+        "--secrets_file",
+        "--secrets",
+        type=Path,
+        default=None,
+        help="Set a secrets file to read sensitive variables from.",
     )
     parser.add_argument(
         "-e",

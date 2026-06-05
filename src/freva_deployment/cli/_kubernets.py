@@ -201,9 +201,13 @@ def create_manifest(args: argparse.Namespace) -> None:
     """Create the k8s manifests."""
     set_log_level(args.verbose)
     services = args.services
+    override = {
+        **{k: v for (k, v) in args.extra or {}},
+    }
     with DeployFactory(
         steps=None,
         config_file=args.config_file,
+        secrets_file=args.secrets_file,
         local_debug=False,
         gen_keys=True,
     ) as DF:
@@ -234,6 +238,7 @@ def create_manifest(args: argparse.Namespace) -> None:
                 ),
             },
             **DF.cfg["kubernetes"],
+            **override,
         }
         logger.info("Parsing configurations")
         logger.debug("Extra args for playbooks:\n%s", extra)
@@ -268,6 +273,10 @@ def create_manifest(args: argparse.Namespace) -> None:
         )
 
         RichConsole.rule("")
+        if args.secrets_file:
+            add = f"--secrets-file {args.secrets_file} "
+        else:
+            add = ""
         RichConsole.print(
             (
                 f"The k8s manifests have been created in [b]{out_dir}[/b].\n"
@@ -276,7 +285,7 @@ def create_manifest(args: argparse.Namespace) -> None:
                 "library installed and prepared the web-directory structure."
                 " on the HPC.\n"
                 "You can do this by running the following command:\n\n"
-                f"  [b]deploy-freva cmd -c {args.config_file} "
+                f"  [b]deploy-freva cmd -c {args.config_file} {add}"
                 "-t core pre-web --skip-version-check -g"
             )
         )
@@ -316,6 +325,22 @@ def kubernetes_parser(
         default=["db", "freva-rest", "web", "data-loader"],
         choices=["web", "db", "freva-rest", "data-loader"],
         help="The services to be deployed.",
+    )
+    parser.add_argument(
+        "--secrets-file",
+        "--secrets_file",
+        type=Path,
+        default=None,
+        help="Set a secrets file to read sensitive variables from.",
+    )
+
+    parser.add_argument(
+        "-e",
+        "--extra",
+        type=str,
+        nargs=2,
+        action="append",
+        help="Add/Override inventory settings.",
     )
     parser.add_argument(
         "--secrets",
