@@ -18,7 +18,8 @@ metadata:
     freva.org/tier: backend
 
 spec:
-  replicas: 2
+  replicas: 1
+  revisionHistoryLimit: 2
   selector: { matchLabels: { app: data-loader-server } }
   template:
     metadata:
@@ -58,6 +59,8 @@ spec:
                   key: REDIS_PASSWORD
             - name: API_REDIS_HOST
               value: cache-server
+            - name: API_LOGLEVEL
+              value: INFO
 {% if volumes %}
           volumeMounts:
 {% for vol in volumes %}
