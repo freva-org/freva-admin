@@ -259,10 +259,12 @@ class MainApp(npyscreen.NPSAppManaged):
             return None
 
         try:
-            config_tmpl = load_config(asset_dir / "config" / "inventory.toml")
+            config_tmpl: Dict[str, Any] = dict(
+                load_config(asset_dir / "config" / "inventory.toml")
+            )
         except Exception as error:
             npyscreen.notify_confirm(error)
-            config_tmpl = self.config
+            config_tmpl = dict(self.config)
         config_tmpl["certificates"] = cert_files
         config_tmpl["project_name"] = project_name
         config_tmpl["deployment_method"] = deployment_method

@@ -686,7 +686,7 @@ class DeployFactory:
                 secrets = tomlkit.loads(Path(self._secrets_file).read_text())
             else:
                 secrets = None
-            config = dict(
+            config: Dict[str, Any] = dict(
                 merge_toml_documents(load_config(self._inv_tmpl, convert=True), secrets)
             )
             self._master_pass = cast(str, config.pop("master_password", ""))
