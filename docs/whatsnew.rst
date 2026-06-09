@@ -7,9 +7,13 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
-v2606.2.0
+v2606.3.0
 ~~~~~~~~
 * Add external secrets file.
+
+v2606.2.0
+~~~~~~~~
+* Bumped version of freva-web to 2606.0.2
 
 
 
