@@ -37,7 +37,7 @@ metadata:
     freva.org/tier: backend
 spec:
   replicas: 1
-  revisionHistoryLimit: 2
+  revisionHistoryLimit: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
@@ -71,19 +71,19 @@ spec:
             - {name: API_PORT, value: "{{ freva_rest_port }}"}
             - {name: API_PROXY, value: "{{ freva_rest_proxy_url }}"}
             - {name: COLUMNS, value: "140"}
-            - name: API_OIDC_CLIENT_ID,
-              valueFrom: valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_CLIENT_ID } }
+            - name: API_OIDC_CLIENT_ID
+              valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_CLIENT_ID } }
             - name: API_OIDC_CLIENT_SECRET
               valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_CLIENT_SECRET } }
-            - name: API_OIDC_DISCOVERY_URL,
-              valueFrom: valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_DISCOVERY_URL } }
-            - {name: API_OIDC_TOKEN_CLAIMS,
+            - name: API_OIDC_DISCOVERY_URL
+              valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_DISCOVERY_URL } }
+            - name: API_OIDC_TOKEN_CLAIMS
               valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_TOKEN_CLAIMS } }
-            - {name: API_ADMIN_CLAIMS,
+            - name: API_ADMIN_CLAIMS
               valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_ADMIN_CLAIMS } }
-            - {name: API_OIDC_SYSTEMUSER_CLAIM,
+            - name: API_OIDC_SYSTEMUSER_CLAIM
               valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_SYSTEM_USER_CLAIM } }
-            - {name: API_OIDC_SCOPES,
+            - name: API_OIDC_SCOPES
               valueFrom: { secretKeyRef: {name: freva-secrets, key: OIDC_SCOPES } }
             - {name: API_OIDC_TRUSTED_ISSUERS, value: "{{ freva_rest_oidc_trusted_issuers | join(',') }}"}
             - name: API_REDIS_USER
