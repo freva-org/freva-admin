@@ -4,15 +4,16 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, cast
 
 import tomlkit
 from rich.console import Console
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
+from tomlkit.items import Table
 
 from freva_deployment import __version__
 
-from ..utils import config_dir, load_config
+from ..utils import config_dir, load_config, merge_toml_documents
 
 
 def _get_config(parser: argparse.Namespace) -> None:
@@ -20,7 +21,7 @@ def _get_config(parser: argparse.Namespace) -> None:
     error_console = Console(markup=True, force_terminal=True, stderr=True)
     std_console = Console(markup=True, force_terminal=True)
     try:
-        cfg = load_config(parser.config_file)
+        cfg = _merge_config(parser.config_file, parser.secrets_file)
     except Exception as error:
         if parser.verbose > 0:
             raise
@@ -28,29 +29,40 @@ def _get_config(parser: argparse.Namespace) -> None:
         raise SystemExit(1)
     if not parser.keys:
         if parser.raw:
-            print(parser.config_file.read_text())
+            print(tomlkit.dumps(cfg))
         else:
-            std_console.print(parser.config_file.read_text())
+            std_console.print(tomlkit.dumps(cfg))
         return
     for key in parser.keys:
         section, _, value = key.partition(".")
         try:
             sec = cfg[section]
             if value:
-                disp = sec[value]
+                disp = sec[value]  # type: ignore
             else:
                 disp = sec
         except Exception as error:
             error_console.print(f"[b red]:warning:  {error}[/b red]")
             continue
     try:
-        disp_dump = tomlkit.dumps(disp)
+        disp_dump = tomlkit.dumps(disp)  # type: ignore
     except Exception:
-        disp_dump = disp
+        disp_dump = disp  # type: ignore
     if parser.raw:
         print(disp_dump)
     else:
         std_console.print(disp_dump)
+
+
+def _merge_config(
+    config_file: Path | str,
+    secrets_file: None | str | Path = None,
+) -> tomlkit.TOMLDocument:
+    if secrets_file is not None:
+        secrets = tomlkit.loads(Path(secrets_file).read_text())
+    else:
+        secrets = None
+    return merge_toml_documents(load_config(config_file), secrets)
 
 
 def _set_config(parser: argparse.Namespace) -> None:
@@ -64,7 +76,7 @@ def _set_config(parser: argparse.Namespace) -> None:
             "on update.[/b]"
         )
     try:
-        cfg = load_config(parser.config_file)
+        cfg = _merge_config(parser.config_file, parser.secrets_file)
     except Exception as error:
         if parser.verbose > 0:
             raise
@@ -93,7 +105,7 @@ def _set_config(parser: argparse.Namespace) -> None:
             else:
                 cfg_value = tomlkit.loads(f"foo={value}")["foo"]
             if key:
-                cfg[section][key] = cfg_value
+                cast(Table, cfg[section])[key] = cfg_value
             else:
                 cfg[section] = cfg_value
         except Exception as error:
@@ -151,6 +163,13 @@ def config_parser(
         default=config_dir / "config" / "inventory.toml",
     )
     get_parser.add_argument(
+        "--secrets-file",
+        "--secrets_file",
+        type=Path,
+        default=None,
+        help="Set a secrets file to read sensitive variables from.",
+    )
+    get_parser.add_argument(
         "-r", "--raw", help="Raw output", action="store_true", default=False
     )
     get_parser.add_argument(
@@ -160,9 +179,7 @@ def config_parser(
     set_parser = subparsers.add_parser(
         "set",
         description="Inspect configuration values.",
-        help=(
-            "Use this command to set/override values " "of the deployment config."
-        ),
+        help=("Use this command to set/override values of the deployment config."),
         epilog=epilog,
         formatter_class=ArgumentDefaultsRichHelpFormatter,
     )
@@ -173,6 +190,14 @@ def config_parser(
         help="Path to ansible inventory file.",
         default=config_dir / "config" / "inventory.toml",
     )
+    set_parser.add_argument(
+        "--secrets-file",
+        "--secrets_file",
+        type=Path,
+        default=None,
+        help="Set a secrets file to read sensitive variables from.",
+    )
+
     set_parser.add_argument(
         "values",
         nargs=2,

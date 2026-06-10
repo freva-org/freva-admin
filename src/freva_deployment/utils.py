@@ -20,6 +20,8 @@ import petname
 import tomlkit
 from rich.console import Console
 from rich.prompt import Prompt
+from tomlkit.container import OutOfOrderTableProxy
+from tomlkit.items import Table
 
 from .error import ConfigurationError
 from .keys import RandomKeys
@@ -238,7 +240,7 @@ def get_current_file_dir(inp_dir: str | Path, value: str) -> str:
 
 
 def _convert_dict(
-    inp_dict: dict[str, str | dict[str, Any]],
+    inp_dict: dict[str, Any],
     variables: dict[str, str],
     cfd: Path,
 ) -> None:
@@ -344,7 +346,7 @@ def _create_new_config(inp_file: Path) -> Path:
     return inp_file
 
 
-def load_config(inp_file: str | Path, convert: bool = False) -> dict[str, Any]:
+def load_config(inp_file: str | Path, convert: bool = False) -> tomlkit.TOMLDocument:
     """Load the inventory toml file and replace all environment variables."""
     inp_file = _create_new_config(Path(inp_file).expanduser().absolute())
     variables = cast(
@@ -352,8 +354,44 @@ def load_config(inp_file: str | Path, convert: bool = False) -> dict[str, Any]:
     )
     config = tomlkit.loads(inp_file.read_text(encoding="utf-8"))
     if convert:
-        _convert_dict(config, variables, inp_file.parent)
+        _convert_dict(cast(Dict[str, Any], config), variables, inp_file.parent)
     return config
+
+
+def merge_toml_documents(
+    *documents: tomlkit.TOMLDocument | None,
+) -> tomlkit.TOMLDocument:
+    """Merge multiple TOML documents into one.
+
+    Later documents take precedence over earlier ones for duplicate keys.
+
+    Parameters
+    ----------
+    documents:
+        List of tomlkit TOMLDocuments to merge.
+
+    Returns
+    -------
+    tomlkit.TOMLDocument:
+        The merged TOML document.
+    """
+    DocT = (dict, Table, tomlkit.TOMLDocument, OutOfOrderTableProxy)
+
+    def deep_merge(
+        base: Dict[str, Any] | Table | tomlkit.TOMLDocument | OutOfOrderTableProxy,
+        override: Dict[str, Any] | Table | tomlkit.TOMLDocument | OutOfOrderTableProxy,
+    ) -> None:
+        for key, value in override.items():
+            if key in base and isinstance(base[key], DocT) and isinstance(value, DocT):
+                deep_merge(cast(Table, base[key]), value)
+            else:
+                base[key] = value
+
+    merged = tomlkit.document()
+    for doc in documents:
+        if doc:
+            deep_merge(merged, doc)
+    return merged
 
 
 def get_setup_for_service(service: str, setups: list[ServiceInfo]) -> tuple[str, str]:

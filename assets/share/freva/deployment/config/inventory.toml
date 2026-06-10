@@ -8,6 +8,12 @@ project_name = "freva"
 ## Choose between: "docker", "podman", "conda", "k8s"
 deployment_method = "podman"
 
+## The `master_password` is used as the admin password for the web admin
+## interface and the mysql root password. It *can* be set in the config file
+## but it is reocmmended to leave this key blank and set enter it during
+## the setup.
+master_password = ""
+
 ## Kubernetes deployment settings
 [kubernetes]
 ## Set the group ID for all volmes used by pods

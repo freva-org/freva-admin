@@ -90,18 +90,12 @@ class MainApp(npyscreen.NPSAppManaged):
             CoreScreen,
             name="Core deployment",
         )
-        self._forms["web"] = self.addForm(
-            "SECOND", WebScreen, name="Web deployment"
-        )
-        self._forms["db"] = self.addForm(
-            "THIRD", DBScreen, name="Database deployment"
-        )
+        self._forms["web"] = self.addForm("SECOND", WebScreen, name="Web deployment")
+        self._forms["db"] = self.addForm("THIRD", DBScreen, name="Database deployment")
         self._forms["freva_rest"] = self.addForm(
             "FOURTH", FrevaRestScreen, name="Freva Rest deployment"
         )
-        self._setup_form = self.addForm(
-            "SETUP", RunForm, name="Apply the Deployment"
-        )
+        self._setup_form = self.addForm("SETUP", RunForm, name="Apply the Deployment")
 
     def exit_application(self, *args, **kwargs) -> None:
         value = npyscreen.notify_ok_cancel(
@@ -134,7 +128,7 @@ class MainApp(npyscreen.NPSAppManaged):
                 return self._steps_lookup[step]
             try:
                 self.config[step] = cfg
-            except Exception as error:
+            except Exception:
                 raise ValueError((step, cfg)) from None
         return None
 
@@ -163,9 +157,7 @@ class MainApp(npyscreen.NPSAppManaged):
             the_selected_file = str(the_selected_file.expanduser().absolute())
             self.check_missing_config(stop_at_missing=False)
             self._setup_form.inventory_file.value = the_selected_file
-            self.save_config_to_file(
-                save_file=the_selected_file, write_toml_file=True
-            )
+            self.save_config_to_file(save_file=the_selected_file, write_toml_file=True)
 
     def _update_config(self, config_file: Path | str) -> None:
         """Update the main window after a new configuration has been loaded."""
@@ -173,9 +165,7 @@ class MainApp(npyscreen.NPSAppManaged):
         try:
             self.config = load_config(config_file)
         except Exception as error:
-            npyscreen.notify_confirm(
-                str(error), title=f"Error loading {config_file}"
-            )
+            npyscreen.notify_confirm(str(error), title=f"Error loading {config_file}")
             return
         self.resetHistory()
         self.editing = True
@@ -260,6 +250,7 @@ class MainApp(npyscreen.NPSAppManaged):
                 "steps": self.steps,
                 "ssh_port": ssh_port,
                 "config": self.config,
+                "secrets_file": self._setup_form.secrets_file.value,
             },
         }
         with open(self.cache_dir / "freva_deployment.json", "w") as f:
@@ -268,10 +259,12 @@ class MainApp(npyscreen.NPSAppManaged):
             return None
 
         try:
-            config_tmpl = load_config(asset_dir / "config" / "inventory.toml")
+            config_tmpl: Dict[str, Any] = dict(
+                load_config(asset_dir / "config" / "inventory.toml")
+            )
         except Exception as error:
             npyscreen.notify_confirm(error)
-            config_tmpl = self.config
+            config_tmpl = dict(self.config)
         config_tmpl["certificates"] = cert_files
         config_tmpl["project_name"] = project_name
         config_tmpl["deployment_method"] = deployment_method
