@@ -114,7 +114,27 @@ issue the `deploy-freva cmd` command:
 
 The `--steps` flags can be used if not all services should be deployed.
 
-## Setting the python
+## Keeping secrets out of version control
+
+Some configuration variables are sensitive and must not be shared publicly.
+[OpenID Connect](https://openid.net) credentials are a typical example
+- client IDs, client secrets, and token endpoints should never end up
+in a public repository.
+
+Starting with version `2506.2.0`, you can split your configuration across
+two files: a main configuration file that is safe to commit, and a separate
+secrets file that you keep out of version control entirely.
+Pass the secrets file via the `--secrets-file` flag:
+
+```console
+ --secrets-file secrets.toml
+```
+
+The secrets file follows the same structure as the main configuration file.
+Any values it defines override those in the main file, so you only need to
+include the keys you want to keep private.
+
+## Setting the python environment
 Some systems do not have access to python3.4+ (/usr/bin/python3) or git by default.
 In such cases you can overwrite the `ansible_python_interpreter` in the inventory
 settings of the server section to point ansible to a custom `python3` binary. For example

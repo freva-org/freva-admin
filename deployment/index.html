@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="keywords" content="freva, climate, data, evaluation, science, reproducibility">
 
-    <title>The freva-deployment software &#8212; freva-deployment 2606.1.0 documentation</title>
+    <title>The freva-deployment software &#8212; freva-deployment 2606.3.0 documentation</title>
   
   
   
@@ -48,7 +48,7 @@
   <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=0790524f97105ba85085" />
 <link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=0790524f97105ba85085" />
 
-    <script src="../_static/documentation_options.js?v=3d7c2d9e"></script>
+    <script src="../_static/documentation_options.js?v=ded6b92c"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
     <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
     <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
@@ -140,8 +140,8 @@
       
     
     
-    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2606.1.0 documentation - Home"/>
-    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2606.1.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-light" alt="freva-deployment 2606.3.0 documentation - Home"/>
+    <img src="../_static/freva_owl.svg" class="logo__image only-dark pst-js-only" alt="freva-deployment 2606.3.0 documentation - Home"/>
   
   
 </a></div>
@@ -524,7 +524,8 @@ that contains all the services with help of the compose sub command:</p>
 <span class="go">Usage: deploy-freva compose [-h] [-v] [-V] [-c CONFIG_FILE] [--host HOST]</span>
 <span class="go">                            [-u USER]</span>
 <span class="go">                            [--dns-nameservers DNS_NAMESERVERS [DNS_NAMESERVERS ...]]</span>
-<span class="go">                            [--no-plugins] [-e {docker,podman}] [-s]</span>
+<span class="go">                            [--no-plugins] [--secrets-file SECRETS_FILE]</span>
+<span class="go">                            [-e {docker,podman}] [-s]</span>
 
 <span class="go">Options:</span>
 <span class="go">  -h, --help            show this help message and exit</span>
@@ -543,6 +544,9 @@ that contains all the services with help of the compose sub command:</p>
 <span class="go">                        (default: [&#39;127.0.0.53&#39;])</span>
 <span class="go">  --no-plugins          Do not setup core library to use plugins. (default:</span>
 <span class="go">                        False)</span>
+<span class="go">  --secrets-file, --secrets_file, --secrets SECRETS_FILE</span>
+<span class="go">                        Set a secrets file to read sensitive variables from.</span>
+<span class="go">                        (default: None)</span>
 <span class="go">  -e, --container-engine {docker,podman}</span>
 <span class="go">                        Create a compose file for docker or podman. (default:</span>
 <span class="go">                        docker)</span>
@@ -555,6 +559,7 @@ by using the <code class="docutils literal notranslate"><span class="pre">kubern
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">deploy-freva kubernetes --help</span>
 <span class="go">Usage: deploy-freva kubernetes [-h] [-v] [-V] [-c CONFIG_FILE]</span>
 <span class="go">                               [-s {web,db,freva-rest,data-loader} [{web,db,freva-rest,data-loader} ...]]</span>
+<span class="go">                               [--secrets-file SECRETS_FILE] [-e EXTRA EXTRA]</span>
 <span class="go">                               [--secrets] [-o OUTPUT] [--no-plugins]</span>
 
 <span class="go">Options:</span>
@@ -568,6 +573,11 @@ by using the <code class="docutils literal notranslate"><span class="pre">kubern
 <span class="go">  -s, --services {web,db,freva-rest,data-loader} [{web,db,freva-rest,data-loader} ...]</span>
 <span class="go">                        The services to be deployed. (default: [&#39;db&#39;,</span>
 <span class="go">                        &#39;freva-rest&#39;, &#39;web&#39;, &#39;data-loader&#39;])</span>
+<span class="go">  --secrets-file, --secrets_file SECRETS_FILE</span>
+<span class="go">                        Set a secrets file to read sensitive variables from.</span>
+<span class="go">                        (default: None)</span>
+<span class="go">  -e, --extra EXTRA EXTRA</span>
+<span class="go">                        Add/Override inventory settings. (default: None)</span>
 <span class="go">  --secrets, --with-secrets</span>
 <span class="go">                        Create the secrets manifest. You only have to render</span>
 <span class="go">                        the secrets manifest once. Use the flag to include</span>
@@ -593,7 +603,8 @@ by using the <code class="docutils literal notranslate"><span class="pre">kubern
 <li class="toctree-l2"><a class="reference internal" href="Configure.html#creating-a-compose-file-ready-to-go">Creating a Compose file ready to go</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Configure.html#kubernetes-based-deployment">Kubernetes based deployment</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Configure.html#running-the-deployment">Running the deployment</a></li>
-<li class="toctree-l2"><a class="reference internal" href="Configure.html#setting-the-python">Setting the python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Configure.html#keeping-secrets-out-of-version-control">Keeping secrets out of version control</a></li>
+<li class="toctree-l2"><a class="reference internal" href="Configure.html#setting-the-python-environment">Setting the python environment</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Configure.html#setting-up-the-deployment-without-root-privileges">Setting up the deployment without root-privileges</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Configure.html#version-checking">Version checking</a></li>
 <li class="toctree-l2"><a class="reference internal" href="Configure.html#using-environment-variables">Using environment variables</a></li>
