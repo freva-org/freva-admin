@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2606.4.0
+~~~~~~~~
+* Bumped version of freva-nextgen to 2605.2.3
+
+
+
 v2606.3.0
 ~~~~~~~~
 * Add external secrets file.
