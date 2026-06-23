@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import logging
 import os
@@ -68,6 +69,32 @@ class ConfigType(TypedDict):
 
     hosts: NotRequired[str]
     vars: NotRequired[dict[str, str | int | bool | float]]
+
+
+def _is_alias_candidate(host: str) -> bool:
+    host = host.strip().lower()
+    if not host:
+        return False  # empty string (Django: matches empty Host)
+    if host == "*" or host.startswith("."):
+        return False  # Django wildcards: '*' and '.example.com'
+    if host == "localhost" or host.endswith(".localhost"):
+        return False
+    candidate = host[1:-1] if host.startswith("[") and host.endswith("]") else host
+    try:
+        ipaddress.ip_address(candidate)  # IPv4 or IPv6 → not an alias
+        return False
+    except ValueError:
+        return True
+
+
+def _build_aliases(allowed_hosts: list[str], canonical_host: str) -> list[str]:
+    seen, aliases = set(), []
+    for h in allowed_hosts:
+        h = h.strip().lower()
+        if _is_alias_candidate(h) and h != canonical_host.lower() and h not in seen:
+            seen.add(h)
+            aliases.append(h)
+    return aliases
 
 
 def get_current_architecture() -> str:
@@ -520,6 +547,14 @@ class DeployFactory:
         allowed_hosts = self.cfg["web"].get("allowed_hosts") or ["localhost"]
         if isinstance(allowed_hosts, str):
             allowed_hosts = [s.strip() for s in allowed_hosts.split(",") if s.strip()]
+        canonical_host = (
+            self.cfg["web"]
+            .get("project_website", "")
+            .removeprefix("https://")
+            .removeprefix("http://")
+            .removeprefix("www.")
+        )
+        self.cfg["web"]["aliases"] = _build_aliases(allowed_hosts, canonical_host)
         allowed_hosts.append(self.cfg["web"]["web_host"])
         allowed_hosts.append(f"{self.project_name}-httpd")
         self.cfg["web"]["allowed_hosts"] = [
