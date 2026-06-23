@@ -215,7 +215,7 @@ services:
                  "curl -Ssl https://raw.githubusercontent.com/freva-org/freva-admin/refs/heads/main/assets/share/freva/deployment/scripts/write-config.sh| sh"
     ]
 {% endif %}
-
+{% if deploy_web %}
   web-app:
     user: root:0
     image: ghcr.io/freva-org/freva-web:{{web_version}}
@@ -252,6 +252,10 @@ services:
       - DB_HOST=database-server
       - VAULT_URL=http://vault-server:5002
     command: ["bash", "-c", "./init_django.sh"]
+{% if not web_reverse_proxy %}
+    ports:
+      -  8000:8000
+{% endif %}
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
 {% if use_core is true %}
@@ -280,6 +284,7 @@ services:
       timeout: 2s
       retries: 3
       start_period: 35s
+{%if web_reverse_proxy %}
 
   web-reverse-proxy:
     user: root:0
@@ -327,7 +332,8 @@ services:
       timeout: 2s
       retries: 3
       start_period: 15s
-
+{% endif %}
+{% endif %}
 
 networks:
   {{ project_name }}:
@@ -336,10 +342,19 @@ networks:
 
 
 volumes:
+{% if deploy_web %}
   web_django-static:
-  web_proxy-logs:
+    driver: local
+    driver_opts:
+      type: none
+      device: /srv/freva/{{project_name}}/static
+      o: bind
   web_config:
   web_logs:
+{% if web_reverse_proxy %}
+  web_proxy-logs:
+{% endif %}
+{% endif %}
   db_logs:
   db_data:
   vault_data:

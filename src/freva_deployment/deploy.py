@@ -576,6 +576,7 @@ class DeployFactory:
                 uri = f"https://{prefix}{netloc}"
                 self.cfg["web"]["csrf_trusted_origins"].append(uri)
         host_ip = gethostbyname(web_host)
+        self.cfg["web"].setdefault("revers_proxy", True)
         self.cfg["web"]["csrf_trusted_origins"].append(f"http://{host_ip}")
         self.cfg["web"]["csrf_trusted_origins"].append(f"https://{host_ip}")
 
@@ -821,7 +822,7 @@ class DeployFactory:
         kube_conf = self.cfg.get("kubernetes", {})
         config: dict[str, ConfigType] = {
             "kubernetes": {
-                "hosts": kube_conf.get("deploy_host", "localhost"),
+                "hosts": kube_conf.get("deploy_host") or "localhost",
                 "vars": {
                     "expose_method": kube_conf.get("expose_method", "lb"),
                     "config_only": kube_conf.get("config_only", False),

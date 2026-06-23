@@ -192,6 +192,7 @@ class MainApp(npyscreen.NPSAppManaged):
                 title="Error",
                 message=f"Couldn't save config:\n{error}",
             )
+        raise error
         return None
 
     def get_save_file(self, save_file: Path | None = None) -> str:
@@ -276,6 +277,7 @@ class MainApp(npyscreen.NPSAppManaged):
                 "project_name",
                 "deployment_method",
                 "kubernetes",
+                "master_password",
             ):
                 continue
             for key, config in settings.items():

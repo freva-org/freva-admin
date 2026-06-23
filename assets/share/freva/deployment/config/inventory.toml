@@ -479,6 +479,12 @@ ansible_user = ""
 ## deployments and creating docker-compose files.
 data_path = "/opt/freva"
 
+## By default freva web is deployed using a reverse proxy, to enable a
+## greater deal of flexibility you can choose *not* to deploy a reverse proxy
+## and deploy a reverse proxy your your self. For example if multiple vhosts
+## should be configured.
+reverse_proxy = true
+
 ## Set the main HTML color scheme.
 main_color = "Tomato"
 ## Set the HTML border colors.
