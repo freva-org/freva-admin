@@ -10,7 +10,7 @@ What's new
 v2606.5.0
 ~~~~~~~~
 * Bumped version of freva-web to 2606.0.4
-
+* Make reverse proxy service optional
 
 
 v2606.4.0
