@@ -112,23 +112,30 @@
   loop:
     - { src: systemd-conda-redis.j2, dest: "{{ web_cache_name }}" }
     - { src: systemd-conda-nginx.j2, dest: "{{ web_proxy_name }}" }
-    - { src: systemd-conda-django.j2, dest: "{{ web_name }}" }
+    - { src: systemd-conda-django.j2, dest: "{{ web_name }}", reverse_proxy: true}
+  when: >
+     not (item.reverse_proxy | default(false) | bool)
+     or (web_reverse_proxy | default(true) | bool)
 
 - name: Reload systemd
   systemd:
-    daemon_reload: yes
+    daemon_reload: true
     scope: "{{ 'system' if ansible_become is true else 'user' }}"
 
 - name: Enable and start web services
-  systemd:
-    name: "{{ item }}"
+  ansible.builtin.systemd:
+    name: "{{ item.name }}"
     enabled: true
     state: started
-    scope: "{{ 'system' if ansible_become is true else 'user'}}"
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
   loop:
-    - "{{ web_proxy_name }}.service"
-    - "{{ web_cache_name }}.service"
-    - "{{ web_name }}.service"
+    - name: "{{ web_cache_name }}.service"
+    - name: "{{ web_name }}.service"
+    - name: "{{ web_proxy_name }}.service"
+      reverse_proxy: true
+  when: >
+    not (item.reverse_proxy | default(false) | bool)
+    or (web_reverse_proxy | default(false) | bool)
 
 - name: Create Django user via manage.py shell
   when: debug | default(false)
@@ -158,4 +165,4 @@
       Since you are not running as root, consider setting up a reverse proxy
       to forward connections from port 80 and 443 to ports {{ web_port_httpd }}
       and {{ web_port_httpsd }} respectively.
-  when: ansible_become_user != 'root'
+  when: ansible_become_user != 'root' and web_reverse_proxy is true

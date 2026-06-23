@@ -281,6 +281,19 @@ class WebScreen(BaseForm):
                 ),
                 False,
             ),
+            reverse_proxy=(
+                self.add_widget_intelligent(
+                    CheckboxInfo,
+                    section="web",
+                    key="reverse_proxy",
+                    max_height=2,
+                    value=cfg.get("reverse_proxy", True),
+                    editable=True,
+                    name=(f"{self.num}Deploy reverse proxy service?"),
+                    scroll_exit=True,
+                ),
+                False,
+            ),
             main_color=(
                 self.add_widget_intelligent(
                     TextInfo,

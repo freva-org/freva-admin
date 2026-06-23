@@ -6,6 +6,14 @@ ansible_python_interpreter: "{{ web_ansible_python_interpreter }}"
 admin_user: "{{ web_admin_user | default('') }}"
 base_path: '{{web_data_path| regex_replace("^~", ansible_facts.env.HOME)}}'
 systemd_unit_dir: "{{ '/etc/systemd/system' if  web_ansible_become_user is defined and web_ansible_become_user != '' else ansible_facts.env.HOME + '/.config/systemd/user' }}"
+web_device_path: >-
+  {{
+    (
+      ['/srv/freva', project_name, 'static']
+      if (web_ansible_become_user | default('')) != ''
+      else [ansible_env.HOME, '.share', 'freva', project_name, 'static']
+    ) | path_join
+  }}
 web_name: "{{ project_name }}-web"
 web_cache_name: "{{ project_name }}-web-cache"
 web_proxy_name: "{{ project_name }}-web-proxy"

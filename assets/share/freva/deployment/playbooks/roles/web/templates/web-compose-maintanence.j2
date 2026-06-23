@@ -1,4 +1,4 @@
-
+{% if web_reverse_proxy %}
 services:
   {{web_proxy_name}}:
     user: root:0
@@ -42,3 +42,4 @@ networks:
 volumes:
     django-static:
     logs:
+{% endif %}

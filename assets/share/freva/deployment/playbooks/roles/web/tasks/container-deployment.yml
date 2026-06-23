@@ -2,31 +2,83 @@
 - name: Getting container engine
   include_tasks: "get_container_engine.yml"
 
-- name: Pulling containers
-  shell: "{{ docker_bin }} {{ item }} || true"
+- name: Set web container names
+  set_fact:
+    web_container_names: >-
+      {{
+        [web_name, web_cache_name]
+        + ([web_proxy_name] if web_reverse_proxy | default(false) | bool else [])
+      }}
+
+- name: Clean up existing web containers and network
+  command: "{{ docker_bin }} {{ item }}"
   loop:
-    - "stop {{ web_name }} {{ web_cache_name }} {{web_proxy_name}}"
-    - "rm -f {{ web_name }} {{ web_cache_name }} {{web_cache_name}}"
-    - "rmi -f  ghcr.io/freva-org/freva-web:{{ web_version }}"
-    - "rmi -f  ghcr.io/freva-org/freva-nginx"
+    - "stop {{ web_container_names | join(' ') }}"
+    - "rm -f {{ web_container_names | join(' ') }}"
+    - "rmi -f ghcr.io/freva-org/freva-web:{{ web_version }}"
     - "network rm {{ web_name }}_{{ web_name }}"
-    - "pull ghcr.io/freva-org/freva-web:{{ web_version }}"
-    - "pull ghcr.io/freva-org/freva-nginx:{{ proxy_version or 'latest'}}"
-    - "network create {{ web_name }}_{{ web_name }} --ipv6"
+  failed_when: false
   changed_when: true
 
-- name: Creating volumes
-  include_tasks: "container-volumes.yml"
+- name: Clean up existing reverse proxy image
+  ansible.builtin.command: "{{ docker_bin }} {{ item }}"
+  loop:
+    - "rmi -f ghcr.io/freva-org/freva-nginx:{{ proxy_version | default('latest') }}"
+  when: web_reverse_proxy | default(false) | bool
+  failed_when: false
+  changed_when: true
+
+- name: Pull required web containers
+  ansible.builtin.command: "{{ docker_bin }} {{ item }}"
+  loop:
+    - "pull ghcr.io/freva-org/freva-web:{{ web_version }}"
+
+- name: Pull reverse proxy container
+  ansible.builtin.command: "{{ docker_bin }} {{ item }}"
+  loop:
+    - "pull ghcr.io/freva-org/freva-nginx:{{ proxy_version | default('latest') }}"
+  when: web_reverse_proxy | default(false) | bool
+
+- name: Create Docker network
+  ansible.builtin.command: "{{ docker_bin }} network create {{ web_name }}_{{ web_name }} --ipv6"
+  failed_when: false
+  changed_when: true
+
+- name: Cleaning volumes
+  shell: >
+    {{ docker_bin }} volume rm -f {{ item }}
+  loop: "{{ volume_names  | default([]) }}"
 
 - name: Creating directories
   file:
-    path: '{{ base_path }}/{{ project_name }}/compose_services'
+    path: "{{ item }}"
     state: directory
     recurse: true
     owner: "{{ uid }}"
     group: "{{ gid }}"
+  loop:
+    - "{{ base_path }}/{{ project_name }}/compose_services"
+    - "{{ web_device_path }}"
 
 
+- name: Check whether SELinux is enabled
+  ansible.builtin.command: getenforce
+  register: selinux_status
+  changed_when: false
+  failed_when: false
+
+- name: Set SELinux context rule for Django static volume
+  ansible.builtin.shell: |
+    semanage fcontext -a -t container_file_t '{{ web_device_path }}(/.*)?' \
+    || semanage fcontext -m -t container_file_t '{{ web_device_path }}(/.*)?'
+  register: static_selinux_context
+  changed_when: static_selinux_context.rc == 0
+  when: selinux_status.stdout in ["Enforcing", "Permissive"]
+
+- name: Apply SELinux context to Django static volume
+  ansible.builtin.command: restorecon -Rv {{ web_device_path }}
+  changed_when: false
+  when: selinux_status.stdout in ["Enforcing", "Permissive"]
 
 - name: Removing old compose file
   file:

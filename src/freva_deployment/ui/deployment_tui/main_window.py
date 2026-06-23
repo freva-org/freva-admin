@@ -276,6 +276,7 @@ class MainApp(npyscreen.NPSAppManaged):
                 "project_name",
                 "deployment_method",
                 "kubernetes",
+                "master_password",
             ):
                 continue
             for key, config in settings.items():

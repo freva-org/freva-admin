@@ -38,7 +38,10 @@ services:
       - OIDC_CLIENT_ID={{ web_oidc_client }}
       - CHATBOT_HOST={{ web_chatbot_host.replace("http://", "") }}
       - STAC_BROWSER=1
-
+{% if not web_reverse_proxy %}
+    ports:
+      -  8000:8000
+{% endif %}
     volumes:
       - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
       - {{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}:{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME)}}:ro
@@ -48,7 +51,7 @@ services:
       - logs:/data/logs:z
     depends_on:
       - {{ web_cache_name }}
-
+{% if web_reverse_proxy %}
   {{web_proxy_name}}:
     user: root:0
     image: ghcr.io/freva-org/freva-nginx:{{ proxy_version or "latest" }}
@@ -84,6 +87,7 @@ services:
       - {{web_port_httpsd}}:{{web_port_httpsd}}
     depends_on:
       - {{ web_name }}
+{% endif %}
 
 networks:
   {{web_name}}:
@@ -92,4 +96,9 @@ networks:
 
 volumes:
     django-static:
+        driver: local
+        driver_opts:
+          type: none
+          device: {{ web_device_path }}
+          o: bind
     logs:

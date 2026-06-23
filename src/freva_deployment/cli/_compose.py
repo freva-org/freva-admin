@@ -33,6 +33,9 @@ COMPOSE_TASK = """---
       template:
         src: {asset_dir}/playbooks/templates/service-compose.yml.j2
         dest: {pwd}/{project_name}-compose.yml
+      vars:
+        deploy_web: {{ ({deploy_web}|int) != 0 }}
+      
 """
 
 SYSTEMD_TMPL = """
@@ -143,14 +146,17 @@ def create_compose(args: argparse.Namespace) -> None:
             )
 
         playbook = COMPOSE_TASK.format(
-            pwd=Path.cwd(), project_name=DF.project_name, asset_dir=asset_dir
+            pwd=Path.cwd(),
+            project_name=DF.project_name,
+            asset_dir=asset_dir,
+            deploy_web=int(args.no_web is False),
         )
         web_conf = (
             Path(inventory["core"]["vars"]["core_root_dir"])
             / "share"
             / "freva"
             / "web"
-            / "freva_web.toml"
+            / "freva_web_config.toml"
         )
         for key in inventory:
             inventory[key]["hosts"] = "localhost"
@@ -233,6 +239,12 @@ def compose_parser(
         "--host",
         type=str,
         help="Host name where the compose service should be running.",
+    )
+    parser.add_argument(
+        "--no-web",
+        action="store_true",
+        help="Do not deploy the web service.",
+        default=False,
     )
     parser.add_argument(
         "-u",
