@@ -7,6 +7,10 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2606.5.1
+~~~~~~~~
+* Configure reverse proxy alias host names.
+
 v2606.5.0
 ~~~~~~~~
 * Bumped version of freva-web to 2606.0.4
