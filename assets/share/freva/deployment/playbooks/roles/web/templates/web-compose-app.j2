@@ -69,7 +69,7 @@ services:
         - CHATBOT_HOST={{ web_chatbot_host.replace("http://", "") }}
         - WEB_SERVER_NAME={{ web_name }}
         - WEB_SERVER_PORT=8000
-        - WEB_HOST_ALIASES= {{ web_aliases | join(',') }}
+        - WEB_HOST_ALIASES={{ web_aliases | join(',') }}
         - SERVER_CERT={{ web_cert_content }}
         - SERVER_KEY={{ web_key_content }}
         - REST_PROXY_HOST_NAME={{ web_chatbot_rest_api_url }}

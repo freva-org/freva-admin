@@ -72,8 +72,14 @@ class ConfigType(TypedDict):
 
 
 def _is_alias_candidate(host: str) -> bool:
-    host = host.strip().lower()
-    if not host:
+    host = (
+        host.strip()
+        .lower()
+        .removeprefix("https://")
+        .removeprefix("http://")
+        .removeprefix("www.")
+    )
+    if not host or len(host.split(".")) == 1:
         return False  # empty string (Django: matches empty Host)
     if host == "*" or host.startswith("."):
         return False  # Django wildcards: '*' and '.example.com'
@@ -90,10 +96,17 @@ def _is_alias_candidate(host: str) -> bool:
 def _build_aliases(allowed_hosts: list[str], canonical_host: str) -> list[str]:
     seen, aliases = set(), []
     for h in allowed_hosts:
-        h = h.strip().lower()
+        h = (
+            h.strip()
+            .lower()
+            .removeprefix("https://")
+            .removeprefix("http://")
+            .removeprefix("www.")
+        )
         if _is_alias_candidate(h) and h != canonical_host.lower() and h not in seen:
             seen.add(h)
             aliases.append(h)
+            aliases.append(f"www.{h}")
     return aliases
 
 
