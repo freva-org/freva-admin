@@ -1,7 +1,13 @@
 [Unit]
 Description=Freva Web app
+{% if web_reverse_proxy %}
 After={{web_cache_name}}.service {{web_proxy_name}}.service
 Requires={{web_cache_name}}.service {{web_proxy_name}}.service
+{% else %}
+After={{web_cache_name}}.service
+Requires={{web_cache_name}}.service
+{% endif %}
+
 {% if not ansible_become %}
 ConditionHost={{ ansible_hostname }}
 {% endif %}
