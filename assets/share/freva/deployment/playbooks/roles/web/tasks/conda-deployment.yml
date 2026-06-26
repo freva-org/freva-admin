@@ -112,8 +112,8 @@
     dest: "{{ systemd_unit_dir }}/{{ item.dest }}.service"
   loop:
     - { src: systemd-conda-redis.j2, dest: "{{ web_cache_name }}" }
-    - { src: systemd-conda-nginx.j2, dest: "{{ web_proxy_name }}" }
-    - { src: systemd-conda-django.j2, dest: "{{ web_name }}", reverse_proxy: true}
+    - { src: systemd-conda-nginx.j2, dest: "{{ web_proxy_name }}", reverse_proxy: true}
+    - { src: systemd-conda-django.j2, dest: "{{ web_name }}"}
   when: >
      not (item.reverse_proxy | default(false) | bool)
      or (web_reverse_proxy | default(true) | bool)
@@ -130,10 +130,9 @@
     state: started
     scope: "{{ 'system' if ansible_become is true else 'user' }}"
   loop:
-    - name: "{{ web_cache_name }}.service"
-    - name: "{{ web_name }}.service"
-    - name: "{{ web_proxy_name }}.service"
-      reverse_proxy: true
+    - { name: "{{ web_cache_name }}.service" }
+    - { name: "{{ web_proxy_name }}.service", reverse_proxy: true}
+    - { name: "{{ web_name }}.service"}
   when: >
     not (item.reverse_proxy | default(false) | bool)
     or (web_reverse_proxy | default(false) | bool)
