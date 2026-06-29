@@ -58,6 +58,7 @@ pip_packages:
   - django-bootstrap-v5
   - django-model-utils
   - djproxy
+  - markdown
 
 secret_keys:
   - OIDC_CLIENT_SECRET

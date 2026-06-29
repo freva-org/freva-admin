@@ -7,6 +7,10 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2606.5.2
+~~~~~~~~
+* Bug fixes for anaconda reverse proxy deployment.
+
 v2606.5.1
 ~~~~~~~~
 * Configure reverse proxy alias host names.
