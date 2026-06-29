@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2606.6.0
+~~~~~~~~
+* Bumped version of freva-nextgen to 2606.0.0
+
+
+
 v2606.5.2
 ~~~~~~~~
 * Bug fixes for anaconda reverse proxy deployment.
