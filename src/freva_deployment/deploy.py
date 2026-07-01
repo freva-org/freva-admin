@@ -853,6 +853,19 @@ class DeployFactory:
     def parse_config(self, steps: list[str], **extra: str) -> Optional[str]:
         """Create config files for ansible and evaluation_system.conf."""
         versions = get_versions()
+        passwords: dict[str, str] = {}
+        for pw in [
+            p.strip()
+            for p in os.getenv("FREVA_DEPLOYMENT_PASSWORDS", "")
+            .replace(" ", ",")
+            .strip()
+            .split(",")
+            if p.strip()
+        ]:
+            user, _, pw = pw.partition(":")
+            if user and pw:
+                passwords.setdefault(user, pw)
+
         additional_steps = set(steps) - set(self.steps)
         if additional_steps:
             pprint(
@@ -886,6 +899,10 @@ class DeployFactory:
                 },
             }
         }
+        if config["kubernetes"]["vars"]["ansible_user"] in passwords:
+            config["kubernetes"]["vars"]["ansible_password"] = passwords[
+                config["kubernetes"]["vars"]["ansible_user"]
+            ]
 
         playbooks = "\n".join(
             [
@@ -940,8 +957,17 @@ class DeployFactory:
             config[step]["vars"]["debug"] = self.local_debug
             # Add additional keys
             self._set_additional_config_values(step, config)
+            _user: str = cast(str, config[step]["vars"].get("ansible_user", ""))
+            if _user and user in passwords:
+                config[step]["vars"]["ansible_password"] = passwords[_user]
             for k, v in extra.items():
-                config[step]["vars"][k] = v
+                es, _, ek = k.rpartition(".")
+                ek = ek.strip()
+                v = v.strip()
+                if not es and v:
+                    config[step]["vars"][ek] = v
+                elif es == step and v:
+                    config[step]["vars"][ek] = v
         max_width = int(max(shutil.get_terminal_size().columns * 0.75, 25))
         if "search_server" in config:
             config["search_server"]["vars"]["solr_version"] = versions["solr"]
