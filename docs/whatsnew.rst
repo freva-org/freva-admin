@@ -7,6 +7,12 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2606.8.0
+~~~~~~~~
+* Make inventory more flexible via environment variables.
+
+
+
 v2606.7.0
 ~~~~~~~~
 * Bumped version of freva-nextgen to 2606.0.1

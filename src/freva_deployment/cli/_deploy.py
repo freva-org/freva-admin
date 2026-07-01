@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from rich_argparse import ArgumentDefaultsRichHelpFormatter
 
@@ -16,6 +17,18 @@ from ..error import DeploymentError
 from ..logger import set_log_level
 from ..utils import config_dir
 from ..versions import VersionAction, display_versions
+
+
+def _get_default_extra() -> List[Tuple[str, str]]:
+    extras = os.getenv("DEPLOY_FREVA_EXTRA", "").replace(" ", ",").strip().split(",")
+    out = []
+    for extra in extras:
+        key, _, value = extra.partition(":")
+        key = key.strip()
+        value = value.strip()
+        if key and value:
+            out.append((key, value))
+    return out
 
 
 class BatchParser:
@@ -141,6 +154,7 @@ class BatchParser:
             nargs=2,
             action="append",
             help="Add/Override inventory settings.",
+            default=_get_default_extra() or None,
         )
         self.parser.add_argument(
             "--inspect",
