@@ -7,7 +7,7 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
-v2606.8.0
+v2606.8.1
 ~~~~~~~~
 * Make inventory more flexible via environment variables.
 
