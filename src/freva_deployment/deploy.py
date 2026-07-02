@@ -958,7 +958,7 @@ class DeployFactory:
             # Add additional keys
             self._set_additional_config_values(step, config)
             _user: str = cast(str, config[step]["vars"].get("ansible_user", ""))
-            if _user and user in passwords:
+            if _user and _user in passwords:
                 config[step]["vars"]["ansible_password"] = passwords[_user]
             for k, v in extra.items():
                 es, _, ek = k.rpartition(".")
