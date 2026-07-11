@@ -963,11 +963,11 @@ class DeployFactory:
             for k, v in extra.items():
                 es, _, ek = k.rpartition(".")
                 ek = ek.strip()
-                v = v.strip()
-                if not es and v:
-                    config[step]["vars"][ek] = v
-                elif es == step and v:
-                    config[step]["vars"][ek] = v
+                if isinstance(v, str):
+                    v = v.strip()
+                if v or isinstance(v, (bool, int, float)):
+                    if not es or es == step:
+                        config[step]["vars"][ek] = v
         max_width = int(max(shutil.get_terminal_size().columns * 0.75, 25))
         if "search_server" in config:
             config["search_server"]["vars"]["solr_version"] = versions["solr"]

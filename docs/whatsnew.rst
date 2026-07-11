@@ -7,11 +7,13 @@ What's new
    :maxdepth: 0
    :titlesonly:
 
+v2606.8.2
+~~~~~~~~
+* Bug fixes
+
 v2606.8.1
 ~~~~~~~~
 * Make inventory more flexible via environment variables.
-
-
 
 v2606.7.0
 ~~~~~~~~
