@@ -5,4 +5,4 @@ npyscreen==5.0.2
 rich==15.0.0
 requests==2.34.2
 toml==0.10.2
-tomlkit==0.15.0
+tomlkit==0.15.1
