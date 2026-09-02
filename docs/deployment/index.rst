@@ -43,12 +43,9 @@ the ``deploy-freva config`` subcommands:
     deploy-freva config set project_name clex -c freva.toml
 
 
-If you are fine with setting up *all* services on one machine and using
-*docker-compose* or *podman-compose* you can create a complete compose file
-that contains all the services with help of the compose sub command:
-
-.. literalinclude:: ../_generated/compose.txt
-   :language: console
+For a systemd-native container deployment, set
+``deployment_method = "quadlet"``. Ansible installs Podman Quadlet units on
+the selected service hosts.
 
 Kubernetes manifest for using deployment  ``kubectl apply -f`` can be generated
 by using the ``kubernetes`` sub-command:
@@ -63,6 +60,7 @@ by using the ``kubernetes`` sub-command:
 
    Installation
    Configure
+   Quadlet
    TuiHowto
    webui
    Config

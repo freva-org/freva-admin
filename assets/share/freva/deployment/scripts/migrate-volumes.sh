@@ -3,28 +3,20 @@ set -euo pipefail
 
 usage() {
   cat <<EOF
-Usage: $0 --service <service> --engine <docker|podman|conda> --old-parent-dir <path> --project-name <name>
+Usage: $0 --service <service> --engine <quadlet|conda> --old-parent-dir <path> --project-name <name>
 
 Options:
   --service          Service name
-  --engine           docker, podman or conda
+  --engine           quadlet or conda
   --old-parent-dir   Path to old bind-mounted data
   --project-name     Project name prefix for volumes
 EOF
   exit 1
 }
 
-# Determine container runtime
+# Locate Podman for volume migrations
 get_container_cmd() {
-
-  local order=($1 podman docker)
-  for cmd in "${order[@]}"; do
-    if command -v "$cmd" &> /dev/null; then
-      echo "$cmd"
-      return
-    fi
-  done
-  echo ""
+  command -v podman 2>/dev/null || true
 }
 
 # Setup
@@ -44,11 +36,15 @@ while [[ $# -gt 0 ]]; do
 done
 
 [[ -z "${SERVICE:-}" || -z "${ENGINE:-}" || -z "${OLD_PARENT_DIR:-}" || -z "${PROJECT_NAME:-}" ]] && usage
-[[ "$ENGINE" != "docker" && "$ENGINE" != "podman" && "$ENGINE" != "conda" ]] && {
-  echo "❌ Engine must be 'docker', 'podman' or 'conda'"
+[[ "$ENGINE" != "quadlet" && "$ENGINE" != "conda" ]] && {
+  echo "Engine must be 'quadlet' or 'conda'"
   exit 1
 }
-OCI_PATH=$(get_container_cmd $ENGINE)
+OCI_PATH=$(get_container_cmd)
+if [ "$ENGINE" = "quadlet" ] && [ -z "$OCI_PATH" ]; then
+  echo "Podman is required to migrate data into Quadlet volumes"
+  exit 1
+fi
 # Normalize service folder names
 normalize_service_name() {
   local path=$1
@@ -127,10 +123,10 @@ migrate_conda_legacy() {
 migrate() {
   local service="$1"
   local data_path
-  if [ "$service" != "freva-cacheing" ];then
-      local data_path="$OLD_PARENT_DIR/$PROJECT_NAME/services/$service"
+  if [ "$service" != "freva-cacheing" ]; then
+    data_path="$OLD_PARENT_DIR/$PROJECT_NAME/services/$service"
   else
-      local data_path="$OLD_PARENT_DIR/$service"
+    data_path="$OLD_PARENT_DIR/$service"
   fi
   local suffixes
 
@@ -144,7 +140,7 @@ migrate() {
     if [ -d "$data_path/data" ]; then
       migrate_volume "$service" "$data_path/data" "$data_path"
     fi
-    rm -rf $data_path
+    rm -rf "$data_path"
   else
     local vol="${PROJECT_NAME}-${service}_data"
 

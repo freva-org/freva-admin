@@ -13,7 +13,6 @@ wipe: false
 volume_names:
   - "{{ cache_name }}_data"
   - "{{ cache_name }}_logs"
-compose_file: '{{base_path}}/{{service}}/compose_services/{{service}}-compose.yml'
 old_compose_dir: ""
 conda_packages:
   - redis-server

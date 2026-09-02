@@ -78,7 +78,7 @@ def main_cli(argv: Optional[List[str]] = None) -> None:
     compose_parser(
         parser=subparser.add_parser(
             name="compose",
-            help="Create a compose file.",
+            help="Create a local development Compose bundle.",
             formatter_class=ArgumentDefaultsRichHelpFormatter,
         )
     )

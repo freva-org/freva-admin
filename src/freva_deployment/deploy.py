@@ -32,6 +32,7 @@ from typing_extensions import NotRequired, TypedDict
 import freva_deployment.callback_plugins
 from freva_deployment import AUX_URL, FREVA_PYTHON_VERSION, __version__
 
+from .config import DeploymentMethod
 from .error import ConfigurationError, handled_exception
 from .keys import RandomKeys
 from .logger import logger
@@ -698,9 +699,9 @@ class DeployFactory:
         cfg["web"]["allowed_hosts"] = [host, "localhost", "127.0.0.1"]
         cfg["web"]["project_website"] = "https://localhost"
         cfg["core"]["arch"] = get_current_architecture()
-        cfg["freva_rest"]["oidc_url"] = (
-            "http://localhost:8080/realms/freva/.well-known/openid-configuration"
-        )
+        cfg["freva_rest"][
+            "oidc_url"
+        ] = "http://localhost:8080/realms/freva/.well-known/openid-configuration"
         cfg["freva_rest"]["oidc_client"] = "freva"
         cfg["freva_rest"]["oidc_client_secret"] = ""
         cfg["freva_rest"]["oidc_token_claims"] = ""
@@ -738,6 +739,9 @@ class DeployFactory:
             config: Dict[str, Any] = dict(
                 merge_toml_documents(load_config(self._inv_tmpl, convert=True), secrets)
             )
+            config["deployment_method"] = DeploymentMethod.from_config(
+                config.get("deployment_method", DeploymentMethod.QUADLET.value)
+            ).value
             self._master_pass = cast(str, config.pop("master_password", ""))
             for dest, source in mapper.items():
                 host = (
@@ -948,7 +952,7 @@ class DeployFactory:
                 "admin_user", ""
             )
             config[step]["vars"]["deployment_method"] = self.cfg.get(
-                "deployment_method", "docker"
+                "deployment_method", DeploymentMethod.QUADLET.value
             )
             if step in versions:
                 config[step]["vars"][f"{step.replace('-', '_')}_version"] = versions[
@@ -1018,16 +1022,9 @@ class DeployFactory:
         """Set all the deployment steps."""
         return [s for s in self.step_order if s in self._steps]
 
-    def _set_deployment_methods(self) -> str:
+    def _set_deployment_methods(self) -> DeploymentMethod:
         """Check the deployment methods."""
-        valid_deployment_methods = ("podman", "docker", "conda", "k8s")
-        deployment_method = self.cfg.get("deployment_method", "")
-        if deployment_method not in valid_deployment_methods:
-            raise ConfigurationError(
-                f"Deployment method: {deployment_method} is invalid, should be"
-                f"one of {', '.join(valid_deployment_methods)}"
-            )
-        return deployment_method
+        return DeploymentMethod.from_config(self.cfg.get("deployment_method"))
 
     def create_eval_config(self) -> Optional[Path]:
         """Create and dump the evaluation_system.config."""
@@ -1193,7 +1190,9 @@ class DeployFactory:
                 config[step]["vars"] = {
                     f"{step}_ansible_become_user": become_user,
                     "asset_dir": str(asset_dir),
-                    "deployment_method": self.cfg.get("deployment_method", "docker"),
+                    "deployment_method": self.cfg.get(
+                        "deployment_method", DeploymentMethod.QUADLET.value
+                    ),
                     f"{step}_ansible_user": ansible_user,
                     "project_name": self.project_name,
                     f"{step}_data_path": cfg[step].get("data_path", ""),

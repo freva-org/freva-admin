@@ -1,0 +1,95 @@
+---
+- name: Inspect the target state directory
+  ansible.builtin.find:
+    paths: "{{ quadlet_state_item.path }}"
+    file_type: any
+    hidden: true
+    recurse: false
+  register: quadlet_target_contents
+
+- name: Inspect legacy state directories
+  ansible.builtin.command:
+    argv:
+      - find
+      - "{{ item }}"
+      - -mindepth
+      - "1"
+      - -print
+      - -quit
+  loop: "{{ quadlet_state_item.legacy_paths | default([]) }}"
+  register: quadlet_legacy_path_stats
+  changed_when: false
+  failed_when: false
+
+- name: Select an existing legacy state directory
+  ansible.builtin.set_fact:
+    quadlet_legacy_path: >-
+      {{
+        quadlet_legacy_path_stats.results
+        | selectattr('rc', 'equalto', 0)
+        | selectattr('stdout', 'defined')
+        | rejectattr('stdout', 'equalto', '')
+        | map(attribute='item')
+        | first
+        | default('')
+      }}
+
+- name: Inspect the legacy Podman volume
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - volume
+      - inspect
+      - "{{ quadlet_state_item.legacy_volume }}"
+  register: quadlet_legacy_volume
+  changed_when: false
+  failed_when: false
+  when: quadlet_state_item.legacy_volume | default('') | length > 0
+
+- name: Copy legacy bind-mounted state into the fixed path
+  ansible.builtin.command:
+    argv:
+      - cp
+      - -a
+      - --
+      - "{{ quadlet_legacy_path }}/."
+      - "{{ quadlet_state_item.path }}/"
+  when:
+    - quadlet_target_contents.matched == 0
+    - quadlet_legacy_path | length > 0
+  changed_when: true
+
+- name: Copy a legacy Podman volume into the fixed path
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - run
+      - --rm
+      - --volume
+      - "{{ quadlet_state_item.legacy_volume }}:/source:ro"
+      - --volume
+      - "{{ quadlet_state_item.path }}:/destination:rw,z"
+      - docker.io/library/alpine:latest
+      - sh
+      - -c
+      - cp -a /source/. /destination/
+  when:
+    - quadlet_target_contents.matched == 0
+    - quadlet_legacy_path | length == 0
+    - quadlet_legacy_volume.rc | default(1) == 0
+  changed_when: true
+
+- name: Record the completed state migration
+  ansible.builtin.copy:
+    content: |
+      Freva copied legacy data into this directory.
+      The source was intentionally retained for rollback.
+    dest: "{{ quadlet_state_item.path }}/.freva-state-migrated"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    mode: "0600"
+    force: false
+  when: >-
+    quadlet_target_contents.matched == 0
+    and (quadlet_legacy_path | length > 0
+         or quadlet_legacy_volume.rc | default(1) == 0)

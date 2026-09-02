@@ -15,11 +15,22 @@ logging.basicConfig(
 logger = logging.getLogger("container-check")
 
 
-def start_container(container_name: str) -> subprocess.Popen:
-    """Start the container."""
+def start_container(container_name: str) -> subprocess.Popen[bytes]:
+    """Start a vault test container with Podman.
+
+    Parameters
+    ----------
+    container_name : str
+        Container image to test.
+
+    Returns
+    -------
+    subprocess.Popen[bytes]
+        Handle for the running Podman process.
+    """
     return subprocess.Popen(
         [
-            "docker",
+            "podman",
             "run",
             "--net=host",
             "-e",
@@ -33,8 +44,14 @@ def start_container(container_name: str) -> subprocess.Popen:
     )
 
 
-def _check_container(process: subprocess.Popen) -> None:
-    """Check if the container starts up."""
+def _check_container(process: subprocess.Popen[bytes]) -> None:
+    """Check whether the vault test container is ready.
+
+    Parameters
+    ----------
+    process : subprocess.Popen[bytes]
+        Handle for the running Podman process.
+    """
     try:
         if process.poll() is not None:
             raise RuntimeError("Container died.")
@@ -56,7 +73,13 @@ def _check_container(process: subprocess.Popen) -> None:
 
 
 def check_container(container_name: str = "vault") -> None:
-    """Check the status of the container."""
+    """Check the status of a vault container image.
+
+    Parameters
+    ----------
+    container_name : str, default="vault"
+        Container image to test.
+    """
     proc = start_container(container_name)
     time.sleep(5)
     for _ in range(10):
@@ -66,7 +89,7 @@ def check_container(container_name: str = "vault") -> None:
         except RuntimeError:
             time.sleep(5)
     proc.terminate()
-    raise ValueError("Container deosn't seem to work.")
+    raise ValueError("Container does not seem to work.")
 
 
 if __name__ == "__main__":

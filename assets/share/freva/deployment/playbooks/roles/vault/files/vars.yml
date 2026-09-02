@@ -9,7 +9,6 @@ conda_path: '{{ base_path }}/{{ project_name }}/services/{{ service }}/conda'
 data_dir: '{{ base_path }}/{{ project_name }}/services/{{service}}'
 systemd_unit_dir: "{{ '/etc/systemd/system' if  vault_ansible_become_user is defined and vault_ansible_become_user != '' else ansible_facts.env.HOME + '/.config/systemd/user' }}"
 vault_name: "{{ project_name }}-vault"
-compose_file: '{{ base_path }}/{{project_name}}/compose_services/{{vault_name}}-compose.yml'
 old_compose_dir: '{{ base_path }}/compose_services'
 vault_token_path: "{{ data_dir }}/data/files/keys"
 wipe: "{{ vault_wipe }}"

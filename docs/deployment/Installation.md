@@ -67,12 +67,12 @@ python3 -m pip install libselinux-python3
 ```
 :::
 
-## 3. Using docker
+## 3. Running the deployment client as a container
 
-A pre-built docker image is available to run the deployment
+A pre-built container image is available to run the deployment client:
 
 ```console
-docker run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-org/freva-deployment
+podman run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-org/freva-deployment
 ```
 The `-it` flags are important in order to interact with the program. To use
 and save existing configurations you can mount the directories of the config
@@ -80,9 +80,12 @@ files into the container.
 
 
 ## Commands after installation:
-The deployment software consists of *three* different sub-commands:
+The deployment software provides these subcommands:
 - `deploy-freva`: Main deployment command via text user interface (tui).
 - `deploy-freva cmd`: Run already configured deployment.
+- `deploy-freva config`: Create and inspect configuration.
+- `deploy-freva compose`: Render a local development Compose bundle.
+- `deploy-freva kubernetes`: Render Kubernetes manifests.
 - `deploy-freva migrate`: Command line interface to manage project migration from
    old freva systems to new ones.
 

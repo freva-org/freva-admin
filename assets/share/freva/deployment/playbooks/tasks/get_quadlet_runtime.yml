@@ -1,0 +1,64 @@
+---
+- name: Locate Podman
+  ansible.builtin.command: which podman
+  register: podman_path
+  changed_when: false
+  failed_when: false
+  environment:
+    PATH: >-
+      /usr/local/bin:{{ ansible_facts.env.PATH }}:
+      {{ ansible_facts.env.HOME }}/.local/bin
+
+- name: Require Podman for Quadlet deployments
+  ansible.builtin.assert:
+    that:
+      - podman_path.rc == 0
+    fail_msg: >-
+      Podman is required for deployment_method='quadlet'. Install Podman
+      with Quadlet support on the target host.
+
+- name: Register the Podman path
+  ansible.builtin.set_fact:
+    podman_bin: "{{ podman_path.stdout | trim }}"
+
+- name: Check the cgroup version used by Podman
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - info
+      - --format
+      - "{% raw %}{{.Host.CgroupsVersion}}{% endraw %}"
+  register: podman_cgroups
+  changed_when: false
+
+- name: Require cgroup version 2 for Quadlet
+  ansible.builtin.assert:
+    that:
+      - podman_cgroups.stdout | trim == 'v2'
+    fail_msg: >-
+      Podman Quadlet requires cgroup version 2. The target host reports
+      {{ podman_cgroups.stdout | trim }}.
+
+- name: Reject system units running as a non-root service user
+  ansible.builtin.assert:
+    that:
+      - not (ansible_become | bool) or ansible_become_user == 'root'
+    fail_msg: >-
+      Rootless Quadlet units must be installed by logging in as the service
+      user. Do not use ansible_become_user for a non-root service user.
+
+- name: Set Quadlet paths and systemd scope
+  ansible.builtin.set_fact:
+    quadlet_unit_dir: >-
+      {{ '/etc/containers/systemd'
+         if quadlet_rootful
+         else ansible_facts.env.HOME + '/.config/containers/systemd' }}
+    quadlet_env_dir: "{{ deployment_config_root }}/env"
+    quadlet_systemd_scope: >-
+      {{ 'system'
+         if quadlet_rootful
+         else 'user' }}
+    quadlet_wanted_by: >-
+      {{ 'multi-user.target'
+         if quadlet_rootful
+         else 'default.target' }}

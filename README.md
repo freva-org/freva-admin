@@ -5,11 +5,11 @@
 The code in this repository is used to deploy freva in different computing
 environments. The general strategy is to split the deployment into
 4 different steps, these are :
-- Deploy MariaDB service via docker
+- Deploy the MySQL service through Podman Quadlet or conda-forge
 - Deploy a Hashicorp Vault service for storing and retrieving passwords
-  and other sensitive data via docker
+  and other sensitive data
   (this step get automatically activated once the MariaDB service is set)
-- Deploy [Databrowser API](https://github.com/freva-org/freva-nextgen) service via docker
+- Deploy the [Databrowser API](https://github.com/freva-org/freva-nextgen)
 - Deploy command line interface backend ([evaluation_system](https://github.com/freva-org/freva-legacy))
 - Deploy web front end ([freva_web](https://github.com/freva-org/freva-web))
 
@@ -72,13 +72,17 @@ After downloading and extracting the zip file for your operating system and arch
 you can run the `deploy-freva` command.
 
 ```console
-Usage: deploy-freva [-h] [-v] [-V] [--cowsay] {cmd,migrate} ...
+Usage: deploy-freva [-h] [-v] [-V] [--cowsay]
+                    {cmd,config,compose,kubernetes,migrate} ...
 
 Run the freva deployment
 
 Positional Arguments:
-  {cmd,migrate}
+  {cmd,config,compose,kubernetes,migrate}
     cmd          Run deployment in batch mode.
+    config       Create and inspect Freva configuration.
+    compose      Create a local development Compose bundle.
+    kubernetes   Create Kubernetes manifests for deployment.
     migrate      Utilities to handle migrations from old freva systems.
 
 Options:
@@ -103,22 +107,27 @@ This command installs ansible and all required python packages.
 ```console
 python3 -m pip install libselinux-python3
 ```
-## 3. Using docker
+## 3. Running the deployment client as a container
 
-A pre-built docker image is available to run the deployment
+A pre-built container image is available to run the deployment client:
 
 ```console
-docker run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-org/freva-deployment
+podman run -it -v /path/to/config:/opt/freva-deployment:z ghcr.io/freva-org/freva-deployment
 ```
 The `-it` flags are important in order to interact with the program. To use
 and save existing configurations you can mount the directories of the config
 files into the container.
 
 
-## Sub Commands after installation:
-The deployment software consists of *three* different sub-commands:
+## Subcommands after installation
+
+The deployment software provides the following interfaces:
+
 - `deploy-freva`: Main deployment command via text user interface (tui).
 - `deploy-freva cmd`: Run already configured deployment.
+- `deploy-freva config`: Create and inspect configuration.
+- `deploy-freva compose`: Render a local development Compose bundle.
+- `deploy-freva kubernetes`: Render Kubernetes manifests.
 - `deploy-freva migrate`: Command line interface to manage project migration from
    old freva systems to new ones.
 
@@ -131,18 +140,24 @@ Without having to install anything on remote machines.
 
 
 
-## Installing docker-compose/podman-compose and sudo access to the service servers
-Because the services of MariaDB, DatabrowserAPI and Apache httpd will be deployed
-on docker container images, docker needs to be available on the target servers.
-Since version *v2309.0.0* of the deployment the containers are set up
-using `docker-compose`. Hence `docker-compose` (or `podman-compose`) has to be
-installed on the host systems. Usually installing and running docker
-requires *root* privileges. Hence, on the servers that will be running docker
-you will need root access. There exists an option to install and run docker
-without root, information on a root-less docker option
-can be found [on the docker docs](https://docs.docker.com/engine/security/rootless/)
-> ``💡`` Some systems use `podman` instead of `docker`. The deployment
-routine is able to distinguish and use the right service.
+## Installing Podman with Quadlet support
+
+Container deployments use Podman Quadlet. Each container and network is
+declared in a Quadlet source file and generated into a normal systemd unit.
+The target hosts require Podman with Quadlet support, systemd, and cgroup
+version 2. Compose and Docker are not used for deployed services. The local
+`compose` subcommand remains available for development and release testing.
+
+Set `deployment_method = "quadlet"` in the configuration. Rootful units are
+written to `/etc/containers/systemd`. For a rootless deployment, connect as the
+service user and leave `ansible_become_user` empty; units are then written to
+`~/.config/containers/systemd`.
+
+Rootful persistent state is stored below `/var/lib/freva/<project>` and
+configuration below `/etc/freva/<project>`. Rootless deployments use
+`~/.local/state/freva/<project>` and `~/.config/freva/<project>`. Quadlet
+drop-ins under `<name>.container.d` and protected `.local.env` files provide
+operator-owned overrides that deployments do not replace.
 
 ## Version checking
 Because the system consists of multiple micro services the software will
@@ -166,7 +181,7 @@ A complete freva instance will need the following services:
 Two typical server topography could look the following:
 | ![](docs/architecture/_static/Topography.png) |
 |:--:|
-| *Two different server structures*. In setup I the services are running on the same host that serve 4 docker containers. The backend is installed on a hpc login node with access to a gpfs/lustre file system. Setup II deploys the MariaDB, Solr services and the website on dedicated servers. The command line interfaces are also deployed on independent servers.|
+| *Two different server structures*. In setup I the services run as containers on the same host. The backend is installed on an HPC login node with access to a GPFS or Lustre file system. Setup II deploys the database, Solr services, and website on dedicated servers. The command line interfaces are also deployed on independent servers.|
 ---
 
 ## Setting the python and git path
@@ -250,26 +265,21 @@ fatal: [host.name]: FAILED! => {"msg": "Using a SSH password instead of a key is
 ```
 - This means that you've never logged on to the server. You can avoid this error message by simply logging on to the server for the first time.
 
-### Playbook complains about refused connections for the solr or db playbook
+### A Quadlet service cannot bind its configured port
 
-```python
-fatal: [localhost]: FAILED! => {"changed": true, "cmd": "docker run --name \"test_ces_db\" -e MYSQL_ROOT_PASSWORD=\"T3st\" -p \"3306\":3306 -d docker.io/library/mariadb", "delta": "0:00:00.229695", "end": "2021-05-27 16:10:58.553280", "msg": "non-zero return code", "rc": 125, "start": "2021-05-27 16:10:58.323585", "stderr": "docker: Error response from daemon: driver failed programming external connectivity on endpoint test_ces_db (d106bf1fe310a2ae0e012685df5a897874c61870c5241f7a2af2c4ce461794c2): Error starting userland proxy: listen tcp4 0.0.0.0:3306: bind: address already in use.", "stderr_lines": ["docker: Error response from daemon: driver failed programming external connectivity on endpoint test_ces_db (d106bf1fe310a2ae0e012685df5a897874c61870c5241f7a2af2c4ce461794c2): Error starting userland proxy: listen tcp4 0.0.0.0:3306: bind: address already in use."], "stdout": "895ba35cdf5dcf2d4ec86997aedf0637bf4020f2e9d3e5775221966dcfb820a5", "stdout_lines": ["895ba35cdf5dcf2d4ec86997aedf0637bf4020f2e9d3e5775221966dcfb820a5"]}
-```
-- This means that there is already a service running on this port - in this case a local mariadb service. To avoid this error chose a different port in your `config/inventory` file.
+Use `systemctl status <name>.service` and `journalctl -u <name>.service` to
+inspect the failure. If the log reports that an address is already in use,
+another process is listening on the configured port. Stop that process or
+choose a different port in the inventory.
 
-### Playbook cannot create database tables because connections fails
+### The playbook cannot create database tables
 
 ```python
 fatal: [localhost]: FAILED! => {"changed": false, "msg": "ERROR 1698 (28000): Access denied for user 'root'@'localhost'\n"}
 ```
-- This is a common problem if you've set the mariadb docker host to be localhost. You can avoid the problem by setting the `db_host` variable to a non localhost type IP like 172.17.0.1. If you're not sure what IP to use try the following command
-```
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' db_docker_name
-```
-you can figure out the `db_docker_name` using the following command:
-```
-docker container ls
-```
+- Check that `db_host` resolves to the database host from the machine that
+  runs the dependent service. For a local deployment, use a non-loopback
+  address when the caller must cross a container boundary.
 
 ### Git related unit tests in core playbook fail
 Git pull and push commands tend to fail if you haven't configured git. In this case change into the /tmp/evaluation_system directory of the host that runs the playbook
@@ -320,8 +330,8 @@ applied in debug or local mode using the `-l` flag.
 
 ## Using a local VM for testing.
 A test freva instance can be deployed on a dedicated local virtual machine.
-This virtual machine is based on a minimal ubuntu server image and has
-docker and podman pre installed. To create the virtual machine simply
+This virtual machine is based on a minimal Ubuntu server image and has
+Podman preinstalled. To create the virtual machine, run the following script.
 run the following script.
 
 ```console

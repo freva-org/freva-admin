@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from getpass import getuser
 from pathlib import Path
 from typing import Any, List, cast
@@ -18,25 +19,26 @@ from .base import (
     TextInfo,
 )
 
-DEPLOYMENT_METHODS = ["docker", "podman", "conda", "k8s"]
+DEPLOYMENT_METHODS: tuple[str, ...] = ("quadlet", "conda", "k8s")
 EXPOSE_METHODS = ["op-lb", "saas-lb", "hostport"]
 
 
-def get_index(values: list[str], target: str, default: int = 0) -> int:
-    """Get the target index of item in list.
+def get_index(values: Sequence[str], target: str, default: int = 0) -> int:
+    """Find the index of a value in a sequence.
 
-    Parameters:
-    ===========
-    values:
-        the list of values that is searched
-    target:
-        the item the list of values that is searched for
-    default:
-        if nothing is found return the default value
+    Parameters
+    ----------
+    values : Sequence[str]
+        Values to search.
+    target : str
+        Value whose index is requested.
+    default : int, default=0
+        Index returned when ``target`` is absent.
 
-    Returns:
-    ========
-    int: Index of the the target item in the list
+    Returns
+    -------
+    int
+        Index of ``target`` or ``default`` when it is absent.
     """
 
     for n, value in enumerate(values):
@@ -246,7 +248,7 @@ class WebScreen(BaseForm):
                     TextInfo,
                     section="web",
                     key="data_path",
-                    name=f"{self.num}Parent directory for any permanent data",
+                    name=f"{self.num}Conda-only parent directory for data",
                     value=cast(str, cfg.get("data_path", "/opt/freva")),
                 ),
                 True,
@@ -558,7 +560,7 @@ class DBScreen(BaseForm):
                     TextInfo,
                     section="db",
                     key="data_path",
-                    name=(f"{self.num}Parent directory for any permanent data"),
+                    name=(f"{self.num}Conda-only parent directory for data"),
                     value=cast(str, cfg.get("data_path", "/opt/freva")),
                 ),
                 True,
@@ -759,7 +761,7 @@ class FrevaRestScreen(BaseForm):
                     TextInfo,
                     section="freva_rest",
                     key="data_path",
-                    name=f"{self.num}Parent directory for any permanent data",
+                    name=f"{self.num}Conda-only parent directory for data",
                     value=cast(str, cfg.get("data_path", "/opt/freva")),
                 ),
                 True,
@@ -1018,17 +1020,17 @@ class RunForm(npyscreen.FormMultiPageAction):
             name=f"{self.num}Deployment Method",
             info=(
                 "The `deployment_method` key sets the option of how the "
-                "installation of the service is realised. `docker`, "
-                "`podman` leverages podman or docker, `conda` uses "
+                "installation of the service is realised. `quadlet` uses "
+                "Podman managed by systemd, `conda` uses "
                 "conda-forge to install the service while `k8s` "
                 "involves a kubernetes based deployment "
-                'Chosse between: "docker", "podman", "conda", "k8s"'
+                'Choose between: "quadlet", "conda", "k8s"'
             ),
             value=get_index(
                 DEPLOYMENT_METHODS,
                 cast(
                     str,
-                    self.parentApp.config.get("deployment_method", "docker"),
+                    self.parentApp.config.get("deployment_method", "quadlet"),
                 ),
             ),
             values=DEPLOYMENT_METHODS,

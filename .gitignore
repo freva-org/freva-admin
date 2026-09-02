@@ -14,6 +14,7 @@ config/inventory
 __pycache__/*
 build/
 .tox/
+.venv/
 *.tmpl
 docs/_build/
 dist/

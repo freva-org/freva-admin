@@ -160,7 +160,7 @@ This interconnection is usually fulfilled creating a network mount from the
 HPC system to the machine running the web ui. The deployment routine expects
 the *preview* folder (the directory containing plots to be displayed on the web)
 and `evaluation_system.conf` to be present (mounted)
-on the host machine during deployment time. The docker container expects the
+on the host machine during deployment time. The web container expects the
 mounts to be in the same path as on the HPC system. For example, if
 an instance of Freva has been deployed on `/work/clex/freva-clex` then
 this directory should be available via the same path on the machine running
@@ -215,10 +215,10 @@ following explains the essential setup steps:
 1. Set the login user name for the remote machine.
 
 ### Notes on the freva-rest setup
-Any existing data is *not* overridden if you deploy
-a new server and do not chose to delete any pre existing data. The
-data will be saved to `<data_path>/<project_name>/databrowser_service/`
-on the host name the databrowser server is running on.
+Any existing data is *not* overridden if you deploy a new server and do not
+choose to delete it. Quadlet uses `/var/lib/freva/<project_name>` for rootful
+state and the matching `~/.local/state/freva` path for rootless state. The
+configured `data_path` applies only to Conda deployments.
 
 
 ## Database server setup
@@ -257,8 +257,9 @@ on the database connection are stored. The `evaluation_system` core library
 will automatically make a connection to the vault in order retrieve the
 login credentials. Any existing database is *not* overridden if you deploy
 a new database and do not chose to delete any pre existing data. The database
-will be stored in `<data_path>/<project_name>/db_service` on the database server
-host.
+is stored below `/var/lib/freva/<project_name>/db` for a rootful Quadlet
+deployment. Rootless Quadlet uses `~/.local/state/freva/<project_name>/db`, and
+Conda continues to use the configured `data_path`.
 
 ## The run screen.
 The last of the five screen is the so called run screen. This screen sets up a

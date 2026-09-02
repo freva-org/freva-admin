@@ -33,8 +33,6 @@ package_update: true
 packages:
   - git
   - python3-pip
-  - podman-compose
-  - docker-compose
 runcmd:
   - [ mkdir, -p, /opt/freva]
   - [ chown, -R, freva:admin, /opt/freva]

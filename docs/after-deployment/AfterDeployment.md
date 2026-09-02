@@ -12,7 +12,7 @@ file into the `MODULEPATH` location.
 
 
 # Persisent micro service data:
-If you chose podman/docker or conda based deployment of the micro-services
+If you chose Quadlet or conda based deployment of the micro-services
 you will have access to a
 [systemd unit](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/7/html/system_administrators_guide/chap-managing_services_with_systemd)
 of the created service. In general the services can be accessed by
@@ -24,9 +24,8 @@ key was set to `clex-ces` then the following services are created:
 - web ui: `clex-ces-web.service` `clex-ces-web-cache.service` `clex-ces-web-proxy.service`
 - data-loader: `freva-caching.service` `data-loader@scheduler.service` `data-loader@worker.service`
 
-The data-loader services for zarr streaming are optional. Additionally
-`clex-ces-web-cache.service` `clex-ces-web-proxy.service` will only be present
-for *conda-forge* based deployments.
+The data-loader services for zarr streaming are optional. The
+`clex-ces-web-proxy.service` unit is present when the reverse proxy is enabled.
 
 To get an overview over how things are started and controlled you can use
 the `list-units` and `cat` directives to find and inspect the service in
@@ -35,7 +34,7 @@ the following commands:
 
 ```console
 systemctl list-units "*web*"
-sysemctl cat clex-ces-web.service
+systemctl cat clex-ces-web.service
 ```
 
 :::{note}
@@ -43,25 +42,21 @@ If you have set up the services as an unprivileged user you need
 to access the services with help of the ``--user`` flag for example:
 
 ```console
-systemclt --user restart clex-ces-web.service
+systemctl --user restart clex-ces-web.service
 ```
 :::
 
 ## Access of service data on the host machine
 
 ### Environment variables
-All services are configured via environment variables. *Conda* based deployment
-use the `EnvironmentFile` directive in the `systemd` unit of the service in
-question while *Container* based deployments define the environment variables
-directly in the `docker-compose.yml` file. The environment files are located
-in `<data_path>/<project_name>/<service>.env` for example:
+All services are configured via environment variables. Conda environment files
+are located in `<data_path>/<project_name>/<service>.env`. Rootful Quadlet
+environment files are generated in `/etc/freva/<project>/env`. Rootless files
+are generated in `~/.config/freva/<project>/env`. They have mode `0600`
+because they can contain secrets.
 
-- `/opt/freva/clex-ces/web.env`
-
-
-For *Conda* based deployments *all* services define environment files. Container
-deployments only create a `web.env` service file where a so called maintenance
-mode can be configured.
+Each Quadlet container also reads `<container>.local.env` after its generated
+file. The deployment creates the local file once and does not overwrite it.
 
 #### Web maintenance mode
 
@@ -70,12 +65,13 @@ maintenance mode can be enabled. This can be realised by setting the
 
 - `FREVA_MAINTENANCE_MODE=1`
 
-in the `web.env` environment file (`<data_path>/<project_name>/web.env`) and
-restarting the service via `systemd`. This will prevent the web app from
-starting causing the `nginx` reverse proxy to display a message that the system
-is currently unavailable. Once the services are fully available
+in `<project>-web-proxy.local.env` and
+restarting the proxy via `systemd`. The nginx reverse proxy then displays a
+message that the system is currently unavailable. The application containers
+can remain running. Once the services are fully available
 again the entry can be set back to `FREVA_MAINTENANCE_MODE=0` and the web
-service can be restarted.
+proxy can be restarted with
+`systemctl restart <project_name>-web-proxy.service`.
 
 
 ### Conda-forge base deployments
@@ -98,73 +94,18 @@ for example:
 
 - `/opt/freva/clex-ces/conda`
 
-### Container based deployment
-Persistent data for container based deployments in stored in docker/podman managed
-volumes. The volume names follow the following structure:
+### Quadlet deployment
+Persistent data for rootful Quadlet deployments is stored in normal host
+directories below `/var/lib/freva/<project>/<service>`. Rootless deployments
+use `~/.local/state/freva/<project>/<service>`. These paths can be backed up
+with standard filesystem tools without inspecting Podman storage.
 
-`<project_name>-<service>_<name>`
+The Quadlet source files are located in `/etc/containers/systemd` for rootful
+deployments and `~/.config/containers/systemd` for rootless deployments. Their
+generated services are managed with `systemctl` or `systemctl --user`.
 
-for example:
-- `clex-ces-db_data`: Persistent database data
-- `clex-ces-db_logs`: Persistent database logs
-
-You can inspect the volumes using the following commands:
-
-```console
-
-podman volume ls
-podman volume inspect <project_name>-<service>_<type>
-
-```
-
-
-If you chose the `docker/podman` deployment option then the containers are
-orchestrated using `podman-compose` / `docker-compose`.
-The compose files are also located in the `<data_path>/<project_name>/compose_services`
-location, for example:
-
-- `/opt/freva/clex-ces/compose_services`
-
-
-
-## Environment variables for configuration
-
-All services are configured via environment variables.
-The mechanism differs by deployment type: Conda-based deployments
-load variables through the `EnvironmentFile` directive in each
-service's systemd unit, while container-based deployments define
-them directly in the `docker-compose.yml` file.
-
-Environment files are located at
-`<data_path>/<project_name>/<service>.env`, for example
-`/opt/freva/clex-ces/web.env`.
-
-For Conda-based deployments, every service has its own environment
-file. Container-based deployments only create a `web.env` file,
-which is used to configure maintenance mode (see below).
-
-### Web maintenance mode
-
-If the web application becomes unavailable due to an upstream
-service outage or disk failure, a maintenance mode can be enabled.
-In this mode, the Django application does not start and the nginx
-reverse proxy displays a message indicating that the system is
-temporarily unavailable.
-
-To enable maintenance mode, set the following in the `web.env`
-file (`<data_path>/<project_name>/web.env`):
-
-```
-FREVA_MAINTENANCE_MODE=1
-```
-
-Then restart the web service via `systemctl`. Once the underlying
-issue is resolved and all services are available again, set the
-value back to `0` and restart:
-
-```
-FREVA_MAINTENANCE_MODE=0
-```
+See [Operating a Quadlet deployment](../deployment/Quadlet) for drop-ins,
+environment overrides, SELinux labels, and storage path overrides.
 
 
 ## Simple backup scripts:
@@ -182,11 +123,14 @@ For conda-forge base deployments the backup data can be found in:
 ```bash
 <data_path>/<project_name>/services/<service>/backup
 ```
-Container deployments (docker/podman) utilise the following volumes:
+For rootful Quadlet deployments, place backups below:
 
 ```bash
-<project_name>-<service>_backup
+/var/lib/freva/<project_name>/<service>/backup
 ```
+
+Rootless deployments use the corresponding path below
+`~/.local/state/freva`.
 
 This is only a rudimentary backup solution, ideally you should transfer those
 backups regularly to a different location. You can also disable this

@@ -20,7 +20,7 @@ from ..logger import logger, set_log_level
 from ..utils import RichConsole, asset_dir, config_dir
 
 TASK = """---
-- name: Render compose file locally only
+- name: Render Kubernetes manifests locally
   hosts: all
   connection: local
   gather_facts: no

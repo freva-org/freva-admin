@@ -1,0 +1,53 @@
+---
+- name: Define the MongoDB Quadlet
+  ansible.builtin.set_fact:
+    mongodb_server_quadlet_state_directories:
+      - path: "{{ service_state_dir }}/data"
+        legacy_volume: "{{ mongo_name }}_data"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/data"
+          - "{{ legacy_data_dir }}/stats"
+      - path: "{{ service_state_dir }}/logs"
+        legacy_volume: "{{ mongo_name }}_logs"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/logs"
+    mongodb_server_quadlet_networks: []
+    mongodb_server_quadlet_containers:
+      - name: "{{ mongo_name }}"
+        description: Freva MongoDB service
+        image: "ghcr.io/freva-org/freva-mongo:{{ mongodb_server_version }}"
+        user: >-
+          {{ (uid ~ ':' ~ gid) if quadlet_rootful else '0:0' }}
+        environment:
+          API_MONGO_PASSWORD: "{{ mongodb_server_db_passwd }}"
+          API_MONGO_DB: search_stats
+          API_MONGO_USER: "{{ mongodb_server_db_user }}"
+        ports:
+          - "27017:27017"
+        volumes:
+          - "{{ service_state_dir }}/data:/data/db:z"
+          - "{{ service_state_dir }}/logs:/data/logs:z"
+  no_log: true
+
+- name: Deploy the MongoDB Quadlet
+  ansible.builtin.include_tasks: deploy_quadlets.yml
+  vars:
+    quadlet_state_directories: >-
+      {{ mongodb_server_quadlet_state_directories }}
+    quadlet_networks: "{{ mongodb_server_quadlet_networks }}"
+    quadlet_containers: "{{ mongodb_server_quadlet_containers }}"
+
+- name: Wait for MongoDB startup
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Check MongoDB health
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - exec
+      - "{{ mongo_name }}"
+      - healthchecks
+      - -s
+      - mongo
+  changed_when: false

@@ -14,25 +14,27 @@ A complete Freva instance will need the following services:
 Please consult the [Frequently Asked Questions](faq) guide to see how you can fix known issues.
 :::
 
-## Container or Conda-Forge Deployment
+## Deployment methods
 
 Starting with version ``2505.0.0`` of the deployment software, you can choose
-how the services are deployed. Two options are supported:
+how the services are deployed. Three options are supported:
 
-- Container-based deployment using Docker or Podman
-- Conda-Forge-based deployment using open-source packages
+- Podman containers managed by systemd through Quadlet
+- Conda-Forge packages managed by systemd
+- Kubernetes manifests generated for an existing cluster
 
 Unlike Anaconda, the conda-forge channel provides fully open-source packages,
 avoiding potential licensing conflicts.
 
 
 :::{danger}
-Versions prior to ``2505.0.0`` supported only Docker/Podman container deployments.
+Versions prior to this change used Compose for container deployments. An old
+``deployment_method = "podman"`` setting is accepted once and migrated to
+Quadlet. Update the setting to ``quadlet`` after that deployment.
 
-If you're upgrading from a version older than ``2505.0.0`` and wish to switch
-to a Conda-based setup, you must first run the deployment software once using
-the ``deployment_method=podman`` (or ``docker``) option. This ensures that all
-persistent service data is migrated before  switching to the Conda environment.
+Data in Docker-managed volumes cannot be read by Podman. Back up a Docker-based
+deployment with the old release before upgrading, then restore the data into
+the new Podman volumes. This release does not invoke Docker for migration.
 :::
 
 ## Inspecting and adjusting the config
@@ -54,31 +56,47 @@ deploy-freva config get -r > my-new-config.toml
 :::
 
 
-## Creating a Compose file ready to go
+## Quadlet deployment
 
-If you are fine with setting up *all* services on one machine and using
-*docker-compose* or *podman-compose* you can create a complete compose file
-that contains all the services with help of the compose sub command:
+Set the following top-level configuration value to deploy services as Podman
+containers managed directly by systemd:
 
-{{cli_compose }}
+```toml
+deployment_method = "quadlet"
+```
 
-You can edit and copy the resulting *compose* file and
-*systemd service unit* to the target machine, and start it.
-This will bring up all micro services necessary to start the freva components.
+The target hosts require Podman with Quadlet support, systemd, and cgroup
+version 2. The deployment writes rootful Quadlet files to
+`/etc/containers/systemd`. Rootless files are written to
+`~/.config/containers/systemd` for the login user.
 
-:::{note}
-The `compose` sub command will not log on to any remote machines nor
-set up anything else than a docker compose file and if chosen, a systemd
-unit file to start the compose service. If you want to use freva core
-library with data analysis plugins you will have to install `freva`
-from conda-forge.
+Persistent rootful service data is stored under `/var/lib/freva/<project>` and
+configuration under `/etc/freva/<project>`. Rootless deployments use
+`~/.local/state/freva/<project>` and `~/.config/freva/<project>`. The
+service-specific `data_path` settings are ignored by Quadlet and remain
+available for Conda and legacy migration.
 
+See [Operating a Quadlet deployment](Quadlet) for environment overrides,
+drop-ins, SELinux labelling, path overrides, and migration details.
 
-Once you have installed the core library you will have to adjust the volumes
-and ``EVALUATION_SYSTEM_CONFIG_FILE`` environment variable in the ``web-app``
-section of your compose file.
+Quadlet applies the `[Install]` section while its systemd generator runs. The
+generated services therefore must not be enabled with `systemctl enable`.
+After deployment they can be operated as normal systemd services:
 
-:::
+```console
+systemctl status <project>-db.service
+systemctl restart <project>-freva_rest.service
+```
+
+Add `--user` for a rootless deployment.
+
+## Local development Compose bundle
+
+The `compose` subcommand renders a single local Compose bundle for integration
+and release-candidate testing. It does not connect to remote hosts or install a
+service:
+
+{{ cli_compose }}
 
 ## Kubernetes based deployment
 Since *v2511.0.0* the `deploy-freva` software supports kubernetes (k8s)
@@ -148,15 +166,13 @@ Sometimes it can be necessary, either due to security concerns or user rights
 restrictions, to set up all services as a un-privileged user. Since version
 `v2402.0.0` the deployment routine supports such setup scenarios.
 
-Especially when security is a concern we recommend you to use the `conda` based
-deployment instead of `podman` or `docker` for setting up the freva
-infrastructure.
+Both Conda and Quadlet support rootless deployment. For Quadlet, log in as the
+service user and leave `ansible_become_user` empty. Quadlet does not support
+installing a system unit with systemd's `User` setting.
 
 Root less installation works essentially just like root based installation. You
-only have to either set the `become_user` configuration to a user name that is
-different from `root` or leave it blank. In case you leave it blank the login
-user will deploy the services. For rootless deployments we always recommend to
-use a `conda` based service setup.
+must leave `ansible_become_user` blank. The login user then owns and operates
+the user services.
 
 Although root-less installation is straight forward it comes with two caveats
 that should be kept in mind:

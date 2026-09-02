@@ -5,11 +5,11 @@ set -euo pipefail
 # Default values
 USER_ID=0
 COMMAND="/usr/local/bin/daily_backup"
-DEPLOYMENT_METHOD="container"
+DEPLOYMENT_METHOD=""
 EMAIL=""
 SERVICE=""
 BACKUP_DIR=""
-SCR_DIR=""
+SRC_DIR=""
 DEBUG=false
 
 print_help() {
@@ -21,14 +21,14 @@ Options:
   --service NAME           Name of the container or environment (required)
   --email EMAIL            Email address for cron job output
   --command PATH           Command to run (default: /usr/local/bin/daily_backup)
-  --deployment-method TYPE Deployment method: podman, docker, conda, or mamba (required)
+  --deployment-method TYPE Deployment method: quadlet, conda, or mamba (required)
   --backup-dir DIR         Directory where the backups should be stored.
   --src-dir DIR            Directory where the backups should be stored.
   --debug                  Print cron job content instead of writing it
   --help, -h               Show this help message and exit
 
 Behavior:
-  - If deployment method is docker or podman: uses 'exec --user=UID SERVICE bash COMMAND'
+  - If deployment method is quadlet: uses 'podman exec --user=UID SERVICE COMMAND'
   - If deployment method is conda or mamba: runs the command directly
   - Adds the command to /etc/cron.daily or the user's crontab
   - Exports current PATH and MAMBA_ROOT_PREFIX to the cron environment
@@ -64,7 +64,7 @@ while [[ $# -gt 0 ]]; do
             BACKUP_DIR="${1#*=}"; shift ;;
         --src-dir)
             SRC_DIR="$2"; shift 2 ;;
-        --scr-dir=*)
+        --src-dir=*)
             SRC_DIR="${1#*=}"; shift ;;
         --debug)
             DEBUG=true; shift ;;
@@ -90,22 +90,20 @@ if [[ -z "$DEPLOYMENT_METHOD" ]]; then
     exit 1
 fi
 
-# Detect container runtime if needed
-detect_container_tool() {
-    for tool in $DEPLOYMENT_METHOD podman docker; do
-        if path=$(which "$tool" 2>/dev/null); then
-            echo "$path"
-            return 0
-        fi
-    done
-    echo "Error: No container runtime found (podman/docker)" >&2
+# Locate Podman for a Quadlet deployment
+locate_podman() {
+    if path=$(command -v podman 2>/dev/null); then
+        echo "$path"
+        return 0
+    fi
+    echo "Error: Podman is required for a Quadlet deployment" >&2
     exit 1
 }
 
 # Build execution command
 case "$DEPLOYMENT_METHOD" in
-    podman|docker|container)
-        RUNTIME_PATH=$(detect_container_tool)
+    quadlet)
+        RUNTIME_PATH=$(locate_podman)
         EXEC_CMD="$RUNTIME_PATH exec --user=$USER_ID $SERVICE /usr/local/bin/daily-backup -s /data/db -b /backup"
         ;;
     conda|mamba)

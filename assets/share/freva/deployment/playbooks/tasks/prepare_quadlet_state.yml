@@ -1,0 +1,102 @@
+---
+- name: Create the fixed Freva roots
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - path: "{{ deployment_state_root }}"
+      mode: "0750"
+    - path: "{{ deployment_config_root }}"
+      mode: "0750"
+
+- name: Remove service state requested by wipe
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ quadlet_state_directories | default([]) }}"
+  when: wipe | default(false) | bool
+
+- name: Create persistent Quadlet state directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    mode: "{{ item.mode | default('0750') }}"
+  loop: "{{ quadlet_state_directories | default([]) }}"
+
+- name: Migrate legacy state without deleting its source
+  ansible.builtin.include_tasks: migrate_quadlet_state.yml
+  loop: "{{ quadlet_state_directories | default([]) }}"
+  loop_control:
+    loop_var: quadlet_state_item
+  when: not wipe | default(false) | bool
+
+- name: Apply persistent state ownership
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    recurse: true
+  loop: "{{ quadlet_state_directories | default([]) }}"
+
+- name: Read the SELinux enforcement mode
+  ansible.builtin.command: getenforce
+  register: quadlet_selinux_status
+  changed_when: false
+  failed_when: false
+  when: quadlet_rootful
+
+- name: Locate SELinux file-context tools
+  ansible.builtin.command: which semanage
+  register: quadlet_semanage_path
+  changed_when: false
+  failed_when: false
+  when:
+    - quadlet_rootful
+    - quadlet_selinux_status.stdout | default('Disabled') in ['Enforcing', 'Permissive']
+
+- name: Require SELinux file-context tools when SELinux is enabled
+  ansible.builtin.assert:
+    that:
+      - quadlet_semanage_path.rc == 0
+    fail_msg: >-
+      SELinux is enabled, but semanage is unavailable. Install the host
+      package that provides policycoreutils-python-utils before deployment.
+  when:
+    - quadlet_rootful
+    - quadlet_selinux_status.stdout | default('Disabled') in ['Enforcing', 'Permissive']
+
+- name: Configure persistent SELinux contexts for Freva
+  ansible.builtin.shell: |
+    semanage fcontext -a -t container_file_t '{{ item | regex_escape }}(/.*)?' \
+    || semanage fcontext -m -t container_file_t '{{ item | regex_escape }}(/.*)?'
+  loop:
+    - "{{ deployment_state_root }}"
+    - "{{ deployment_config_root }}"
+  register: quadlet_selinux_context
+  changed_when: >-
+    'already defined' not in (quadlet_selinux_context.stderr | default(''))
+  when:
+    - quadlet_rootful
+    - quadlet_selinux_status.stdout | default('Disabled') in ['Enforcing', 'Permissive']
+
+- name: Apply persistent SELinux contexts for Freva
+  ansible.builtin.command:
+    argv:
+      - restorecon
+      - -R
+      - -v
+      - "{{ item }}"
+  loop:
+    - "{{ deployment_state_root }}"
+    - "{{ deployment_config_root }}"
+  register: quadlet_restorecon
+  changed_when: quadlet_restorecon.stdout | length > 0
+  when:
+    - quadlet_rootful
+    - quadlet_selinux_status.stdout | default('Disabled') in ['Enforcing', 'Permissive']

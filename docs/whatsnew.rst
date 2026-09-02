@@ -8,299 +8,304 @@ What's new
    :titlesonly:
 
 v2609.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2609.1.0
+* Use Podman Quadlet for production container services.
+* Store rootful Quadlet state below ``/var/lib/freva`` and configuration below
+  ``/etc/freva``, with XDG paths for rootless deployments.
+* Preserve operator environment overrides and Quadlet drop-ins across deploys.
+* Keep Compose bundle generation as a local development command.
 
 
 
 v2608.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2608.0.0
 
 
 
 v2608.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2607.1.0
 
 
 
 v2607.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2607.0.0
 
 
 
 v2607.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2607.0.0
 
 
 
 v2606.8.2
-~~~~~~~~
+~~~~~~~~~
 * Bug fixes
 
 v2606.8.1
-~~~~~~~~
+~~~~~~~~~
 * Make inventory more flexible via environment variables.
 
 v2606.7.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2606.0.1
 
 
 
 v2606.6.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2606.0.0
 
 
 
 v2606.5.2
-~~~~~~~~
+~~~~~~~~~
 * Bug fixes for anaconda reverse proxy deployment.
 
 v2606.5.1
-~~~~~~~~
+~~~~~~~~~
 * Configure reverse proxy alias host names.
 
 v2606.5.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2606.0.4
 * Make reverse proxy service optional
 
 
 v2606.4.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2605.2.3
 
 
 
 v2606.3.0
-~~~~~~~~
+~~~~~~~~~
 * Add external secrets file.
 
 v2606.2.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2606.0.2
 
 
 
 v2606.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2606.0.0
 
 
 
 v2606.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2605.2.3
 
 
 
 v2605.8.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2605.2.2
 
 
 
 v2605.7.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2605.2.1
 
 
 
 v2605.6.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2605.2.2
 
 
 
 v2605.5.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2605.2.0
 
 
 
 v2605.4.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2605.1.1
 
 
 
 v2605.3.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2605.1.0
 
 
 
 v2605.2.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2605.1.0
 
 
 
 v2605.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2605.0.0
 
 
 
 v2605.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2605.0.0
 
 
 
 v2604.11.0
-~~~~~~~~~
+~~~~~~~~~~
 * Bumped version of freva-web to 2604.3.1
 
 
 
 v2604.10.0
-~~~~~~~~~
+~~~~~~~~~~
 * Bumped version of freva-web to 2604.3.0
 
 
 
 v2604.9.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2604.1.1
 
 
 
 v2604.8.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2604.1.1
 
 
 
 v2604.7.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2604.1.1
 
 
 
 v2604.6.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2604.1.1
 
 
 
 v2604.5.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2604.1.0
 
 
 
 v2604.4.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2604.0.0
 
 
 
 v2604.3.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2604.2.0
 
 
 
 v2604.2.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2604.0.0
 
 
 
 v2604.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2604.2.0
 
 v2604.0.2
-~~~~~~~~
+~~~~~~~~~
 * fix: replace deprecated namegenerator lib with petnam
 
 
 v2604.0.1
-~~~~~~~~
+~~~~~~~~~
 * Fix a bug in the deployment script that caused the core deployment to fail
 
 
 v2604.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2604.1.1
 
 
 
 v2603.5.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2603.1.1
 
 
 
 v2603.4.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2603.1.0
 
 
 
 v2603.3.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2604.0.1
 
 
 
 v2603.2.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2604.0.0
 
 
 
 v2603.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2603.0.1
 
 
 
 v2603.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2603.0.0
 
 
 
 v2602.3.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2602.0.0
 
 
 
 v2602.2.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2601.1.0
 
 
 
 v2602.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2601.0.0
 
 
 
 v2602.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2601.0.0
 
 
 
 v2601.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2601.0.0
 
 
 
 v2601.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-nextgen to 2601.0.0
 
 
@@ -343,35 +348,35 @@ v2511.0.0
 * Add kunernetes deployment support
 
 v2510.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2510.1.0
 
 
 
 v2510.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva_rest to 2510.0.0
 
 
 
 v2509.2.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva_rest to 2509.0.0
 
 
 
 v2509.1.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2509.0.0
 
 v2509.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva_rest to 2509.0.0
 
 
 
 v2508.0.0
-~~~~~~~~
+~~~~~~~~~
 * Bumped version of freva-web to 2507.0.0
 
 

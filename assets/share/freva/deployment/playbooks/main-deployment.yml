@@ -138,4 +138,4 @@
         scope: "{{ 'system' if ansible_become is true else 'user'}}"
       ignore_errors: true
       failed_when: false
-      when: deployment_method in ["conda", "docker", "podman"]
+      when: deployment_method in ["conda", "quadlet"]

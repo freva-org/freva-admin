@@ -7,6 +7,5 @@ conda_url: "https://repo.anaconda.com/miniconda/Miniconda3-latest-{{core_arch}}.
 allow_world_readable_tmpfiles: true
 conda_exec_path: "{{ core_conda_exec_path if core_conda_exec_path is defined else '' }}"
 eval_path: "freva/evaluation_system.conf"
-compose_dir: ""
 base_path: ""
 data_dir: ""

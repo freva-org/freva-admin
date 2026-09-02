@@ -1,0 +1,114 @@
+---
+- name: Load the Quadlet runtime for vault validation
+  ansible.builtin.include_tasks: get_quadlet_runtime.yml
+
+- name: Define the vault state
+  ansible.builtin.set_fact:
+    vault_quadlet_state_directories:
+      - path: "{{ service_state_dir }}/data"
+        legacy_volume: "{{ vault_name }}_data"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/data"
+          - "{{ legacy_data_dir }}/files"
+
+- name: Prepare the vault state
+  ansible.builtin.include_tasks: prepare_quadlet_state.yml
+  vars:
+    quadlet_state_directories: "{{ vault_quadlet_state_directories }}"
+
+- name: Validate existing vault keys
+  block:
+    - name: Decode the existing vault key
+      ansible.builtin.command:
+        argv:
+          - "{{ podman_bin }}"
+          - run
+          - --rm
+          - --volume
+          - "{{ service_state_dir }}/data:/data:ro,z"
+          - docker.io/library/alpine:latest
+          - base64
+          - -d
+          - /data/keys
+      changed_when: false
+
+  rescue:
+    - name: Remove invalid vault key data
+      ansible.builtin.command:
+        argv:
+          - "{{ podman_bin }}"
+          - run
+          - --rm
+          - --volume
+          - "{{ service_state_dir }}/data:/data:rw,z"
+          - docker.io/library/alpine:latest
+          - sh
+          - -c
+          - rm -rf /data/*
+      changed_when: true
+
+- name: Define the vault Quadlet
+  ansible.builtin.set_fact:
+    vault_quadlet_networks: []
+    vault_quadlet_containers:
+      - name: "{{ vault_name }}"
+        description: Freva secrets vault
+        image: "ghcr.io/freva-org/freva-vault:{{ vault_version }}"
+        user: "0:0"
+        environment:
+          ROOT_PW: "{{ root_passwd }}"
+          KEY_FILE: /vault/file/keys
+        capabilities:
+          - IPC_LOCK
+          - SYS_NICE
+        dns:
+          - 8.8.8.8
+          - 8.8.4.4
+        ports:
+          - "5002:5002"
+        volumes:
+          - "{{ service_state_dir }}/data:/vault/file:z"
+  no_log: true
+
+- name: Deploy the vault Quadlet
+  ansible.builtin.include_tasks: deploy_quadlets.yml
+  vars:
+    quadlet_state_directories: "{{ vault_quadlet_state_directories }}"
+    quadlet_networks: "{{ vault_quadlet_networks }}"
+    quadlet_containers: "{{ vault_quadlet_containers }}"
+    quadlet_skip_state_preparation: true
+
+- name: Wait for vault startup
+  ansible.builtin.pause:
+    seconds: 15
+
+- name: Insert the database infrastructure into the vault
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - exec
+      - --env
+      - PATH=/opt/conda/bin:/bin:/usr/bin:/usr/local/bin
+      - "{{ vault_name }}"
+      - add-vault-secret
+      - data
+      - -s
+      - db.container
+      - "{{ vault_name }}"
+      - -s
+      - db.host
+      - "{{ vault_db_host }}"
+      - -s
+      - db.port
+      - "{{ vault_db_port | string }}"
+      - -s
+      - db.db
+      - "{{ vault_db }}"
+      - -s
+      - db.passwd
+      - "{{ vault_passwd }}"
+      - -s
+      - db.user
+      - "{{ vault_db_user }}"
+  no_log: true
+  changed_when: true

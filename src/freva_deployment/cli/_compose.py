@@ -1,14 +1,15 @@
-"""Command line interface for creating compose files."""
+"""Create local Compose bundles for development and release testing."""
 
 from __future__ import annotations
 
 import argparse
 import base64
+import json
 import re
 import sys
 from base64 import b64encode
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Sequence
 
 import dns.resolver
 import petname
@@ -18,6 +19,7 @@ from rich_argparse import ArgumentDefaultsRichHelpFormatter
 from freva_deployment import __version__
 
 from ..deploy import DeployFactory
+from ..error import ConfigurationError
 from ..logger import logger, set_log_level
 from ..utils import RichConsole, asset_dir, config_dir
 from ..versions import get_versions
@@ -29,38 +31,32 @@ COMPOSE_TASK = """---
   gather_facts: false
 
   tasks:
-    - name: Template out docker-compose.yml
+    - name: Render the development Compose bundle
       template:
-        src: {asset_dir}/playbooks/templates/service-compose.yml.j2
-        dest: {pwd}/{project_name}-compose.yml
+        src: {template_path}
+        dest: {output_file}
       vars:
         deploy_web: {{ ({deploy_web}|int) != 0 }}
-      
-"""
-
-SYSTEMD_TMPL = """
-[Unit]
-Description=Start/Stop freva services containers
-After=network-online.target
-Wants=network-online.target
-[Service]
-TimeoutStartSec=35s
-TimeoutStopSec=35s
-ExecStartPre=/usr/bin/env sh -c "{engine} compose --project-name {project_name} -f <compose-dir>/{project_name}-compose.yml down --remove-orphans"
-ExecStart=/usr/bin/env sh -c "{engine} compose --project-name {project_name} -f <compose-dir>/{project_name}-compose.yml up --remove-orphans"
-ExecStop=/usr/bin/env sh -c "{engine} compose --project-name {project_name} -f <compose-dir>/{project_name}-compose.yml down --remove-orphans"
-Restart=on-failure
-RestartSec=5
-StartLimitBurst=5
-[Install]
-WantedBy=default.target
-
 """
 
 
-def comment_entries(toml_str, entries_to_comment):
+def comment_entries(toml_str: str, entries_to_comment: Sequence[str]) -> str:
+    """Comment selected list entries in TOML text.
+
+    Parameters
+    ----------
+    toml_str : str
+        TOML document to modify.
+    entries_to_comment : Sequence[str]
+        First values of list entries that should be commented.
+
+    Returns
+    -------
+    str
+        Modified TOML document.
+    """
     lines = toml_str.splitlines()
-    result = []
+    result: list[str] = []
     for line in lines:
         stripped = line.lstrip()
         # If line starts with one of the target entries, comment it
@@ -75,6 +71,7 @@ def comment_entries(toml_str, entries_to_comment):
 
 
 def _get_nameservers() -> str:
+    """Return local IPv4 resolvers as a space-separated string."""
     nameservers = dns.resolver.Resolver().nameservers
     nameservers_list: Sequence[str] = (
         list(map(str, nameservers))
@@ -87,8 +84,16 @@ def _get_nameservers() -> str:
 
 
 def create_compose(args: argparse.Namespace) -> None:
-    """Create a compose file."""
+    """Create a development-only Compose bundle.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments.
+    """
     set_log_level(args.verbose)
+    output_dir = args.output_dir.expanduser().resolve()
+    output_dir.mkdir(parents=True, exist_ok=True)
     with DeployFactory(
         steps=None,
         config_file=args.config_file,
@@ -96,7 +101,10 @@ def create_compose(args: argparse.Namespace) -> None:
         local_debug=False,
         gen_keys=True,
     ) as DF:
-        eval_conf_enc = b64encode(DF.create_eval_config().read_text().encode()).decode()
+        eval_config = DF.create_eval_config()
+        if eval_config is None:
+            raise ConfigurationError("Unable to create the Freva configuration")
+        eval_conf_enc = b64encode(eval_config.read_text().encode()).decode()
         extra = {
             **{
                 "eval_config_content": eval_conf_enc,
@@ -146,9 +154,10 @@ def create_compose(args: argparse.Namespace) -> None:
             )
 
         playbook = COMPOSE_TASK.format(
-            pwd=Path.cwd(),
-            project_name=DF.project_name,
-            asset_dir=asset_dir,
+            output_file=json.dumps(str(output_dir / f"{DF.project_name}-compose.yml")),
+            template_path=json.dumps(
+                str(asset_dir / "playbooks/templates/service-compose.yml.j2")
+            ),
             deploy_web=int(args.no_web is False),
         )
         web_conf = (
@@ -169,8 +178,7 @@ def create_compose(args: argparse.Namespace) -> None:
             inventory=inventory,
             verbosity=args.verbose,
         )
-        yml_file = Path.cwd() / f"{DF.project_name}-compose.yml"
-        service_file = yml_file.with_suffix(".service")
+        yml_file = output_dir / f"{DF.project_name}-compose.yml"
         config_path = (
             Path(inventory["core"]["vars"]["core_root_dir"])
             / "freva"
@@ -181,41 +189,32 @@ def create_compose(args: argparse.Namespace) -> None:
         RichConsole.rule("")
         RichConsole.print(
             (
-                f"The compose file ({yml_file.name}) has been created. "
-                "You can copy the file to your server and start "
-                f"the compose command.\n\n{plugin_note}"
+                f"The development Compose bundle ({yml_file}) was created. "
+                "It is intended for local integration and release-candidate "
+                "testing, not production deployment. Start it with:\n\n"
+                f"  [b]podman compose -f {yml_file} up -d[/b]\n\n{plugin_note}"
                 "The web config file will be located in the "
-                f"[b]{config_path}[/b] you can adjust it's settings there and"
-                " restart the compose."
+                f"[b]{config_path}[/b]. You can adjust its settings there "
+                "and restart the bundle."
             )
         )
 
-        if args.systemd_service:
-            service_file.write_text(
-                SYSTEMD_TMPL.format(
-                    project_name=DF.project_name, engine=args.container_engine
-                )
-            )
-            RichConsole.print(
-                (
-                    "\n\nA systemd service file was created. Set the path"
-                    " to the compose file on the server and place it "
-                    f"into [b]/etc/systemd/system/{service_file.name}[/]"
-                    "\n"
-                    "then use:\n\n"
-                    "  [b]sudo systemctl daemon-reload\n"
-                    f"  sudo systemctl enable --now {service_file.name}[/b]\n"
-                )
-            )
-
 
 def compose_parser(
-    epilog: str = "", parser: Optional[argparse.ArgumentParser] = None
+    epilog: str = "", parser: argparse.ArgumentParser | None = None
 ) -> None:
-    """Construct command line argument parser."""
+    """Construct the development Compose parser.
+
+    Parameters
+    ----------
+    epilog : str, default=""
+        Additional help text.
+    parser : argparse.ArgumentParser or None, default=None
+        Existing parser to configure.
+    """
     parser = parser or argparse.ArgumentParser(
-        prog="deploy-freva-compose",
-        description="Create and inspect freva configuration.",
+        prog="deploy-freva compose",
+        description="Create a local Compose bundle for development testing.",
         formatter_class=ArgumentDefaultsRichHelpFormatter,
         epilog=epilog,
     )
@@ -236,9 +235,11 @@ def compose_parser(
         default=config_dir / "config" / "inventory.toml",
     )
     parser.add_argument(
-        "--host",
-        type=str,
-        help="Host name where the compose service should be running.",
+        "-o",
+        "--output-dir",
+        type=Path,
+        default=Path.cwd(),
+        help="Directory receiving the generated Compose bundle.",
     )
     parser.add_argument(
         "--no-web",
@@ -272,19 +273,5 @@ def compose_parser(
         type=Path,
         default=None,
         help="Set a secrets file to read sensitive variables from.",
-    )
-    parser.add_argument(
-        "-e",
-        "--container-engine",
-        help="Create a compose file for docker or podman.",
-        default="docker",
-        choices=["docker", "podman"],
-        type=str,
-    )
-    parser.add_argument(
-        "-s",
-        "--systemd-service",
-        help="Create a systemd-service file.",
-        action="store_true",
     )
     parser.set_defaults(cli=create_compose)

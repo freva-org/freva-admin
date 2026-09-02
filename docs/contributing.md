@@ -28,8 +28,8 @@ applied in debug or local mode using the `-l` flag.
 
 ## Using a local VM for testing.
 A test freva instance can be deployed on a dedicated local virtual machine.
-This virtual machine is based on a minimal ubuntu server image and has
-docker and podman pre installed. To create the virtual machine simply
+This virtual machine is based on a minimal Ubuntu server image and has
+Podman preinstalled. To create the virtual machine, run the following script.
 run the following script.
 
 ```console

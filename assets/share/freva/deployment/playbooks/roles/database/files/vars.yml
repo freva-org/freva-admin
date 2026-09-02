@@ -7,7 +7,6 @@ admin_user: "{{ db_admin_user | default('') }}"
 base_path: '{{db_data_path| regex_replace("^~", ansible_facts.env.HOME)}}'
 conda_path: '{{ base_path }}/{{ project_name }}/services/{{ service }}/conda'
 systemd_unit_dir: "{{ '/etc/systemd/system' if  db_ansible_become_user is defined and db_ansible_become_user != '' else ansible_facts.env.HOME + '/.config/systemd/user' }}"
-compose_file: '{{db_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{db_name}}-compose.yml'
 old_compose_dir: '{{db_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/compose_services'
 data_dir: '{{ base_path }}/{{project_name}}/services/{{service}}'
 wipe: "{{ db_wipe }}"

@@ -62,6 +62,7 @@ cli_tui = get_cli_output()
 cli_cmd = get_cli_output("cmd")
 cli_mig = get_cli_output("migrate")
 cli_config = get_cli_output("config")
+cli_compose = get_cli_output("compose")
 # -- Project information -----------------------------------------------------
 
 project = "freva-deployment"
@@ -178,9 +179,9 @@ myst_substitutions = {
     "cli_tui": cli_tui,
     "cli_cmd": cli_cmd,
     "cli_mig": cli_mig,
-    "cli_compose": get_cli_output("compose"),
     "cli_k8s": get_cli_output("kubernetes"),
     "cli_config": cli_config,
+    "cli_compose": cli_compose,
     "cli_config_get": get_cli_output("config", "get"),
     "cli_config_set": get_cli_output("config", "get"),
     "toml_config": f"```toml\n{toml_config}\n```",
@@ -200,10 +201,6 @@ rst_prolog = """
 
 cli_output_dir = Path(__file__).parent / "_generated"
 cli_output_dir.mkdir(exist_ok=True, parents=True)
-
-(cli_output_dir / "compose.txt").write_text(
-    get_cli_output("compose", format="rst")
-)
 
 (cli_output_dir / "k8s.txt").write_text(
     get_cli_output("kubernetes", format="rst")

@@ -6,7 +6,8 @@ Here you'll find answers to common questions, troubleshooting tips,
 and practical guidance related to setting up, configuring, and
 running the Freva framework.
 
-Whether you're deploying services with Docker, Podman, or Conda environments, this page is here to help resolve typical issues and clarify common concerns encountered during the installation and operation phases.
+Whether you're deploying services with Quadlet, Conda, or Kubernetes, this page
+helps resolve typical installation and operation issues.
 
 This section is actively maintained and expands over time as new questions
 arise from users and developers. If your question isn't covered yet,
@@ -22,38 +23,28 @@ feel free to open an issue or contribute a new entry.
 - Integration with monitoring and orchestration tools
 
 ---
-## 🐳 Why is `docker compose` failing with "command not found"?
-If you're using Docker but `docker compose` fails, it's likely that the
-Docker Compose plugin isn't installed.
-Modern Docker uses `docker compose` (with a space),
-not `docker-compose` (hyphen).
+## Why was no service generated for my `.container` file?
 
-- On Debian/Ubuntu:
-  ```console
-  sudo apt install docker-compose-plugin
-  ```
-- On RHEL/AlmaLinux
-   ```console
-   sudo dnf install docker-compose-plugin
-   ```
-If you're using Podman, ensure podman-compose is installed and available
-in your $PATH.
+Run the Podman systemd generator in diagnostic mode and inspect its output:
+
+```console
+/usr/lib/systemd/system-generators/podman-system-generator --dryrun
+```
+
+For rootless services, add `--user`. Quadlet requires cgroup version 2, which
+can be checked with `podman info --format '{{.Host.CgroupsVersion}}'`.
 
 
-## 📦 Where are logs and volumes stored?
-Depending whether you've chosen `conda-forge` based or a `docker/podman` based
+## 📦 Where are logs and persistent data stored?
+Depending whether you've chosen a `conda-forge` or Quadlet based
 deployment approach your logs data data will be located in different locations:
 
 - `conda-forge`:
     All data will be stored in `<data_dir>/<project_name>/services/<service>`
-- `podman/conda`:
-    The data will be located in container volumes managed by the container engine
-    checkout
-    ```console
-    docker volume ls
-    docker volume inspect <project_name>-<service>_data
-    ```
-    Or using `podman` if the service was deployed with podman.
+- `quadlet`:
+    Rootful data is stored in
+    `/var/lib/freva/<project_name>/<service>`. Rootless data is stored in
+    `~/.local/state/freva/<project_name>/<service>`.
 
 
 ## 💥 Can't inject secrets into vault.
@@ -66,7 +57,8 @@ For `conda-forge` based deployments:
 ```console
 rm -r <data_dir>/<project_name>/services/vault
 ```
-Or for `podman/docker`:
+Or for Quadlet:
 ```console
-docker volume rm -f <project_name>-vault_data
+systemctl stop <project_name>-vault.service
+rm -r /var/lib/freva/<project_name>/vault/data
 ```

@@ -1,0 +1,51 @@
+[Unit]
+Description={{ item.description }}
+{% if item.requires | default([]) -%}
+After={% for dependency in item.requires %}{{ dependency }}.container{% if not loop.last %} {% endif %}{% endfor %}
+Requires={% for dependency in item.requires %}{{ dependency }}.container{% if not loop.last %} {% endif %}{% endfor %}
+{% endif %}
+
+[Container]
+Image={{ item.image }}
+ContainerName={{ item.container_name | default(item.name) }}
+HostName={{ item.hostname | default(item.name) }}
+Pull={{ item.pull | default('newer') }}
+{% if item.user | default('') -%}
+User={{ item.user }}
+{% endif -%}
+{% if item.environment | default({}) -%}
+EnvironmentFile={{ quadlet_env_dir }}/{{ item.name }}.env
+{% endif -%}
+{% for environment_file in item.environment_files | default([]) -%}
+EnvironmentFile={{ environment_file }}
+{% endfor -%}
+EnvironmentFile={{ quadlet_env_dir }}/{{ item.name }}.local.env
+{% for capability in item.capabilities | default([]) -%}
+AddCapability={{ capability }}
+{% endfor -%}
+{% for nameserver in item.dns | default([]) -%}
+DNS={{ nameserver }}
+{% endfor -%}
+{% if item.network | default('') -%}
+Network={{ item.network }}.network
+{% endif -%}
+{% for alias in item.network_aliases | default([]) -%}
+NetworkAlias={{ alias }}
+{% endfor -%}
+{% for port in item.ports | default([]) -%}
+PublishPort={{ port }}
+{% endfor -%}
+{% for volume in item.volumes | default([]) -%}
+Volume={{ volume }}
+{% endfor -%}
+{% for argument in item.podman_args | default([]) -%}
+PodmanArgs={{ argument }}
+{% endfor -%}
+
+[Service]
+Restart=on-failure
+RestartSec=5
+TimeoutStartSec=900
+
+[Install]
+WantedBy={{ quadlet_wanted_by }}

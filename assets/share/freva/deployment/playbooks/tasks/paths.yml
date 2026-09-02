@@ -6,27 +6,25 @@
   failed_when: bash_env_cmd.rc != 0
 
 - name: Check path to python3
-  command: which python3
+  ansible.builtin.command: which python3
   register: python3_env_cmd
   changed_when: false
-  ignore_errors: true
   failed_when: false
 
 - name: Check path to python
-  command: which python
+  ansible.builtin.command: which python
   register: python_env_cmd
   changed_when: false
-  ignore_errors: true
   failed_when: false
 
 
 - name: Fail if python is not available
-  fail:
+  ansible.builtin.fail:
     msg: "No python env was found on server."
   when: not (python3_env_cmd.rc == 0 or python_env_cmd.rc == 0)
 
 - name: Set command facts
-  set_fact:
+  ansible.builtin.set_fact:
     python_bin: >-
       {{
         (ansible_python_interpreter | trim)

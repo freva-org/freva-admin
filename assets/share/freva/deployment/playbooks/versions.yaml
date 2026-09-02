@@ -15,7 +15,7 @@
         {{ asset_dir }}/scripts/inspect.sh {{ image }}
       become: "{{ ansible_become_user | default('root') is defined and ansible_become_user | default('root') != '' }}"
       register: version_container
-      when: deployment_method in ["docker", "podman"]
+      when: deployment_method == "quadlet"
 
     - name: Checking conda versions
       shell: "{{ service_command }} 2>/dev/null || true"
@@ -28,7 +28,7 @@
     - name: Display freva_rest version
       debug:
         msg: "{{ version_container.stdout }}"
-      when: deployment_method in ["docker", "podman"]
+      when: deployment_method == "quadlet"
 
     - name: Display freva_rest version
       debug:
@@ -53,7 +53,7 @@
         {{ asset_dir }}/scripts/inspect.sh {{ image }}
       become: "{{ ansible_become_user | default('root') is defined and ansible_become_user | default('root') != '' }}"
       register: version_container
-      when: deployment_method in ["docker", "podman"]
+      when: deployment_method == "quadlet"
 
     - name: Checking conda versions
       shell: "{{ service_command }} 2>/dev/null || echo"
@@ -71,7 +71,7 @@
     - name: Display web version
       debug:
         msg: "{{ version_container.stdout }}"
-      when: deployment_method in ["docker", "podman"]
+      when: deployment_method == "quadlet"
 
 
 - hosts: vault

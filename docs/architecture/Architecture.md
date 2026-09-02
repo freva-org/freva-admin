@@ -37,12 +37,12 @@ to function:
   on the HPC file system as zarr-stream via http/https
 - Vault server to securely store and provide passwords for the services.
 
-The above mentioned services can be deployed in docker/podman containers or in
-conda-forge environments. Container conda-forge based deployment strategies were
-chosen over the direct installation on the host system, such as a Virtual Machine (VM)
-or a bare machine because OS specifications that are determined by the container
-setup make a configuration of the service system agnostic - e.i. no
-specifications of the host OS - such as SELinux - has to be taken into account.
+The above mentioned services can be deployed in Podman containers managed by
+systemd Quadlet, in conda-forge environments, or on Kubernetes. Container and
+conda-forge based deployment strategies were chosen over direct host
+installation, such as on a virtual machine or bare machine. Containers provide
+a consistent service userspace, while the deployment still integrates with
+host requirements such as systemd, storage, cgroup version 2, and SELinux.
 
 (web-ui)=
 ### Web based user interface

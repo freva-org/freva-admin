@@ -12,24 +12,5 @@
   failed_when: false
 
 - name: Playing the {{ deployment_method }} tasks
-  block:
-    - name: Creating temporary directory
-      tempfile:
-        prefix: db-playbook.
-        state: directory
-      register: db_tempdir
-      become: false
-
-    - name: Setting additional variables
-      set_fact:
-        temp_compose_file: "{{ db_tempdir.path }}/temp-container.yaml"
-
-    - name: Playing the {{ deployment_method }} tasks
-      include_tasks:
-        file: "{{ deployment_file | trim }}"
-
-  always:
-    - name: Removing temporary directory
-      file:
-        path: "{{ db_tempdir.path }}"
-        state: absent
+  ansible.builtin.include_tasks:
+    file: "{{ deployment_file | trim }}"

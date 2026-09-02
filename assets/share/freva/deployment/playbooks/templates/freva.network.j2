@@ -1,0 +1,7 @@
+[Unit]
+Description=Container network {{ item.name }} for Freva
+
+[Network]
+NetworkName={{ item.name }}
+Driver={{ item.driver | default('bridge') }}
+IPv6={{ item.ipv6 | default(false) | bool | lower }}

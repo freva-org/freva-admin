@@ -38,7 +38,7 @@ dependencies = [ "appdirs",
              "requests",
 ]
 [project.optional-dependencies]
-dev = ["flit", "tox", "kubernetes"]
+dev = ["flit", "tox", "kubernetes", "pytest"]
 k8s = ["kubernetes"]
 win = ["cryptography", "windows-curses", "pyinstaller", "mock", "pywin32"]
 unix = ["cryptography", "pyinstaller", "mock"]
@@ -88,10 +88,12 @@ env_list = types, lint, test
 parallel_show_output = false
 [testenv:test]
 deps = -e .
+       pytest
 
 commands =
     deploy-freva cmd --help
     deploy-freva --help
+    pytest {posargs}
 
 [testenv:docs]
 deps = .[doc]

@@ -1,21 +1,23 @@
 ---
-- name: Include role vars
-  include_vars: "{{ role_path }}/files/vars.yml"
+- name: Include role variables
+  ansible.builtin.include_vars: "{{ role_path }}/files/vars.yml"
 
 - name: Set custom nameserver fact from gathered facts
   ansible.builtin.set_fact:
-    current_nameservers: >
+    web_nameservers: >-
       {{ ansible_facts['dns'].nameservers
          | default([])
          | reject('search', ':')
          | list
          | join(' ') }}
 
+- name: Run the Kubernetes deployment
+  ansible.builtin.include_tasks: k8s-deployment.yml
+  when: deployment_method == 'k8s'
 
-- name: Set deployment task file
-  set_fact:
-    deployment_file: "{{(role_path ~ '/tasks/container-deployment.yml' if deployment_method in ['docker', 'podman'] else role_path ~ '/tasks/conda-deployment.yml' if deployment_method == 'conda' else 'k8s-deployment.yml') | trim}}"
-    play_file: "{{('k8s-deployment.yml' if deployment_method == 'k8s' else role_path ~ '/tasks/systemd-based.yml') | trim}}"
-
-- name: Playing {{ deployment_method }} deployment
-  include_tasks: "{{ play_file | trim }}"
+- name: Run deployment with {{ deployment_method }}
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/systemd-based.yml"
+  vars:
+    deployment_file: >-
+      {{ role_path }}/tasks/{{ deployment_method }}-deployment.yml
+  when: deployment_method in ['quadlet', 'conda']

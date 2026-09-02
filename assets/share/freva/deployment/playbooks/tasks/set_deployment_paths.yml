@@ -1,0 +1,35 @@
+---
+- name: Preserve configurable paths for Conda and migration
+  ansible.builtin.set_fact:
+    legacy_data_dir: "{{ data_dir }}"
+
+- name: Select the Quadlet installation scope
+  ansible.builtin.set_fact:
+    quadlet_rootful: >-
+      {{
+        (ansible_become | default(false) | bool
+         and ansible_become_user | default('root') == 'root')
+        or ansible_user == 'root'
+      }}
+
+- name: Select fixed Quadlet configuration and state roots
+  ansible.builtin.set_fact:
+    deployment_config_root: >-
+      {{
+        '/etc/freva/' + project_name
+        if quadlet_rootful
+        else ansible_facts.env.HOME + '/.config/freva/' + project_name
+      }}
+    deployment_state_root: >-
+      {{
+        '/var/lib/freva/' + project_name
+        if quadlet_rootful
+        else ansible_facts.env.HOME + '/.local/state/freva/' + project_name
+      }}
+
+- name: Select service-specific Quadlet paths
+  ansible.builtin.set_fact:
+    service_config_dir: "{{ deployment_config_root }}/{{ service }}"
+    service_state_dir: "{{ deployment_state_root }}/{{ service }}"
+    env_dir: "{{ deployment_config_root }}/env"
+    env_path: "{{ deployment_config_root }}/env/{{ service }}.local.env"

@@ -1,0 +1,56 @@
+---
+- name: Define the search service Quadlet
+  ansible.builtin.set_fact:
+    search_server_quadlet_state_directories:
+      - path: "{{ service_state_dir }}/data"
+        legacy_volume: "{{ search_server_name }}_data"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/data"
+      - path: "{{ service_state_dir }}/logs"
+        legacy_volume: "{{ search_server_name }}_logs"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/logs"
+    search_server_quadlet_networks: []
+    search_server_quadlet_containers:
+      - name: "{{ search_server_name }}"
+        description: Freva Apache Solr search service
+        image: "ghcr.io/freva-org/freva-solr:{{ solr_version }}"
+        user: >-
+          {{ (uid ~ ':' ~ gid) if quadlet_rootful else '0:0' }}
+        environment:
+          API_SOLR_PORT: "8983"
+          API_SOLR_HEAP: "{{ search_server_solr_mem }}"
+        ports:
+          - "8983:8983"
+        volumes:
+          - "{{ service_state_dir }}/data:/data/db:z"
+          - "{{ service_state_dir }}/logs:/data/logs:z"
+
+- name: Deploy the search service Quadlet
+  ansible.builtin.include_tasks: deploy_quadlets.yml
+  vars:
+    quadlet_state_directories: >-
+      {{ search_server_quadlet_state_directories }}
+    quadlet_networks: "{{ search_server_quadlet_networks }}"
+    quadlet_containers: "{{ search_server_quadlet_containers }}"
+
+- name: Wait for Solr to become available
+  ansible.builtin.uri:
+    url: http://localhost:8983/solr/latest/admin/ping
+    status_code: 200
+    timeout: 5
+  register: search_server_solr_ping
+  retries: 30
+  delay: 5
+  until: search_server_solr_ping.status == 200
+
+- name: Check the Solr container health
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - exec
+      - "{{ search_server_name }}"
+      - healthchecks
+      - -s
+      - "{{ search_server_service }}"
+  changed_when: false

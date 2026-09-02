@@ -1,19 +1,12 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Simple script that lets us inspect stuff
 #
-order=(podman docker)
-path=""
-for cmd in ${order[*]};do
-    if [ "$(which $cmd 2> /dev/null)" ];then
-        path=$(which $cmd)
-	break
-    fi
-done
-if [ -z "$path" ];then
-    echo "Docker nor Podman on the system."
+path=$(command -v podman 2>/dev/null || true)
+if [ -z "$path" ]; then
+    echo "Podman is not installed on the system."
     exit 1
 fi
-image=$($path image ls --filter reference=$1 --format "table {{.Tag}}" | grep -iv tag 2> /dev/null)
+image=$("$path" image ls --filter "reference=$1" --format "{{.Tag}}" 2>/dev/null)
 if [ "$image" ];then
     tag=$(echo $image|awk '{print $0}')
     if [ "$tag" ];then

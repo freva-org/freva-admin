@@ -1,0 +1,157 @@
+---
+- name: Make the database volume writable for migration
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - run
+      - --rm
+      - --volume
+      - "{{ service_state_dir }}/data:/data:rw,z"
+      - docker.io/library/alpine:latest
+      - sh
+      - -c
+      - >-
+        chmod -R 777 /data &&
+        chown -R {{ database_migration_uid }}:{{ database_migration_gid }} /data
+  changed_when: true
+
+- name: Start a temporary MariaDB container
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - run
+      - --detach
+      - --name
+      - temp-db
+      - --user
+      - "{{ database_migration_uid }}:{{ database_migration_gid }}"
+      - --env
+      - "MYSQL_USER={{ db_user }}"
+      - --env
+      - "MYSQL_PASSWORD={{ db_passwd }}"
+      - --env
+      - "MYSQL_DATABASE={{ db }}"
+      - --env
+      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=1
+      - --volume
+      - "{{ service_state_dir }}/data:/var/lib/mysql:rw,z"
+      - --volume
+      - "{{ service_state_dir }}/migration-backup:/backup:rw,z"
+      - docker.io/library/mariadb:11.1
+      - mariadbd-safe
+      - "--user={{ database_migration_uid }}"
+      - --skip-grant-tables
+      - --skip-networking
+  no_log: true
+  changed_when: true
+
+- name: Wait for the temporary MariaDB socket
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - exec
+      - temp-db
+      - sh
+      - -c
+      - >-
+        [ -S /run/mysqld/mysqld.sock ] ||
+        [ -S /var/run/mysqld/mysqld.sock ]
+  register: database_mariadb_ready
+  retries: 10
+  delay: 3
+  until: database_mariadb_ready.rc == 0
+  changed_when: false
+
+- name: Dump the MariaDB database
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - exec
+      - temp-db
+      - sh
+      - -c
+      - "mariadb-dump {{ db }} | gzip -9 > /backup/dump.sql.gz"
+  changed_when: true
+
+- name: Remove the temporary MariaDB container
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - rm
+      - --force
+      - temp-db
+  changed_when: true
+
+- name: Remove the old MariaDB files
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - run
+      - --rm
+      - --volume
+      - "{{ service_state_dir }}/data:/data:rw,z"
+      - docker.io/library/alpine:latest
+      - sh
+      - -c
+      - rm -rf /data/*
+  changed_when: true
+
+- name: Start a temporary MySQL container
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - run
+      - --detach
+      - --name
+      - temp-db
+      - --user
+      - "{{ database_migration_uid }}:{{ database_migration_gid }}"
+      - --env
+      - "MYSQL_USER={{ db_user }}"
+      - --env
+      - "MYSQL_PASSWORD={{ db_passwd }}"
+      - --env
+      - "MYSQL_DATABASE={{ db }}"
+      - --env
+      - "MYSQL_ROOT_PASSWORD={{ root_passwd }}"
+      - --volume
+      - "{{ service_state_dir }}/data:/var/lib/mysql:rw,z"
+      - --volume
+      - "{{ service_state_dir }}/migration-backup:/backup:rw,z"
+      - "docker.io/library/mysql:{{ db_version }}"
+      - "--user={{ database_migration_uid }}"
+      - --skip-networking
+  no_log: true
+  changed_when: true
+
+- name: Wait for the temporary MySQL socket
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - exec
+      - temp-db
+      - sh
+      - -c
+      - >-
+        [ -S /run/mysqld/mysqld.sock ] ||
+        [ -S /var/run/mysqld/mysqld.sock ]
+  register: database_mysql_ready
+  retries: 10
+  delay: 3
+  until: database_mysql_ready.rc == 0
+  changed_when: false
+
+- name: Import the database dump into MySQL
+  ansible.builtin.command:
+    argv:
+      - "{{ podman_bin }}"
+      - exec
+      - temp-db
+      - sh
+      - -c
+      - >-
+        gunzip -c /backup/dump.sql.gz |
+        sed -e 's/utf8mb4_uca1400_ai_ci/utf8mb4_0900_ai_ci/g' |
+        mysql -uroot -p'{{ root_passwd }}' {{ db }}
+  no_log: true
+  changed_when: true

@@ -1,0 +1,32 @@
+---
+- name: Define the cache Quadlet
+  ansible.builtin.set_fact:
+    cache_quadlet_state_directories:
+      - path: "{{ service_state_dir }}/data"
+        legacy_volume: "{{ cache_name }}_data"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/data"
+      - path: "{{ service_state_dir }}/logs"
+        legacy_volume: "{{ cache_name }}_logs"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/logs"
+    cache_quadlet_networks: []
+    cache_quadlet_containers:
+      - name: "{{ cache_name }}"
+        description: Freva shared Redis cache
+        image: "ghcr.io/freva-org/freva-redis:{{ redis_version }}"
+        user: >-
+          {{ (uid ~ ':' ~ gid) if quadlet_rootful else '0:0' }}
+        ports:
+          - "6379:6379"
+        volumes:
+          - "{{ service_state_dir }}/data:/data/db:z"
+          - "{{ service_state_dir }}/logs:/data/logs:z"
+          - "{{ service_config_dir }}:/data/config:ro,z"
+
+- name: Deploy the cache Quadlet
+  ansible.builtin.include_tasks: deploy_quadlets.yml
+  vars:
+    quadlet_state_directories: "{{ cache_quadlet_state_directories }}"
+    quadlet_networks: "{{ cache_quadlet_networks }}"
+    quadlet_containers: "{{ cache_quadlet_containers }}"

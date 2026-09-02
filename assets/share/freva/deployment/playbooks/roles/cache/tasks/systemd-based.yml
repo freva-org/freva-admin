@@ -1,73 +1,89 @@
 ---
 - name: Adjust infrastructure
-  shell:
-    cmd: >
-      echo 'vm.overcommit_memory = 1' | tee -a /etc/sysctl.conf &&
-      sysctl -p &&
-      sysctl vm.overcommit_memory=1
-  when: ansible_become and ansible_become_user == 'root'
+  ansible.builtin.lineinfile:
+    path: /etc/sysctl.conf
+    regexp: '^\s*vm\.overcommit_memory\s*='
+    line: "vm.overcommit_memory = 1"
+    mode: "0644"
+  register: cache_overcommit_config
+  when:
+    - ansible_become | bool
+    - ansible_become_user == 'root'
+
+- name: Apply the infrastructure adjustment
+  ansible.builtin.command:
+    argv:
+      - sysctl
+      - -w
+      - vm.overcommit_memory=1
+  changed_when: cache_overcommit_config.changed
+  when:
+    - ansible_become | bool
+    - ansible_become_user == 'root'
+
+- name: Running common tasks
+  ansible.builtin.include_tasks: "common_tasks.yml"
+
+- name: Select the cache configuration file
+  ansible.builtin.set_fact:
+    cache_config_file: >-
+      {{
+        service_config_dir + '/data-portal-cluster-config.json'
+        if deployment_method == 'quadlet'
+        else data_dir + '/config/data-portal-cluster-config.json'
+      }}
 
 - name: Register config path
-  stat:
-    path: "{{ data_dir }}/config/data-portal-cluster-config.json"
-  register: config_path
-
-- name: Set fact
-  set_fact:
-    cache_deployment_method: "{{ deployment_method }}"
+  ansible.builtin.stat:
+    path: "{{ cache_config_file }}"
+  register: cache_config_path
 
 - name: Set up caching
+  when: >-
+    deployment_method == 'quadlet'
+    or not cache_config_path.stat.exists
+    or (force | default(false) | bool)
   block:
-    - name: Running common tasks
-      include_tasks: "common_tasks.yml"
-
-    - name: Register systmed unit file
-      stat:
-        path: "{{systemd_unit_dir}}/{{ cache_name }}.service"
-      register: systemd_file
-
-    - name: Stopping the {{ cache_name }} service
-      systemd:
+    - name: Stop the cache service {{ cache_name }}
+      ansible.builtin.systemd:
         name: "{{ cache_name }}"
         state: stopped
         enabled: false
-        scope: "{{ 'system' if ansible_become is true else 'user'}}"
-      ignore_errors: true
+        scope: "{{ 'system' if ansible_become | bool else 'user' }}"
       failed_when: false
 
-    - name: Removing old services files
-      file:
+    - name: Remove the old cache service file
+      ansible.builtin.file:
         state: absent
-        force: true
         path: "{{ systemd_unit_dir }}/{{ cache_name }}.service"
 
-    - name: Creating paths {{ data_dir }}
-      file:
+    - name: Create the cache configuration directory
+      ansible.builtin.file:
         state: directory
         owner: "{{ uid }}"
         group: "{{ gid }}"
-        recurse: true
-        path: "{{ data_dir }}/config"
+        mode: "0750"
+        path: >-
+          {{
+            service_config_dir
+            if deployment_method == 'quadlet'
+            else data_dir + '/config'
+          }}
 
-    - name: Writing redis-cache information to {{ data_dir }}
-      copy:
+    - name: Write the Redis cache information
+      ansible.builtin.copy:
         content: "{{ redis_information }}"
-        dest: "{{ data_dir }}/config/data-portal-cluster-config.json"
+        dest: "{{ cache_config_file }}"
         owner: "{{ uid }}"
         group: "{{ gid }}"
+        mode: "0600"
 
-    - name: Overriding facts
-      set_fact:
-        deployment_file: "{{ role_path }}/tasks/{{('container-deployment.yml' if cache_deployment_method in ['docker', 'podman'] else 'conda-deployment.yml')| trim }}"
-
-    - name: Playing the {{ cache_deployment_method }} tasks
-      include_tasks:
+    - name: Run cache tasks for {{ deployment_method }}
+      ansible.builtin.include_tasks:
         file: "{{ deployment_file | trim }}"
-  when: not config_path.stat.exists or (force | default(false) | bool)
-
 
 - name: Copy cache config to {{ cache_secrets }}
-  fetch:
-    src: "{{ data_dir }}/config/data-portal-cluster-config.json"
+  ansible.builtin.fetch:
+    src: "{{ cache_config_file }}"
     dest: "{{ cache_secrets }}"
     flat: true

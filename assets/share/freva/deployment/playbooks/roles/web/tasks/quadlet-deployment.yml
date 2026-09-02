@@ -1,0 +1,153 @@
+---
+- name: Set web Quadlet primitives
+  ansible.builtin.set_fact:
+    web_quadlet_state_directories:
+      - path: "{{ service_state_dir }}/logs"
+        legacy_volume: "{{ web_name }}_logs"
+        legacy_paths:
+          - "{{ legacy_data_dir }}/logs"
+      - path: "{{ service_state_dir }}/static"
+        legacy_volume: "{{ web_name }}_django-static"
+        legacy_paths:
+          - "{{ web_device_path }}"
+          - "{{ legacy_data_dir }}/static"
+    web_quadlet_networks:
+      - name: "{{ web_name }}"
+        driver: bridge
+        ipv6: true
+    web_core_root_path: >-
+      {{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}
+    web_core_base_path: >-
+      {{ core_base_dir_location
+         | regex_replace('^~', ansible_facts.env.HOME) }}
+    web_scheduler_output_path: >-
+      {{ core_scheduler_output_dir
+         | regex_replace('^~', ansible_facts.env.HOME) }}
+    web_app_ports: >-
+      {{ [] if web_reverse_proxy | bool else ['8000:8000'] }}
+
+- name: Define the web application Quadlets
+  ansible.builtin.set_fact:
+    web_quadlet_containers:
+      - name: "{{ web_cache_name }}"
+        description: Freva web Redis cache
+        image: ghcr.io/freva-org/freva-redis:latest
+        user: >-
+          {{ (uid ~ ':' ~ gid) if quadlet_rootful else '0:0' }}
+        environment:
+          REDIS_PASSWORD: "{{ web_redis_password }}"
+          REDIS_USERNAME: "{{ web_redis_username }}"
+        network: "{{ web_name }}"
+        network_aliases:
+          - "{{ web_cache_name }}"
+        volumes:
+          - "{{ service_state_dir }}/logs:/data/logs:z"
+
+      - name: "{{ web_name }}"
+        description: Freva Django web application
+        image: "ghcr.io/freva-org/freva-web:{{ web_version }}"
+        user: "0:0"
+        requires:
+          - "{{ web_cache_name }}"
+        environment:
+          EVALUATION_SYSTEM_CONFIG_FILE: >-
+            {{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf
+          DJANGO_SUPERUSER_PASSWORD: "{{ root_passwd }}"
+          ALLOWED_HOSTS: "{{ web_allowed_hosts | join(',') }}"
+          FREVA_WEB_CONFIG_FILE: "{{ web_config_file }}"
+          SCHEDULER_HOST: "{{ web_scheduler_host | join(',') }}"
+          REDIS_HOST: "{{ web_cache_name }}"
+          CSRF_TRUSTED_ORIGINS: "{{ web_csrf_trusted_origins | join(',') }}"
+          FREVA_BIN: "{{ web_freva_bin }}"
+          COLUMNS: "140"
+          FREVA_REST_URL: >-
+            http://{{ web_freva_rest_host | replace('http://', '') }}
+          REDIS_PASSWD: "{{ web_redis_password }}"
+          REDIS_USER: "{{ web_redis_username }}"
+          OIDC_DISCOVERY_URL: "{{ web_oidc_url }}"
+          OIDC_CLIENT_SECRET: "{{ web_oidc_client_secret }}"
+          OIDC_CLIENT_ID: "{{ web_oidc_client }}"
+          CHATBOT_HOST: "{{ web_chatbot_host | replace('http://', '') }}"
+          STAC_BROWSER: "1"
+        network: "{{ web_name }}"
+        network_aliases:
+          - "{{ web_name }}"
+        ports: "{{ web_app_ports }}"
+        volumes:
+          - /var/lib/sss/pipes:/var/lib/sss/pipes:ro
+          - "{{ web_core_root_path }}:{{ web_core_root_path }}:ro"
+          - "{{ web_core_base_path }}:{{ web_core_base_path }}:ro"
+          - >-
+            {{ web_scheduler_output_path }}:{{ web_scheduler_output_path }}:ro
+          - "{{ service_state_dir }}/static:/opt/freva_web/static:z"
+          - "{{ service_state_dir }}/logs:/data/logs:z"
+  no_log: true
+
+- name: Add the web reverse proxy Quadlet
+  ansible.builtin.set_fact:
+    web_quadlet_containers: >-
+      {{ web_quadlet_containers + [{
+        'name': web_proxy_name,
+        'description': 'Freva nginx reverse proxy',
+        'image': 'ghcr.io/freva-org/freva-nginx:' + (proxy_version or 'latest'),
+        'user': '0:0',
+        'requires': [web_name],
+        'environment': {
+          'SERVER_ROOT': '/srv/static',
+          'VAULT_HOST': web_vault_host | replace('http://', '') + ':5002',
+          'FREVA_REST_HOST': web_freva_rest_host | replace('http://', ''),
+          'EVALUATION_SYSTEM_CONFIG_FILE': core_root_dir | regex_replace('^~', ansible_facts.env.HOME) + '/freva/evaluation_system.conf',
+          'CHATBOT_HOST': web_chatbot_host | replace('http://', ''),
+          'WEB_SERVER_NAME': web_name,
+          'WEB_SERVER_PORT': '8000',
+          'WEB_HOST_ALIASES': web_aliases | join(','),
+          'SERVER_CERT': web_cert_content,
+          'SERVER_KEY': web_key_content,
+          'REST_PROXY_HOST_NAME': web_chatbot_rest_api_url,
+          'FILL_COLOR': web_main_color,
+          'PROXY_DNS': web_nameservers | default('8.8.8.8'),
+          'PROXY_USER': 'nobody' if quadlet_rootful else 'root',
+          'PROJECT_NAME': project_name,
+          'PORT_HTTPSD': web_port_httpsd,
+          'WEB_HOST': web_project_website | replace('http://', '') | replace('https://', '') | replace('www.', '')
+        },
+        'local_environment': {
+          'FREVA_MAINTENANCE_MODE': '0'
+        },
+        'network': web_name,
+        'network_aliases': [web_proxy_name],
+        'dns': (web_nameservers | default('8.8.8.8')).split(),
+        'ports': [web_port_httpd + ':' + web_port_httpd, web_port_httpsd + ':' + web_port_httpsd],
+        'volumes': [
+          service_state_dir + '/static:/srv/static:z',
+          service_state_dir + '/logs:/data/logs:z',
+          (core_preview_path | regex_replace('^~', ansible_facts.env.HOME)) + ':/srv/static/preview:ro'
+        ]
+      }] }}
+  when: web_reverse_proxy | bool
+  no_log: true
+
+- name: Deploy the web Quadlets
+  ansible.builtin.include_tasks: deploy_quadlets.yml
+  vars:
+    quadlet_state_directories: "{{ web_quadlet_state_directories }}"
+    quadlet_networks: "{{ web_quadlet_networks }}"
+    quadlet_containers: "{{ web_quadlet_containers }}"
+    quadlet_obsolete_container_names: >-
+      {{ [] if web_reverse_proxy | bool else [web_proxy_name] }}
+
+- name: Wait for web startup
+  ansible.builtin.pause:
+    seconds: 30
+
+- name: Read web service state
+  ansible.builtin.systemd:
+    name: "{{ web_name }}.service"
+    scope: "{{ quadlet_systemd_scope }}"
+  register: web_service_status
+
+- name: Require an active web service
+  ansible.builtin.assert:
+    that:
+      - web_service_status.status.ActiveState == 'active'
+    fail_msg: "{{ web_name }}.service is not active"

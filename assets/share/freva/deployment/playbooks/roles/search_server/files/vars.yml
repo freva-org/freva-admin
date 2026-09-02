@@ -7,7 +7,6 @@ admin_user: "{{ search_server_admin_user | default('') }}"
 base_path: '{{search_server_data_path| regex_replace("^~", ansible_facts.env.HOME)}}'
 conda_path: '{{ base_path }}/{{ project_name }}/services/{{ search_server_name }}/conda'
 systemd_unit_dir: "{{ '/etc/systemd/system' if  db_ansible_become_user is defined and db_ansible_become_user != '' else ansible_facts.env.HOME + '/.config/systemd/user' }}"
-compose_file: '{{search_server_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/{{project_name}}/compose_services/{{search_server_name}}-compose.yml'
 old_compose_dir: '{{search_server_data_path|regex_replace("^~", ansible_facts.env.HOME)}}/compose_services'
 conda_packages:
   - apache-solr
