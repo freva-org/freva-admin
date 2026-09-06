@@ -1,0 +1,61 @@
+---
+- name: Running common conda tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/conda.yml
+
+- name: Creating environment file
+  ansible.builtin.template:
+    src: "service.env.j2"
+    dest: "{{ env_path }}"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+  vars:
+    service_name: "{{ search_server_name }}"
+    _env_vars:
+      API_SOLR_PORT: "8983"
+      API_SOLR_HEAP: "{{ search_server_solr_mem | default('4g') }}"
+      SOLR_JETTY_HOST: "0.0.0.0"
+      CONDA_PREFIX: "{{ conda_path }}"
+      SOLR_PID_DIR: "{{ data_dir }}/config"
+      SOLR_LOGS_DIR: "{{ data_dir }}/solr"
+      API_LOG_DIR: "{{ data_dir }}/logs"
+      LOG_DIR: "{{ data_dir }}/logs"
+      API_DATA_DIR: "{{ data_dir }}/data"
+      DATA_DIR: "{{ data_dir }}/data"
+      API_CONFIG_DIR: "{{ conda_path }}/share/freva-rest-server/{{ search_server_service }}"
+
+- name: Creating systemd unit service
+  ansible.builtin.template:
+    src: "systemd-conda-{{ search_server_service }}.j2"
+    dest: "{{ systemd_unit_dir }}/{{ search_server_name }}.service"
+    mode: "0644"
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+
+- name: Enable and start the search service
+  ansible.builtin.systemd:
+    name: "{{ search_server_name }}"
+    state: started
+    enabled: true
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+
+- name: Wait for Solr to be available
+  ansible.builtin.uri:
+    url: "http://localhost:8983/solr/latest/admin/ping"
+    status_code: 200
+    timeout: 5
+  register: result
+  retries: 30
+  delay: 5
+  until: result.status == 200
+  when: search_server_service == 'solr'
+
+- name: Performing healthchecks
+  ansible.builtin.shell: >
+    {{ conda_path }}/libexec/freva-rest-server/healthchecks.sh
+    -s {{ search_server_service }}
+  environment:
+    PATH: "{{ conda_path }}/bin:{{ ansible_facts.env.PATH }}"

@@ -1,0 +1,55 @@
+---
+- name: Cleaning existing directory structure
+  ansible.builtin.file:
+    path: "{{ data_dir }}"
+    state: absent
+  when: wipe is true
+
+- name: Creating service directory structure
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    recurse: true
+  loop:
+    - "{{ data_dir }}"
+    - "{{ data_dir }}/data"
+    - "{{ data_dir }}/logs"
+    - "{{ data_dir }}/config"
+    - "{{ data_dir }}/bin"
+
+- name: Registering conda path
+  ansible.builtin.stat:
+    path: "{{ conda_path }}"
+  register: conda_env_path
+
+- name: Setting conda command fact
+  ansible.builtin.set_fact:
+    conda_cmd: "install"
+
+- name: Overriding conda command fact
+  ansible.builtin.set_fact:
+    conda_cmd: "create"
+  when: not conda_env_path.stat.exists
+
+- name: Downloading micromamba
+  ansible.builtin.include_tasks: install_micromamba.yml
+  vars:
+    micromamba_destination: "{{ data_dir }}"
+
+- name: Installing mamba packages {{ conda_packages | join(' ') }}
+  ansible.builtin.shell:
+    cmd: >
+      {{ data_dir }}/bin/micromamba {{ conda_cmd }} -p {{ conda_path }} -c conda-forge --override-channels -y git curl {{ conda_packages | join(' ') }}
+  environment:
+    MAMBA_ROOT_PREFIX: "{{ conda_path }}"
+
+- name: Getting service startup scripts
+  ansible.builtin.shell: >
+    {{ data_dir }}/bin/micromamba run -p {{ conda_path }} curl
+    https://raw.githubusercontent.com/freva-org/freva-service-config/refs/heads/main/conda-services/create.sh
+    | bash
+  environment:
+    CONDA_PREFIX: "{{ conda_path }}"
+    PATH: "{{ conda_path }}/bin:{{ ansible_facts.env.PATH }}"

@@ -1,9 +1,0 @@
-name: deployment
-channels:
-  - conda-forge
-dependencies:
-  - python=3.10
-  - ipython
-  - pip
-  - pip:
-      - freva-deployment[doc]

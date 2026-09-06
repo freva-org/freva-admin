@@ -1,0 +1,46 @@
+---
+- name: Running common tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/common_tasks.yml
+
+- name: Stop the web services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+  failed_when: false
+  loop:
+    - "{{ web_name }}"
+    - "{{ web_cache_name }}"
+    - "{{ web_proxy_name }}"
+
+- name: Removing old services files
+  ansible.builtin.file:
+    state: absent
+    force: true
+    path: "{{ systemd_unit_dir }}/{{ item }}.service"
+  loop:
+    - "{{ web_name }}"
+    - "{{ web_cache_name }}"
+    - "{{ web_proxy_name }}"
+
+- name: Append ported and non-ported origins
+  ansible.builtin.set_fact:
+    web_csrf_trusted_origins: >-
+      {{
+         (
+           web_csrf_trusted_origins
+           + ( web_csrf_trusted_origins
+               | product([ web_port_httpsd ])
+               | map('join', ':')
+               | list
+             )
+         )
+         | unique
+       }}
+
+
+- name: Run web deployment tasks
+  ansible.builtin.include_tasks:
+    file: "{{ deployment_file | trim }}"

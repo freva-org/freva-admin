@@ -1,0 +1,106 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freva.fullname" . }}-vault
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vault
+spec:
+  selector:
+    {{- include "freva.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: vault
+  ports:
+    - name: http
+      port: {{ .Values.vault.port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "freva.fullname" . }}-vault
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: vault
+spec:
+  serviceName: {{ include "freva.fullname" . }}-vault
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: vault
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: vault
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: vault
+          image: {{ include "freva.image" .Values.images.vault }}
+          imagePullPolicy: {{ .Values.images.vault.pullPolicy }}
+          securityContext:
+            capabilities:
+              add:
+                - IPC_LOCK
+                - SYS_NICE
+            {{- with .Values.containerSecurityContext }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: 5002
+          env:
+            - name: ROOT_PW
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: ADMIN_PASSWORD
+            - name: KEY_FILE
+              value: /vault/file/keys
+            - name: VAULT_ADD_VAR_DB_USER
+              value: {{ .Values.database.user | quote }}
+            - name: VAULT_ADD_VAR_DB_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MYSQL_PASSWORD
+            - name: VAULT_ADD_VAR_DB_DB
+              value: {{ .Values.database.name | quote }}
+            - name: VAULT_ADD_VAR_DB_HOST
+              value: {{ include "freva.fullname" . }}-database
+            - name: VAULT_ADD_VAR_MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MONGO_APP_USER
+            - name: VAULT_ADD_VAR_MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MONGO_APP_PASSWORD
+            - name: VAULT_ADD_VAR_MONGO_DB
+              value: {{ .Values.mongodb.database | quote }}
+            - name: VAULT_ADD_VAR_MONGO_HOST
+              value: {{ include "freva.fullname" . }}-mongodb:{{ .Values.mongodb.port }}
+          readinessProbe:
+            httpGet:
+              path: /vault/status
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.vault.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /vault/file
+      volumes:
+        - name: data
+          {{- if .Values.vault.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "freva.pvcName" (dict "root" . "component" "vault" "persistence" .Values.vault.persistence) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

@@ -1,0 +1,66 @@
+---
+freva_deployment_root: "{{ role_path }}/../.."
+service: freva_rest
+ansible_become: "{{ freva_rest_ansible_become_user is defined and freva_rest_ansible_become_user != '' }}"
+ansible_become_user: "{{ freva_rest_ansible_become_user | default('root') }}"
+admin_user: "{{ freva_rest_admin_user | default('') }}"
+base_path: '{{ freva_rest_data_path | regex_replace("^~", ansible_facts.env.HOME) }}'
+conda_path: "{{ base_path }}/{{ project_name }}/services/{{ service }}/conda"
+systemd_unit_dir: >-
+  {{
+    '/etc/systemd/system'
+    if freva_rest_ansible_become_user is defined
+    and freva_rest_ansible_become_user != ''
+    else ansible_facts.env.HOME + '/.config/systemd/user'
+  }}
+freva_rest_name: "{{ project_name }}-freva_rest"
+old_compose_dir: '{{ freva_rest_data_path | regex_replace("^~", ansible_facts.env.HOME) }}/compose_services'
+data_dir: '{{ freva_rest_data_path | regex_replace("^~", ansible_facts.env.HOME) }}/{{ project_name }}/services/{{ service }}'
+conda_packages:
+  - freva-rest-server>={{ freva_rest_version }}
+volume_names:
+  - "{{ freva_rest_name }}_logs"
+
+keycloak_dir: "{{ data_dir }}/keycloak"
+keycloak_version: "26.2.5"
+keycloak_url: "https://github.com/keycloak/keycloak/releases/download/{{ keycloak_version }}/keycloak-{{ keycloak_version }}.tar.gz"
+keycloak_realm_import_url: "https://raw.githubusercontent.com/freva-org/freva-service-config/refs/heads/main/keycloak/import/realm-export.json"
+keycloak_realm_file_path: "{{ keycloak_dir }}/data/import/realm-export.json"
+
+service_port: "{{ freva_rest_port }}"
+image: "ghcr.io/freva-org/freva-rest-api:{{ freva_rest_version }}"
+env_vars:
+  API_SOLR_CORE: "files"
+  API_PORT: "{{ freva_rest_port }}"
+  API_PROXY: "{{ freva_rest_proxy_url }}"
+  API_OIDC_CLIENT_ID: "{{ freva_rest_oidc_client }}"
+  API_OIDC_DISCOVERY_URL: "{{ freva_rest_oidc_url }}"
+  API_OIDC_CLIENT_SECRET: "{{ freva_rest_oidc_client_secret }}"
+  API_OIDC_TOKEN_CLAIMS: "{{ freva_rest_oidc_token_claims }}"
+  API_ADMIN_CLAIMS: "{{ freva_rest_oidc_admin_claims }}"
+  API_OIDC_TRUSTED_ISSUERS: "{{ freva_rest_oidc_trusted_issuers }}"
+  API_MONGO_USER: "{{ freva_rest_db_user }}"
+  API_LOGDIR: "/tmp/logs"
+  API_SOLR_HOST: "{{ freva_rest_search_server_host }}:8983"
+  API_SERVICES: "{{ freva_rest_services }}"
+  API_MONGO_HOST: "{{ freva_rest_mongodb_server_host }}:27017"
+  API_MONGO_PASSWORD: "{{ freva_rest_db_passwd }}"
+  API_MONGO_DB: "search_stats"
+  CACHE_CONFIG: "{{ redis_information }}"
+  COLUMNS: 140
+
+secret_keys:
+  - API_OIDC_CLIENT_SECRET
+  - API_MONGO_USER
+  - API_MONGO_PASSWORD
+  - CACHE_CONFIG
+
+workload_kind: "deployment"
+
+volumes:
+  sss-pipes:
+    hostPath: "/var/lib/sss/pipes"
+    mountPath: "/var/lib/sss/pipes"
+  freva-rest-logs:
+    pvc: "freva-rest-logs"
+    mountPath: "/tmp/logs"

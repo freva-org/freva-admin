@@ -1,0 +1,89 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freva.fullname" . }}-database
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  selector:
+    {{- include "freva.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+  ports:
+    - name: mysql
+      port: {{ .Values.database.port }}
+      targetPort: mysql
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "freva.fullname" . }}-database
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: database
+spec:
+  serviceName: {{ include "freva.fullname" . }}-database
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: database
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: database
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: database
+          image: {{ include "freva.image" .Values.images.database }}
+          imagePullPolicy: {{ .Values.images.database.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          ports:
+            - name: mysql
+              containerPort: 3306
+          env:
+            - name: ROOT_PW
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MYSQL_ROOT_PASSWORD
+            - name: MYSQL_USER
+              value: {{ .Values.database.user | quote }}
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MYSQL_PASSWORD
+            - name: MYSQL_DATABASE
+              value: {{ .Values.database.name | quote }}
+            - name: HOST
+              value: {{ include "freva.fullname" . }}-database
+            - name: PROJECT
+              value: {{ .Release.Name | quote }}
+          readinessProbe:
+            exec:
+              command: ["healthchecks", "-s", "mysql"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.database.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      volumes:
+        - name: data
+          {{- if .Values.database.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "freva.pvcName" (dict "root" . "component" "database" "persistence" .Values.database.persistence) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

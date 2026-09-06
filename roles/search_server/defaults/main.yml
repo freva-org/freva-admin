@@ -1,0 +1,42 @@
+---
+freva_deployment_root: "{{ role_path }}/../.."
+search_server_service: "solr"
+ansible_become: "{{ search_server_ansible_become_user is defined and search_server_ansible_become_user != '' }}"
+ansible_become_user: "{{ search_server_ansible_become_user | default('root') }}"
+admin_user: "{{ search_server_admin_user | default('') }}"
+base_path: '{{ search_server_data_path | regex_replace("^~", ansible_facts.env.HOME) }}'
+conda_path: "{{ base_path }}/{{ project_name }}/services/{{ search_server_name }}/conda"
+systemd_unit_dir: >-
+  {{
+    '/etc/systemd/system'
+    if search_server_ansible_become_user is defined
+    and search_server_ansible_become_user != ''
+    else ansible_facts.env.HOME + '/.config/systemd/user'
+  }}
+old_compose_dir: '{{ search_server_data_path | regex_replace("^~", ansible_facts.env.HOME) }}/compose_services'
+conda_packages:
+  - apache-solr
+
+service: "{{ search_server_service }}"
+data_dir: '{{ search_server_data_path | regex_replace("^~", ansible_facts.env.HOME) }}/{{ project_name }}/services/{{ service }}'
+search_server_name: "{{ project_name }}-{{ search_server_service }}"
+wipe: "{{ search_server_wipe }}"
+volume_names:
+  - "{{ search_server_name }}_data"
+  - "{{ search_server_name }}_logs"
+
+service_port: 8983
+image: "ghcr.io/freva-org/freva-{{ service }}:latest"
+env_vars:
+  API_SOLR_PORT: "{{ service_port }}"
+  API_SOLR_HEAP: "{{ search_server_solr_mem }}"
+
+workload_kind: "deployment"
+
+volumes:
+  search-api-data:
+    pvc: "search-api-data"
+    mountPath: "/data/db"
+  search-api-logs:
+    pvc: "search-api-logs"
+    mountPath: "/data/logs"

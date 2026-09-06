@@ -1,0 +1,6 @@
+ansible-core>=2.15,<2.20
+ansible-lint>=24.0,<26
+mypy>=1.10,<2
+PyYAML>=6.0,<7
+-r vault/requirements.txt
+-r docs/requirements.txt

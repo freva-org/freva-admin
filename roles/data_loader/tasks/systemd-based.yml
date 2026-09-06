@@ -1,0 +1,41 @@
+---
+- name: Getting binaries
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/paths.yml
+
+- name: Ensure the user systemd directory exists
+  ansible.builtin.file:
+    path: "{{ systemd_unit_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Register systmed unit file
+  ansible.builtin.stat:
+    path: "{{ systemd_unit_dir }}/data-loader@.service"
+  register: systemd_file
+
+- name: Set up data-loader
+  when: not systemd_file.stat.exists or (force | default(false) | bool)
+  block:
+    - name: Write Redis cache information
+      ansible.builtin.copy:
+        content: "{{ redis_information }}"
+        dest: "{{ secrets_file }}"
+        mode: "0600"
+        force: true
+      no_log: true
+
+    - name: Create the data-loader systemd unit
+      ansible.builtin.template:
+        src: systemd-service.j2
+        dest: "{{ systemd_unit_dir }}/data-loader@.service"
+        mode: "0644"
+      when: force | bool
+
+    - name: Start data-loader {{ loader_service }}
+      ansible.builtin.systemd:
+        name: "data-loader@{{ loader_service }}.service"
+        daemon_reload: true
+        state: started
+        enabled: true
+        scope: "{{ 'system' if ansible_become_user == 'root' else 'user' }}"

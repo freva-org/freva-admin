@@ -1,0 +1,167 @@
+{{- if .Values.web.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freva.fullname" . }}-web
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  selector:
+    {{- include "freva.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+  ports:
+    - name: http
+      port: 8080
+      targetPort: proxy
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "freva.fullname" . }}-web
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: web
+spec:
+  replicas: {{ .Values.web.replicas }}
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: web
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: proxy
+          image: {{ include "freva.image" .Values.images.proxy }}
+          imagePullPolicy: {{ .Values.images.proxy.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          ports:
+            - name: proxy
+              containerPort: 8080
+          env:
+            - name: SERVER_ROOT
+              value: /srv/static
+            - name: VAULT_HOST
+              value: {{ include "freva.fullname" . }}-vault:{{ .Values.vault.port }}
+            - name: FREVA_REST_HOST
+              value: {{ include "freva.fullname" . }}-rest:{{ .Values.rest.port }}
+            - name: CHATBOT_HOST
+              value: {{ .Values.web.chatbotHost | quote }}
+            - name: WEB_SERVER_NAME
+              value: 127.0.0.1
+            - name: WEB_SERVER_PORT
+              value: "8000"
+            - name: REST_PROXY_HOST_NAME
+              value: {{ .Values.web.externalUrl | quote }}
+            - name: FILL_COLOR
+              value: {{ .Values.web.mainColor | quote }}
+            - name: PROXY_USER
+              value: nobody
+            - name: PROJECT_NAME
+              value: {{ .Release.Name | quote }}
+            - name: PORT_HTTPD
+              value: "8080"
+            - name: PORT_HTTPSD
+              value: "8443"
+            - name: NO_HTTP_CERT
+              value: "1"
+            - name: WEB_HOST
+              value: {{ first .Values.web.allowedHosts | quote }}
+          resources:
+            {{- toYaml .Values.web.proxyResources | nindent 12 }}
+          volumeMounts:
+            - name: static
+              mountPath: /srv/static
+        - name: web
+          image: {{ include "freva.image" .Values.images.web }}
+          imagePullPolicy: {{ .Values.images.web.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          env:
+            - name: EVALUATION_SYSTEM_CONFIG_FILE
+              value: /data/config/evaluation_system.conf
+            - name: FREVA_WEB_CONFIG_FILE
+              value: /data/config/freva_web.toml
+            - name: DJANGO_SUPERUSER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: ADMIN_PASSWORD
+            - name: ALLOWED_HOSTS
+              value: {{ join "," .Values.web.allowedHosts | quote }}
+            - name: SCHEDULER_HOST
+              value: {{ join "," .Values.web.schedulerHosts | quote }}
+            - name: CSRF_TRUSTED_ORIGINS
+              value: {{ join "," .Values.web.csrfTrustedOrigins | quote }}
+            - name: FREVA_BIN
+              value: /opt/conda/bin
+            - name: REDIS_HOST
+              value: {{ include "freva.fullname" . }}-redis
+            - name: REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_USERNAME
+            - name: REDIS_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_PASSWORD
+            - name: FREVA_REST_URL
+              value: http://{{ include "freva.fullname" . }}-rest:{{ .Values.rest.port }}
+            - name: CHATBOT_HOST
+              value: {{ .Values.web.chatbotHost | quote }}
+            - name: DB_USER
+              value: {{ .Values.database.user | quote }}
+            - name: DB_PASSWD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MYSQL_PASSWORD
+            - name: DB_NAME
+              value: {{ .Values.database.name | quote }}
+            - name: DB_HOST
+              value: {{ include "freva.fullname" . }}-database
+            - name: VAULT_URL
+              value: http://{{ include "freva.fullname" . }}-vault:{{ .Values.vault.port }}
+            {{- with .Values.web.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /data/config
+              readOnly: true
+            - name: static
+              mountPath: /opt/freva_web/static
+            {{- with .Values.web.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "freva.webConfigMapName" . }}
+        - name: static
+          {{- if .Values.web.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "freva.pvcName" (dict "root" . "component" "web" "persistence" .Values.web.persistence) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        {{- with .Values.web.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}

@@ -1,0 +1,22 @@
+---
+- name: Running common tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/common_tasks.yml
+
+- name: Stop the Vault service
+  ansible.builtin.systemd:
+    name: "{{ vault_name }}"
+    state: stopped
+    enabled: false
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+  failed_when: false
+
+- name: Remove the old Vault service file
+  ansible.builtin.file:
+    state: absent
+    force: true
+    path: "{{ systemd_unit_dir }}/{{ vault_name }}.service"
+
+- name: Run Vault deployment tasks
+  ansible.builtin.include_tasks:
+    file: "{{ deployment_file | trim }}"

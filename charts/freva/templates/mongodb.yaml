@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freva.fullname" . }}-mongodb
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  selector:
+    {{- include "freva.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+  ports:
+    - name: mongodb
+      port: {{ .Values.mongodb.port }}
+      targetPort: mongodb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "freva.fullname" . }}-mongodb
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: mongodb
+spec:
+  serviceName: {{ include "freva.fullname" . }}-mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: mongodb
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: mongodb
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: mongodb
+          image: {{ include "freva.image" .Values.images.mongodb }}
+          imagePullPolicy: {{ .Values.images.mongodb.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          ports:
+            - name: mongodb
+              containerPort: 27017
+          env:
+            - name: API_MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MONGO_APP_USER
+            - name: API_MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MONGO_APP_PASSWORD
+            - name: API_MONGO_DB
+              value: {{ .Values.mongodb.database | quote }}
+          readinessProbe:
+            exec:
+              command: ["healthchecks", "-s", "mongo"]
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.mongodb.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      volumes:
+        - name: data
+          {{- if .Values.mongodb.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "freva.pvcName" (dict "root" . "component" "mongodb" "persistence" .Values.mongodb.persistence) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

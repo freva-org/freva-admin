@@ -1,8 +1,0 @@
-name: freva
-channels:
-  - conda-forge
-dependencies:
-  - freva
-  - pip:
-    - jupyter-kernel-install
-    - metadata-inspector

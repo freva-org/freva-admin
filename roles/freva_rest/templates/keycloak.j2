@@ -1,0 +1,37 @@
+[Unit]
+Description=Keycloak test server.
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+PermissionsStartOnly=true
+NoNewPrivileges=true
+KillSignal=SIGTERM
+ExecStart={{ bash_cmd }} {{ keycloak_dir }}/bin/kc.sh start-dev \
+    --hostname-strict=false \
+    --import-realm \
+    --http-enabled true \
+    --http-port 8080 \
+    --log file \
+    --log-file {{ data_dir }}/logs/keycloak.log \
+    -Dkeycloak.migration.strategy=OVERWRITE_EXISTING \
+    -Dcom.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES=false
+Environment="PATH={{ conda_path }}/bin:{{ ansible_env.PATH }}"
+Environment="KEYCLOAK_ADMIN={{ admin_user | trim }}"
+Environment="KEYCLOAK_ADMIN_PASSWORD=secret"
+Environment="KC_HEALTH_ENABLED=true"
+Environment="KC_METRICS_ENABLED=true"
+Environment="JAVA_HOME={{ conda_path }}"
+Environment="JAVA_OPTS_APPEND=-Djava.net.preferIPv4Stack=true"
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=5
+UMask=007
+ReadWritePaths={{ conda_path }}
+{% if (ansible_become == true and ansible_become_user == 'root') or ansible_user == 'root' %}
+ProtectHome=true
+ProtectSystem=full
+User={{ uid }}
+Group={{ gid }}
+{% endif %}

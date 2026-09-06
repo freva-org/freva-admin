@@ -2,9 +2,9 @@
 
 This appendix gives examples of flat pages containing privacy and terms of
 conditions. Such statements should be added as flat-pages in the
-[django admin-panel](the-web-ui-admin-panel).
+Django admin panel.
 [Flat-pages](https://docs.djangoproject.com/en/4.1/ref/contrib/flatpages/)
-additional notes that are displayed on the web site. Any flat-page url
+are additional notes that are displayed on the web site. Any flat-page URL
 starting with `/legal/` will be added as a link to the footer.
 For example `/legal/privacy/` which could be a flat-page for a privacy
 statement. Below you'll find examples of a privacy statement and terms of use.

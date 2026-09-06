@@ -1,0 +1,125 @@
+---
+- name: Load the Quadlet runtime
+  ansible.builtin.include_tasks: >-
+    {{ freva_deployment_root }}/playbooks/tasks/get_quadlet_runtime.yml
+
+- name: Stop obsolete Quadlet services
+  ansible.builtin.systemd:
+    name: "{{ item }}.service"
+    state: stopped
+    scope: "{{ quadlet_systemd_scope }}"
+  loop: "{{ quadlet_obsolete_container_names | default([]) }}"
+  failed_when: false
+
+- name: Remove obsolete Quadlet container sources
+  ansible.builtin.file:
+    path: "{{ quadlet_unit_dir }}/{{ item }}.container"
+    state: absent
+  loop: "{{ quadlet_obsolete_container_names | default([]) }}"
+
+- name: Remove obsolete Quadlet environment files
+  ansible.builtin.file:
+    path: "{{ quadlet_env_dir }}/{{ item }}.env"
+    state: absent
+  loop: "{{ quadlet_obsolete_container_names | default([]) }}"
+
+- name: Create Quadlet directories
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+    owner: "{{ item.owner | default(omit) }}"
+    group: "{{ item.group | default(omit) }}"
+  loop:
+    - path: "{{ quadlet_unit_dir }}"
+      mode: "0755"
+    - path: "{{ deployment_config_root }}"
+      mode: "0750"
+      owner: "{{ uid }}"
+      group: "{{ gid }}"
+    - path: "{{ quadlet_env_dir }}"
+      mode: "0700"
+      owner: "{{ uid }}"
+      group: "{{ gid }}"
+    - path: "{{ service_config_dir }}"
+      mode: "0750"
+      owner: "{{ uid }}"
+      group: "{{ gid }}"
+
+- name: Create operator-owned Quadlet drop-in directories
+  ansible.builtin.file:
+    path: "{{ quadlet_unit_dir }}/{{ item.name }}.container.d"
+    state: directory
+    mode: "0755"
+  loop: "{{ quadlet_containers }}"
+
+- name: Create operator-owned network drop-in directories
+  ansible.builtin.file:
+    path: "{{ quadlet_unit_dir }}/{{ item.name }}.network.d"
+    state: directory
+    mode: "0755"
+  loop: "{{ quadlet_networks | default([]) }}"
+
+- name: Prepare persistent Quadlet state
+  ansible.builtin.include_tasks: >-
+    {{ freva_deployment_root }}/playbooks/tasks/prepare_quadlet_state.yml
+  when: not quadlet_skip_state_preparation | default(false) | bool
+
+- name: Render Quadlet networks
+  ansible.builtin.template:
+    src: "{{ freva_deployment_root }}/playbooks/templates/freva.network.j2"
+    dest: "{{ quadlet_unit_dir }}/{{ item.name }}.network"
+    mode: "0644"
+  loop: "{{ quadlet_networks | default([]) }}"
+
+- name: Render Quadlet environment files
+  ansible.builtin.template:
+    src: "{{ freva_deployment_root }}/playbooks/templates/quadlet.env.j2"
+    dest: "{{ quadlet_env_dir }}/{{ item.name }}.env"
+    mode: "0600"
+  loop: "{{ quadlet_containers }}"
+  when: item.environment | default({}) | length > 0
+  no_log: true
+
+- name: Create operator-owned Quadlet environment overrides
+  ansible.builtin.template:
+    src: "{{ freva_deployment_root }}/playbooks/templates/quadlet.local.env.j2"
+    dest: "{{ quadlet_env_dir }}/{{ item.name }}.local.env"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    mode: "0600"
+    force: false
+  loop: "{{ quadlet_containers }}"
+  no_log: true
+
+- name: Apply SELinux contexts to generated configuration
+  ansible.builtin.command:
+    argv:
+      - restorecon
+      - -R
+      - -v
+      - "{{ deployment_config_root }}"
+  register: quadlet_config_restorecon
+  changed_when: quadlet_config_restorecon.stdout | length > 0
+  when:
+    - quadlet_rootful
+    - quadlet_selinux_status.stdout | default('Disabled') in ['Enforcing', 'Permissive']
+
+- name: Render Quadlet containers
+  ansible.builtin.template:
+    src: "{{ freva_deployment_root }}/playbooks/templates/freva.container.j2"
+    dest: "{{ quadlet_unit_dir }}/{{ item.name }}.container"
+    mode: "0644"
+  loop: "{{ quadlet_containers }}"
+
+- name: Reload systemd to generate Quadlet services
+  ansible.builtin.systemd:
+    daemon_reload: true
+    scope: "{{ quadlet_systemd_scope }}"
+
+- name: Restart Quadlet services
+  ansible.builtin.systemd:
+    name: "{{ item.name }}.service"
+    state: restarted
+    scope: "{{ quadlet_systemd_scope }}"
+  loop: "{{ quadlet_containers }}"

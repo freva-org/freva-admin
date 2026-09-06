@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freva.fullname" . }}-redis
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  selector:
+    {{- include "freva.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+  ports:
+    - name: redis
+      port: {{ .Values.redis.port }}
+      targetPort: redis
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "freva.fullname" . }}-redis
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  serviceName: {{ include "freva.fullname" . }}-redis
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: redis
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: redis
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: redis
+          image: {{ include "freva.image" .Values.images.redis }}
+          imagePullPolicy: {{ .Values.images.redis.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          ports:
+            - name: redis
+              containerPort: 6379
+          env:
+            - name: REDIS_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_USERNAME
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_PASSWORD
+          readinessProbe:
+            exec:
+              command: ["healthchecks", "-s", "redis"]
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.redis.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      volumes:
+        - name: data
+          {{- if .Values.redis.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "freva.pvcName" (dict "root" . "component" "redis" "persistence" .Values.redis.persistence) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

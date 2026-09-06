@@ -1,0 +1,33 @@
+secrets:
+  create: true
+  values:
+    adminPassword: test-only
+    databasePassword: test-only
+    redisPassword: test-only
+    mongoPassword: test-only
+    oidcClientSecret: test-only
+
+imagePullSecrets:
+  - name: test-registry
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+
+nodeSelector:
+  kubernetes.io/os: linux
+
+tolerations:
+  - key: freva
+    operator: Exists
+
+ingress:
+  enabled: true
+  hosts:
+    - host: freva.example.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: freva-example-tls
+      hosts:
+        - freva.example.org

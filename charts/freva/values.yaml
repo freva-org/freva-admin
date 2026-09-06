@@ -1,0 +1,265 @@
+nameOverride: ""
+fullnameOverride: ""
+
+imagePullSecrets: []
+
+podSecurityContext:
+  fsGroup: 1000
+  fsGroupChangePolicy: OnRootMismatch
+
+containerSecurityContext: {}
+
+images:
+  database:
+    repository: ghcr.io/freva-org/freva-mysql
+    tag: "9.3.0"
+    pullPolicy: IfNotPresent
+  vault:
+    repository: ghcr.io/freva-org/freva-vault
+    tag: "2505.0.3"
+    pullPolicy: IfNotPresent
+  redis:
+    repository: ghcr.io/freva-org/freva-redis
+    tag: latest
+    pullPolicy: Always
+  mongodb:
+    repository: ghcr.io/freva-org/freva-mongo
+    tag: latest
+    pullPolicy: Always
+  solr:
+    repository: ghcr.io/freva-org/freva-solr
+    tag: latest
+    pullPolicy: Always
+  rest:
+    repository: ghcr.io/freva-org/freva-rest-api
+    tag: "2607.1.0"
+    pullPolicy: IfNotPresent
+  dataLoader:
+    repository: ghcr.io/freva-org/freva-data-loader
+    tag: "2607.1.0"
+    pullPolicy: IfNotPresent
+  web:
+    repository: ghcr.io/freva-org/freva-web
+    tag: "2609.1.0"
+    pullPolicy: IfNotPresent
+  proxy:
+    repository: ghcr.io/freva-org/freva-nginx
+    tag: latest
+    pullPolicy: Always
+
+# Production installations should set existingSecret and keep create false.
+# The Secret must provide the keys listed in templates/NOTES.txt.
+secrets:
+  existingSecret: ""
+  create: false
+  values:
+    adminPassword: ""
+    databasePassword: ""
+    redisUsername: freva-cache
+    redisPassword: ""
+    mongoUsername: freva-rest
+    mongoPassword: ""
+    oidcClientSecret: ""
+
+database:
+  user: freva
+  name: frevadb
+  port: 3306
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 600m
+      memory: 512Mi
+    limits:
+      cpu: 800m
+      memory: 1Gi
+
+vault:
+  port: 5002
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 300m
+      memory: 512Mi
+
+redis:
+  port: 6379
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 300m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+mongodb:
+  database: search_stats
+  port: 27017
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 300m
+      memory: 1Gi
+    limits:
+      cpu: 1500m
+      memory: 3Gi
+
+solr:
+  port: 8983
+  core: files
+  heap: 4g
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 20Gi
+  resources:
+    requests:
+      cpu: 1500m
+      memory: 8Gi
+    limits:
+      cpu: "4"
+      memory: 16Gi
+
+rest:
+  replicas: 1
+  port: 7777
+  proxyUrl: https://freva.example.org
+  services:
+    - databrowser
+    - stacapi
+    - zarr-stream
+  oidc:
+    discoveryUrl: https://login.example.org/realms/freva/.well-known/openid-configuration
+    clientId: freva
+    tokenClaims:
+      - preferred_username
+    adminClaims: []
+    trustedIssuers: []
+    systemUserClaim: preferred_username
+    scopes: profile email
+  extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
+  resources:
+    requests:
+      cpu: 400m
+      memory: 512Mi
+    limits:
+      cpu: 600m
+      memory: 512Mi
+
+dataLoader:
+  enabled: true
+  replicas: 1
+  logLevel: INFO
+  extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 1200m
+      memory: 4Gi
+
+web:
+  enabled: true
+  replicas: 1
+  externalUrl: https://freva.example.org
+  allowedHosts:
+    - freva.example.org
+  csrfTrustedOrigins:
+    - https://freva.example.org
+  schedulerHosts:
+    - localhost
+  chatbotHost: localhost
+  mainColor: Tomato
+  config:
+    existingConfigMap: ""
+    evaluationSystem: |-
+      [evaluation_system]
+      admins=freva
+      project_name=freva
+      project_website=https://freva.example.org
+      root_dir=/data/config
+      directory_structure_type=local
+      scheduler_system=local
+      db.host={{ include "freva.fullname" . }}-database
+      solr.host={{ include "freva.fullname" . }}-solr
+      solr.port=8983
+      solr.core=files
+    frevaWeb: |-
+      institution_name = "Example institution"
+      main_color = "Tomato"
+      contacts = ["freva@example.org"]
+  extraEnv: []
+  extraVolumes: []
+  extraVolumeMounts: []
+  persistence:
+    enabled: true
+    existingClaim: ""
+    storageClass: ""
+    accessModes:
+      - ReadWriteOnce
+    size: 5Gi
+  resources:
+    requests:
+      cpu: 600m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 2Gi
+  proxyResources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: freva.example.org
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

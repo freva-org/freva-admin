@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+REDIS_TMP_DIR=$(mktemp -d --suffix=redis)
+export PATH={{ conda_path }}/bin:$PATH
+export LOG_DIR={{ conda_path }}/logs
+export DATA_DIR=${REDIS_TMP_DIR}/data
+export CONFIG_DIR=${REDIS_TMP_DIR}/config
+mkdir -p $LOG_DIR $DATA_DIR $CONFIG_DIR
+trap "rm -fr $TMP_TMP_DIR" EXIT
+{{ conda_path }}/libexec/freva-rest-server/init-redis

@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freva.fullname" . }}-solr
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: solr
+spec:
+  selector:
+    {{- include "freva.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: solr
+  ports:
+    - name: http
+      port: {{ .Values.solr.port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "freva.fullname" . }}-solr
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: solr
+spec:
+  serviceName: {{ include "freva.fullname" . }}-solr
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: solr
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: solr
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: solr
+          image: {{ include "freva.image" .Values.images.solr }}
+          imagePullPolicy: {{ .Values.images.solr.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          ports:
+            - name: http
+              containerPort: 8983
+          env:
+            - name: API_SOLR_PORT
+              value: "8983"
+            - name: API_SOLR_HEAP
+              value: {{ .Values.solr.heap | quote }}
+          readinessProbe:
+            exec:
+              command: ["healthchecks", "-s", "solr"]
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.solr.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+      volumes:
+        - name: data
+          {{- if .Values.solr.persistence.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ include "freva.pvcName" (dict "root" . "component" "solr" "persistence" .Values.solr.persistence) }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}

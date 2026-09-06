@@ -1,0 +1,15 @@
+apiVersion: v2
+name: freva
+description: Freva services for Kubernetes
+type: application
+version: 0.1.0
+appVersion: "2609"
+kubeVersion: ">=1.27.0-0"
+home: https://freva-org.github.io/
+sources:
+  - https://github.com/freva-org/freva-admin
+maintainers:
+  - name: Freva Team
+    email: freva@dkrz.de
+annotations:
+  artifacthub.io/license: BSD-3-Clause

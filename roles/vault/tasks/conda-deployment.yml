@@ -1,0 +1,82 @@
+---
+- name: Register path to vault keys
+  ansible.builtin.stat:
+    path: "{{ vault_token_path }}"
+  register: token_path
+
+- name: Check vault keys
+  when: token_path.stat.exists
+
+  block:
+    - name: Base64 decode vault key path
+      ansible.builtin.command: base64 -d "{{ vault_token_path }}"
+  rescue:
+    - name: Delete vault dir because its content is not valid
+      ansible.builtin.file:
+        state: absent
+        path: "{{ data_dir }}"
+- name: Running common conda tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/conda.yml
+
+- name: Build vault service
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/build-vault.yml"
+  when: conda_packages | select('search', '^vault([><=].*)?$') | list | length == 0
+
+- name: Creating vault server directory in conda env
+  ansible.builtin.file:
+    state: directory
+    path: "{{ conda_path }}/libexec/freva-rest-server/vault"
+    recurse: true
+
+- name: Copying vault files to target machine
+  ansible.builtin.copy:
+    src: "{{ freva_deployment_root }}/vault/{{ item }}"
+    dest: "{{ conda_path }}/libexec/freva-rest-server/vault/{{ item }}"
+  loop:
+    - "runserver.py"
+    - "policy-file.hcl"
+
+- name: Adjusting vault config file
+  ansible.builtin.template:
+    src: "vault-server-conda.j2"
+    dest: "{{ conda_path }}/libexec/freva-rest-server/vault/vault-server-tls.hcl"
+
+- name: Creating vault systemd service
+  ansible.builtin.template:
+    src: "systemd-vault-conda.j2"
+    dest: "{{ systemd_unit_dir }}/{{ vault_name }}.service"
+    mode: "0644"
+
+- name: Reload systemd daemon
+  ansible.builtin.systemd:
+    daemon_reload: true
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+  become: "{{ vault_ansible_become_user is defined and vault_ansible_become_user != '' }}"
+
+- name: Creating environment file
+  ansible.builtin.template:
+    src: "service.env.j2"
+    dest: "{{ env_path }}"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+  vars:
+    service_name: "{{ vault_name }}"
+    _vault_env_vars:
+      KEY_FILE: "{{ data_dir }}/data/keys"
+      ROOT_PW: "{{ root_passwd }}"
+      VERSION: "{{ vault_version }}"
+      CONDA_PREFIX: "{{ conda_path }}"
+      VAULT_CONFIG: >-
+        {{ conda_path }}/libexec/freva-rest-server/vault/vault-server-tls.hcl
+      VAULT_ADD_VAR_DB_USER: "{{ vault_db_user }}"
+      VAULT_ADD_VAR_DB_PASSWD: "{{ vault_passwd }}"
+      VAULT_ADD_VAR_DB_DB: "{{ vault_db }}"
+      VAULT_ADD_VAR_DB_HOST: "{{ vault_db_host }}"
+
+- name: Enable and start the freva vault server
+  ansible.builtin.systemd:
+    name: "{{ project_name }}-vault"
+    state: started
+    enabled: true
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"

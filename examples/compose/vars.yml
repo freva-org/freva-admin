@@ -1,0 +1,72 @@
+---
+# Development and release-candidate settings. Do not reuse these passwords in
+# production. Override image tags from CI with Ansible extra variables.
+compose:
+  project_name: freva-dev
+  external_url: http://localhost:8080
+  images:
+    database: ghcr.io/freva-org/freva-mysql:9.3.0
+    vault: ghcr.io/freva-org/freva-vault:2505.0.3
+    redis: ghcr.io/freva-org/freva-redis:latest
+    mongodb: ghcr.io/freva-org/freva-mongo:latest
+    solr: ghcr.io/freva-org/freva-solr:latest
+    rest: ghcr.io/freva-org/freva-rest-api:2607.1.0
+    data_loader: ghcr.io/freva-org/freva-data-loader:2607.1.0
+    web: ghcr.io/freva-org/freva-web:2609.1.0
+    proxy: ghcr.io/freva-org/freva-nginx:latest
+  secrets:
+    admin_password: development-only
+    database_password: development-only
+    redis_password: development-only
+    mongodb_password: development-only
+    oidc_client_secret: development-only
+  database:
+    user: freva
+    name: frevadb
+  redis:
+    user: freva-cache
+  mongodb:
+    user: freva-rest
+  solr:
+    heap: 2g
+  oidc:
+    discovery_url: http://localhost:8081/realms/freva/.well-known/openid-configuration
+    client_id: freva
+    token_claims:
+      - preferred_username
+    admin_claims: []
+    trusted_issuers: []
+    system_user_claim: preferred_username
+    scopes: profile email
+  rest:
+    services:
+      - databrowser
+      - stacapi
+      - zarr-stream
+  web:
+    enabled: true
+    reverse_proxy: true
+    evaluation_config: "{{ playbook_dir }}/../examples/compose/evaluation_system.conf"
+    web_config: "{{ playbook_dir }}/../examples/compose/freva_web.toml"
+    external_host: localhost
+    allowed_hosts:
+      - localhost
+      - 127.0.0.1
+    csrf_trusted_origins:
+      - http://localhost:8080
+    scheduler_hosts:
+      - localhost
+    chatbot_host: localhost
+    main_color: Tomato
+  data_loader_volumes: []
+  sss_pipes: false
+  ports:
+    database: 3306
+    vault: 5002
+    redis: 6379
+    mongodb: 27017
+    solr: 8983
+    rest: 7777
+    web: 8000
+    http: 8080
+    https: 8443

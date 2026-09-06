@@ -1,0 +1,146 @@
+---
+- name: Validate the deployment inventory
+  hosts: all
+  gather_facts: false
+  tags:
+    - always
+  tasks:
+    - name: Require a supported host deployment method
+      ansible.builtin.assert:
+        that:
+          - project_name is defined
+          - project_name | length > 0
+          - project_name is match('^[a-z0-9][a-z0-9_-]*$')
+          - deployment_method in ["quadlet", "conda"]
+          - root_passwd is defined
+          - root_passwd not in ["", "CHANGE_ME"]
+          - db_passwd is defined
+          - db_passwd not in ["", "CHANGE_ME"]
+          - freva_rest_db_passwd is defined
+          - freva_rest_db_passwd not in ["", "CHANGE_ME"]
+          - mongodb_server_db_passwd is defined
+          - mongodb_server_db_passwd not in ["", "CHANGE_ME"]
+          - web_redis_password is defined
+          - web_redis_password not in ["", "CHANGE_ME"]
+          - (freva_rootful_state_root | default('/var/lib/freva')) is match('^/')
+          - (freva_rootful_config_root | default('/etc/freva')) is match('^/')
+          - (freva_rootful_state_root | default('/var/lib/freva')) is not match('^/(tmp|run|dev/shm)(/|$)')
+        fail_msg: >-
+          Check the example inventory, encrypt the required secrets, and
+          choose either quadlet or conda. Kubernetes deployments use Helm.
+
+- name: Deploy Freva Core Library
+  hosts: core
+  tags:
+    - core
+  become: "{{ core_ansible_become_user is defined and core_ansible_become_user != '' }}"
+  become_user: "{{ core_ansible_become_user | default(ansible_user) }}"
+  roles:
+    - core
+
+- name: Deploy Database
+  hosts: db
+  tags:
+    - db
+  become: "{{ db_ansible_become_user is defined and db_ansible_become_user != '' }}"
+  become_user: "{{ db_ansible_become_user | default('root') }}"
+  roles:
+    - database
+
+- name: Deploy Vault
+  hosts: vault
+  tags:
+    - db
+    - vault
+  become: "{{ vault_ansible_become_user is defined and vault_ansible_become_user != '' }}"
+  become_user: "{{ vault_ansible_become_user | default('root') }}"
+  roles:
+    - vault
+
+- name: Setup cache server
+  hosts: redis
+  tags:
+    - freva_rest
+    - cache
+  become: "{{ redis_ansible_become_user is defined and redis_ansible_become_user != '' }}"
+  become_user: "{{ redis_ansible_become_user | default('root') }}"
+  roles:
+    - cache
+
+- name: Setup data-loader scheduler
+  hosts: data_portal_scheduler
+  tags:
+    - freva_rest
+    - data-loader
+  vars:
+    loader_service: "scheduler"
+    ansible_become_user: "{{ data_portal_scheduler_ansible_become_user | default('root') }}"
+    force: "{{ data_portal_scheduler_force | default('false') | bool }}"
+  become: "{{ data_portal_scheduler_ansible_become_user is defined and data_portal_scheduler_ansible_become_user != '' }}"
+  become_user: "{{ data_portal_scheduler_ansible_become_user | default('root') }}"
+  roles:
+    - data_loader
+
+- name: Setup mongodb server
+  hosts: mongodb_server
+  tags:
+    - freva_rest
+    - mongodb
+  become: "{{ mongodb_server_ansible_become_user is defined and mongodb_server_ansible_become_user != '' }}"
+  become_user: "{{ mongodb_server_ansible_become_user | default('root') }}"
+  roles:
+    - mongodb_server
+
+- name: Setup search backend
+  hosts: search_server
+  tags:
+    - freva_rest
+    - search-server
+  become: "{{ search_server_ansible_become_user is defined and search_server_ansible_become_user != '' }}"
+  become_user: "{{ search_server_ansible_become_user | default('root') }}"
+  roles:
+    - search_server
+
+- name: Deploy Freva Rest API
+  hosts: freva_rest
+  tags:
+    - freva_rest
+    - freva-rest
+  become: "{{ freva_rest_ansible_become_user is defined and freva_rest_ansible_become_user != '' }}"
+  become_user: "{{ freva_rest_ansible_become_user | default('root') }}"
+  roles:
+    - freva_rest
+
+- name: Prepare Web App
+  hosts: core
+  tags:
+    - web
+    - pre-web
+  become: "{{ core_ansible_become_user is defined and core_ansible_become_user != '' }}"
+  become_user: "{{ core_ansible_become_user | default(ansible_user) }}"
+  roles:
+    - web_prep
+
+- name: Deploy Web App
+  hosts: web
+  tags:
+    - web
+  become: "{{ web_ansible_become_user is defined and web_ansible_become_user != '' }}"
+  become_user: "{{ web_ansible_become_user | default('root') }}"
+  roles:
+    - web
+
+- name: Restarting the web service
+  hosts: web
+  tags:
+    - db
+    - freva_rest
+    - freva-rest
+  tasks:
+    - name: Restarting web container via systemd
+      ansible.builtin.systemd:
+        name: "{{ web_name }}"
+        state: restarted
+        scope: "{{ 'system' if ansible_become is true else 'user' }}"
+      failed_when: false
+      when: deployment_method in ["conda", "quadlet"]

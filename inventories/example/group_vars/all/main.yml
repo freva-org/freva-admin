@@ -1,0 +1,129 @@
+---
+# Public example configuration. Keep institution-specific inventories in a
+# separate repository and pin every production image to a tested tag or digest.
+project_name: freva
+deployment_method: quadlet
+
+# Rootful Quadlet state belongs under /var. These roots can be changed in an
+# institution inventory without editing a role. Rootless deployments use the
+# matching XDG directories in the service user's home directory.
+freva_rootful_state_root: /var/lib/freva
+freva_rootful_config_root: /etc/freva
+freva_rootless_state_root: "{{ ansible_facts.env.HOME }}/.local/state/freva"
+freva_rootless_config_root: "{{ ansible_facts.env.HOME }}/.config/freva"
+
+# Service images. Update these deliberately after testing a complete release.
+db_version: "9.3.0"
+vault_version: "2505.0.3"
+redis_version: "latest"
+mongodb_server_version: "latest"
+solr_version: "latest"
+freva_rest_version: "2607.1.0"
+web_version: "2609.1.0"
+proxy_version: "latest"
+
+# Set an empty become user for a rootless user deployment. Do not use become
+# to switch to a non-root service account. Log in as that account instead.
+core_ansible_become_user: root
+db_ansible_become_user: root
+vault_ansible_become_user: root
+redis_ansible_become_user: root
+mongodb_server_ansible_become_user: root
+search_server_ansible_become_user: root
+freva_rest_ansible_become_user: root
+web_ansible_become_user: root
+
+core_admin_group: freva
+core_arch: Linux-x86_64
+core_python_version: "3.12"
+core_install_dir: /opt/freva
+core_root_dir: "/var/lib/freva/{{ project_name }}/core"
+core_base_dir_location: "/var/lib/freva/{{ project_name }}/work"
+core_scheduler_output_dir: "/var/lib/freva/{{ project_name }}/work/share/local"
+core_preview_path: "/var/lib/freva/{{ project_name }}/work/share/preview"
+core_dump: "{{ inventory_dir }}/files/evaluation_system.conf"
+core_config_toml_file: "{{ inventory_dir }}/files/freva_web.toml"
+core_keyfile: "{{ inventory_dir }}/files/tls.crt.example"
+
+db_host: freva.example.org
+db_port: 3306
+db_user: freva
+db: frevadb
+db_name: "{{ project_name }}-db"
+db_wipe: false
+db_data_path: /var/lib/freva
+
+vault_host: freva.example.org
+vault_db_host: "{{ db_host }}"
+vault_db_port: "{{ db_port }}"
+vault_db_user: "{{ db_user }}"
+vault_db: "{{ db }}"
+vault_wipe: false
+vault_data_path: /var/lib/freva
+
+redis_force: false
+redis_data_path: /var/lib/freva
+redis_username: freva-cache
+redis_information: >-
+  {{
+    {
+      'host': 'freva.example.org',
+      'port': 6379,
+      'user': redis_username,
+      'passwd': redis_password,
+      'scheduler_host': '',
+      'scheduler_port': 40000
+    } | to_json | b64encode
+  }}
+
+mongodb_server_db_user: freva-rest
+mongodb_server_wipe: false
+mongodb_server_data_path: /var/lib/freva
+
+search_server_solr_mem: 4g
+search_server_wipe: false
+search_server_data_path: /var/lib/freva
+
+freva_rest_port: 7777
+freva_rest_proxy_url: https://freva.example.org
+freva_rest_search_server_host: freva.example.org
+freva_rest_mongodb_server_host: freva.example.org
+freva_rest_db_host: freva.example.org
+freva_rest_db_user: freva-rest
+freva_rest_services: databrowser,stacapi
+freva_rest_data_loader: false
+freva_rest_oidc_url: https://login.example.org/realms/freva/.well-known/openid-configuration
+freva_rest_oidc_client: freva
+freva_rest_oidc_token_claims:
+  - preferred_username
+freva_rest_oidc_admin_claims: []
+freva_rest_oidc_trusted_issuers: []
+freva_rest_oidc_systemuser_claim: preferred_username
+freva_rest_oidc_scopes: profile email
+freva_rest_wipe: false
+freva_rest_data_path: /var/lib/freva
+
+web_project_website: https://freva.example.org
+web_allowed_hosts:
+  - freva.example.org
+web_aliases:
+  - www.freva.example.org
+web_csrf_trusted_origins:
+  - https://freva.example.org
+web_scheduler_host:
+  - localhost
+web_freva_bin: /opt/freva/bin
+web_freva_rest_host: freva.example.org:7777
+web_vault_host: freva.example.org
+web_chatbot_host: localhost
+web_chatbot_rest_api_url: https://freva.example.org
+web_main_color: Tomato
+web_reverse_proxy: true
+web_oidc_url: "{{ freva_rest_oidc_url }}"
+web_oidc_client: "{{ freva_rest_oidc_client }}"
+web_data_path: /var/lib/freva
+web_wipe: false
+
+# Files are read on the Ansible controller and passed to the reverse proxy.
+web_cert_content: "{{ lookup('file', inventory_dir + '/files/tls.crt.example') | b64encode }}"
+web_key_content: "{{ lookup('file', inventory_dir + '/files/tls.key.example') | b64encode }}"

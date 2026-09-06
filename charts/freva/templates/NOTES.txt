@@ -1,0 +1,26 @@
+The Freva release {{ .Release.Name }} was rendered for namespace {{ .Release.Namespace }}.
+
+{{- if not .Values.secrets.create }}
+Create Secret {{ include "freva.secretName" . }} before starting the workloads.
+It must contain these keys:
+
+  ADMIN_PASSWORD
+  MYSQL_ROOT_PASSWORD
+  MYSQL_PASSWORD
+  REDIS_USERNAME
+  REDIS_PASSWORD
+  MONGO_APP_USER
+  MONGO_APP_PASSWORD
+  OIDC_CLIENT_SECRET
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+Configured web hosts:
+{{- range .Values.ingress.hosts }}
+  https://{{ .host }}
+{{- end }}
+{{- else }}
+Ingress is disabled. Use port-forwarding for a temporary local connection:
+
+  kubectl -n {{ .Release.Namespace }} port-forward service/{{ include "freva.fullname" . }}-web 8080:8080
+{{- end }}

@@ -1,0 +1,22 @@
+{{- $root := . -}}
+{{- range $component, $config := dict "database" .Values.database "vault" .Values.vault "redis" .Values.redis "mongodb" .Values.mongodb "solr" .Values.solr "web" .Values.web }}
+{{- if and $config.persistence.enabled (not $config.persistence.existingClaim) }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "freva.pvcName" (dict "root" $root "component" $component "persistence" $config.persistence) }}
+  labels:
+    {{- include "freva.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: {{ $component }}
+spec:
+  accessModes:
+    {{- toYaml $config.persistence.accessModes | nindent 4 }}
+  {{- if $config.persistence.storageClass }}
+  storageClassName: {{ $config.persistence.storageClass | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $config.persistence.size }}
+{{- end }}
+{{- end }}

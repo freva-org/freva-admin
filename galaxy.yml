@@ -1,0 +1,35 @@
+---
+namespace: freva
+name: deployment
+version: 2.0.0-dev.0
+readme: README.md
+authors:
+  - Freva Team <freva@dkrz.de>
+description: Manage Freva hosts with Ansible, Podman Quadlet, and Conda.
+license:
+  - BSD-3-Clause
+tags:
+  - freva
+  - deployment
+  - podman
+  - quadlet
+  - climate
+repository: https://github.com/freva-org/freva-admin
+documentation: https://freva-deployment.readthedocs.io/
+issues: https://github.com/freva-org/freva-admin/issues
+build_ignore:
+  - .git
+  - .github
+  - .ansible
+  - .ansible-lint
+  - .readthedocs.yaml
+  - .tox
+  - .venv
+  - build
+  - charts
+  - dist
+  - docs
+  - inventories
+  - Makefile
+  - requirements-dev.txt
+  - tests

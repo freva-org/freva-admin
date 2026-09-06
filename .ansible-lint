@@ -1,0 +1,9 @@
+---
+profile: basic
+
+# The existing role interface predates collection role prefixes. Renaming all
+# variables would break institution inventories, so keep that compatibility
+# exception narrow and enforce every other rule in the basic profile.
+skip_list:
+  - var-naming[no-role-prefix]
+warn_list: []

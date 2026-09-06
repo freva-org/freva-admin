@@ -1,0 +1,6 @@
+---
+- name: Run deployment with {{ deployment_method }}
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/systemd-based.yml"
+  vars:
+    deployment_file: >-
+      {{ role_path }}/tasks/{{ deployment_method }}-deployment.yml

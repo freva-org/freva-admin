@@ -1,22 +1,24 @@
-.PHONY: develop install prepare lint docs
-all: develop
+.PHONY: ansible check compose docs helm vault
 
-develop: prepare
-	python3 -m pip uninstall -y freva-deployment
-	flit install -s --deps=develop
+check: ansible compose helm vault docs
+	git diff --check
 
-install: prepare
-	python3 -m pip uninstall -y freva-deloyment
-	flit install --deps=develop
+ansible:
+	ansible-playbook -i inventories/example/hosts.yml playbooks/deploy.yml --syntax-check
+	ansible-lint playbooks roles
+	ansible-galaxy collection build . --force --output-path build
 
-prepare:
-	python3 -m pip install flit
-	python3 src/freva_deployment/__init__.py
+compose:
+	ansible-playbook -i localhost, playbooks/compose.yml -e @examples/compose/vars.yml
+	python3 -c 'import pathlib, yaml; yaml.safe_load(pathlib.Path("build/compose.yml").read_text())'
 
-lint:
-	isort --profile black -t py311 -l 79 src
-	mypy --install-types --non-interactive
+helm:
+	helm lint charts/freva --values charts/freva/ci/test-values.yaml
+	helm template freva charts/freva --namespace freva --values charts/freva/ci/test-values.yaml > /dev/null
 
-docs: tox -e docs
+vault:
+	python3 -m py_compile vault/runserver.py
+	mypy --config-file vault/mypy.ini vault/runserver.py
 
-release: tox -e release
+docs:
+	sphinx-build -W --keep-going -b html docs docs/_build/html

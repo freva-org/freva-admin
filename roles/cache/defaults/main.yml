@@ -1,0 +1,40 @@
+---
+freva_deployment_root: "{{ role_path }}/../.."
+service: freva-cacheing
+ansible_become: "{{ redis_ansible_become_user is defined and redis_ansible_become_user != '' }}"
+systemd_unit_dir: >-
+  {{
+    '/etc/systemd/system'
+    if redis_ansible_become_user is defined and redis_ansible_become_user != ''
+    else ansible_facts.env.HOME + '/.config/systemd/user'
+  }}
+ansible_become_user: "{{ redis_ansible_become_user | default('root') }}"
+admin_user: "{{ redis_admin_user | default('') }}"
+conda_path: '{{ redis_data_path | regex_replace("^~", ansible_facts.env.HOME) }}/{{ service }}/conda'
+base_path: '{{ redis_data_path | regex_replace("^~", ansible_facts.env.HOME) }}'
+data_dir: '{{ redis_data_path | regex_replace("^~", ansible_facts.env.HOME) }}/{{ service }}'
+force: "{{ redis_force | default('false') | bool }}"
+cache_name: "freva-cacheing"
+wipe: false
+volume_names:
+  - "{{ cache_name }}_data"
+  - "{{ cache_name }}_logs"
+old_compose_dir: ""
+conda_packages:
+  - redis-server
+
+service_port: 6379
+image: "ghcr.io/freva-org/freva-redis:{{ redis_version }}"
+
+env_vars:
+  CONFIG_CONTENT: "{{ redis_information }}"
+
+workload_kind: "statefulset"
+
+secret_keys:
+  - CONFIG_CONTENT
+
+volumes:
+  cache-logs:
+    pvc: "cache-logs"
+    mountPath: "/data/logs"

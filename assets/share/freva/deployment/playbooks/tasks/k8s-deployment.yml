@@ -1,6 +1,0 @@
----
-- name: Print Instructions
-  ansible.builtin.debug:
-    msg: |
-      Kubernetes deployments should be done via the `Kubernetes` subcommand
-      of the `deploy-freva` command.

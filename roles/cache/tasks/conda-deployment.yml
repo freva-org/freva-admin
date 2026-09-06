@@ -1,0 +1,39 @@
+---
+- name: Running common conda tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/conda.yml
+
+- name: Adjust service directory ownership
+  ansible.builtin.file:
+    path: "{{ data_dir }}"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    state: directory
+    recurse: true
+
+- name: Creating environment file
+  ansible.builtin.template:
+    src: "service.env.j2"
+    dest: "{{ env_path }}"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+  vars:
+    service_name: "{{ cache_name }}"
+    env_vars:
+      CONDA_PREFIX: "{{ conda_path }}"
+      API_DATA_DIR: "{{ data_dir }}/data"
+      API_LOG_DIR: "{{ data_dir }}/logs"
+      API_CONFIG_DIR: "{{ data_dir }}/config"
+
+- name: Creating caching systemd service
+  ansible.builtin.template:
+    src: "systemd-conda.j2"
+    dest: "{{ systemd_unit_dir }}/{{ cache_name }}.service"
+    mode: "0644"
+
+- name: Enable and start the freva cache server
+  ansible.builtin.systemd:
+    name: "{{ cache_name }}"
+    state: restarted
+    enabled: true
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"

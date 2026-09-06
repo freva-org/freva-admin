@@ -15,6 +15,9 @@ v2609.0.0
   ``/etc/freva``, with XDG paths for rootless deployments.
 * Preserve operator environment overrides and Quadlet drop-ins across deploys.
 * Keep Compose bundle generation as a local development command.
+* Replace the Python deployment CLI, TUI, and custom TOML schema with native
+  Ansible inventories and playbooks.
+* Add a reusable Helm chart for Kubernetes deployments.
 
 
 

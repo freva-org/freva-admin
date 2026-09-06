@@ -1,34 +1,49 @@
-name: Trigger Release
-run-name: ${{ github.actor }} is creating a new release 🧉
+---
+name: Package deployment assets
 
-on: [workflow_dispatch]
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
 
 jobs:
-  trigger-release:
+  package:
     runs-on: ubuntu-latest
     steps:
-
-      - uses: actions/create-github-app-token@v1
-        id: app-token
-        with:
-          app-id: ${{ vars.FREVA_BOT_APP_ID }}
-          private-key: ${{ secrets.FREVA_BOT_PRIVATE_KEY }}
-
-      - name: Checkout
+      - name: Check out repository
         uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-      - name: Install packages
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.18.6
+
+      - name: Install Ansible
+        run: python -m pip install "ansible-core>=2.15,<2.20"
+
+      - name: Set package versions from the tag
         run: |
-          python3 -m pip install tox flit
+          version="${GITHUB_REF_NAME#v}"
+          test -n "$version"
+          sed -i -E "s/^version: .*/version: $version/" galaxy.yml
+          sed -i -E "s/^version: .*/version: $version/" charts/freva/Chart.yaml
 
-      - run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Package the Ansible collection and Helm chart
+        run: |
+          mkdir -p dist
+          ansible-galaxy collection build . --output-path dist
+          helm package charts/freva --destination dist
 
-      - name: Triggering release pipeline with tox
-        run: tox -e release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Attach packages to the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: dist/*

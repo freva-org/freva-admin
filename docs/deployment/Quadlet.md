@@ -1,154 +1,96 @@
-# Operating a Quadlet deployment
+# Podman Quadlet
 
-Quadlet is the production container deployment method. Ansible writes Podman
-Quadlet sources and systemd generates the corresponding services. Docker and
-Compose are not used on remote deployment hosts.
+Quadlet is the supported production container path on Linux hosts. Ansible
+writes declarative `.container` and `.network` sources, then systemd's Quadlet
+generator creates the services. Docker is not required or invoked.
 
-## Filesystem layout
+## Persistent paths
 
-Rootful deployments use fixed system paths:
+Rootful installations use:
 
-| Purpose | Path |
+| Purpose | Default |
 | --- | --- |
-| Persistent state | `/var/lib/freva/<project>/<service>` |
-| Generated environment | `/etc/freva/<project>/env/<container>.env` |
-| Local environment overrides | `/etc/freva/<project>/env/<container>.local.env` |
-| Other service configuration | `/etc/freva/<project>/<service>` |
+| Persistent service state | `/var/lib/freva/<project>/<service>` |
+| Generated configuration | `/etc/freva/<project>/<service>` |
+| Generated environment | `/etc/freva/<project>/env` |
 | Quadlet sources | `/etc/containers/systemd` |
-| Quadlet drop-ins | `/etc/containers/systemd/<container>.container.d/*.conf` |
 
-Rootless deployments use the matching XDG locations for the login user:
+The root paths are controlled by `freva_rootful_state_root` and
+`freva_rootful_config_root`. Keep persistent state out of `/tmp`, `/run`, and
+other ephemeral filesystems.
 
-| Purpose | Path |
-| --- | --- |
-| Persistent state | `~/.local/state/freva/<project>/<service>` |
-| Generated environment | `~/.config/freva/<project>/env/<container>.env` |
-| Local environment overrides | `~/.config/freva/<project>/env/<container>.local.env` |
-| Other service configuration | `~/.config/freva/<project>/<service>` |
-| Quadlet sources | `~/.config/containers/systemd` |
-| Quadlet drop-ins | `~/.config/containers/systemd/<container>.container.d/*.conf` |
-
-The TOML `data_path` values are used only by Conda deployments and as a
-source for one-time migration. They do not select Quadlet state locations.
-
-## Environment overrides
-
-Deployment rewrites `<container>.env`, which contains values derived from the
-TOML configuration. It creates `<container>.local.env` once and never
-overwrites it. Quadlet reads the local file last, so values in it take
-precedence.
-
-For example, enable the web maintenance page in a rootful deployment:
+Rootless installations use
+`~/.local/state/freva/<project>` and `~/.config/freva/<project>`. Run Ansible as
+the service user and enable lingering when services must survive logout:
 
 ```console
-sudoedit /etc/freva/<project>/env/<project>-web-proxy.local.env
-sudo systemctl restart <project>-web-proxy.service
+sudo loginctl enable-linger freva
+systemctl --user daemon-reload
+systemctl --user status freva-web.service
 ```
 
-Set the following value in the local environment file:
+## Operator drop-ins
 
-```text
-FREVA_MAINTENANCE_MODE=1
-```
+Every rendered container loads a generated environment file followed by an
+operator-owned `.local.env` file. Ansible creates the latter once with mode
+`0600` and does not overwrite it.
 
-Use `systemctl --user` and the rootless path for a rootless deployment.
-
-## Quadlet drop-ins
-
-Ansible owns the base `.container` files. Do not edit them because a later
-deployment replaces them. Quadlet supports systemd-style drop-ins and the
-deployment leaves those files untouched.
-
-The following rootful example pins a locally tested image and adjusts the
-restart delay for the database:
+Quadlet source drop-ins are also supported. For a source named
+`freva-web.container`, add a file such as:
 
 ```ini
-# /etc/containers/systemd/<project>-db.container.d/90-local.conf
-[Container]
-Image=registry.example.org/freva/mysql:tested
-Pull=never
-
+# /etc/containers/systemd/freva-web.container.d/50-local.conf
 [Service]
-RestartSec=15
+MemoryMax=8G
+
+[Container]
+Environment=HTTP_PROXY=http://proxy.example.org:3128
 ```
 
-After adding or changing a drop-in, reload systemd and restart the service:
+Apply a structural drop-in with:
 
 ```console
 sudo systemctl daemon-reload
-sudo systemctl restart <project>-db.service
+sudo systemctl restart freva-web.service
 ```
 
-Use the rootless drop-in path and `systemctl --user` for a rootless service.
-To inspect the complete generated unit, including drop-ins, run:
+Keep institution-managed drop-ins in the private inventory repository and copy
+them with a small site role or playbook. The public roles deliberately do not
+delete files in the `.container.d` and `.network.d` directories.
 
-```console
-systemctl cat <project>-db.service
-```
-
-### Moving one service to another filesystem
-
-The fixed `/var/lib/freva` layout is the default. Mounting another filesystem
-at that path, or at a service subdirectory, is the simplest override because
-the base Quadlet remains unchanged. A Quadlet drop-in can also replace the
-bind mounts. Reset the repeated `Volume` key before declaring the complete
-replacement list:
+Set `freva_rootful_state_root` in the site inventory when the whole installation
+must use a different state root. This keeps directory creation, ownership,
+mounts, and SELinux labels consistent. A service-specific drop-in can add an
+institution mount without changing the generated source:
 
 ```ini
-# /etc/containers/systemd/<project>-db.container.d/90-storage.conf
+# /etc/containers/systemd/freva-data-loader.container.d/30-archive.conf
 [Container]
-Volume=
-Volume=/srv/freva/<project>/db/data:/data/db:z
-Volume=/srv/freva/<project>/db/logs:/data/logs:z
+Volume=/srv/archive:/data/archive:ro,z
 ```
 
-Create the replacement directories with the service ownership before
-restarting. On an SELinux host, make the label persistent:
-
-```console
-sudo semanage fcontext -a -t container_file_t '/srv/freva/<project>/db(/.*)?'
-sudo restorecon -Rv /srv/freva/<project>/db
-```
-
-Run the Podman generator in diagnostic mode before restarting if the host has
-an older Podman release:
-
-```console
-/usr/lib/systemd/system-generators/podman-system-generator --dryrun
-```
+Create and label `/srv/archive` in the site playbook before reloading systemd.
+The additional mount does not replace the service's generated state mounts.
 
 ## SELinux
 
-For rootful deployments, Ansible registers `container_file_t` for the project
-state and configuration roots and applies it with `restorecon`. The host must
-provide `semanage` when SELinux is enforcing or permissive. On common Fedora
-and RHEL systems it is supplied by `policycoreutils-python-utils`.
+For a rootful installation, the roles register the configured state and config
+roots as `container_file_t` using `semanage fcontext`, then run `restorecon`.
+This makes the label persistent across relabel operations. The target host must
+provide `semanage`, commonly through `policycoreutils-python-utils` or the
+distribution equivalent.
 
-Bind mounts also use the Podman `:z` option. This is required for rootless
-paths and provides a shared label where the web application and proxy use the
-same state directory.
+Volume specifications still use `:z` or `:Z` where container sharing semantics
+require them. Inspect local policy before adding site storage outside the Freva
+roots.
 
-## Migration and rollback
-
-When a fixed state directory is empty, deployment looks for the previous
-`data_path` directory and the previous Podman named volume. It copies the first
-available source into the fixed location and writes a migration marker. It
-does not delete the old directory or volume, so it remains available for
-rollback.
-
-Docker-managed volumes are outside Podman's storage. Back them up with the old
-release and restore them into the appropriate directory under
-`/var/lib/freva/<project>` before starting the new service.
-
-## Local development Compose bundle
-
-The `compose` subcommand remains available for development servers that watch
-release-candidate images. It renders one local bundle and never installs a
-remote runtime or systemd service:
+## Diagnostics
 
 ```console
-deploy-freva compose -c freva.toml -o ./generated
-podman compose -f ./generated/<project>-compose.yml up -d
+podman info --format '{{.Host.CgroupsVersion}}'
+/usr/lib/systemd/system-generators/podman-system-generator --dryrun
+systemctl status freva-web.service
+journalctl -u freva-web.service
 ```
 
-Use Quadlet for deployed production services.
+Use `--user` for generator and systemd commands in a rootless deployment.

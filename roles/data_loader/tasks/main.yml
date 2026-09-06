@@ -1,0 +1,5 @@
+---
+- name: Run the systemd data-loader deployment
+  ansible.builtin.include_tasks: "{{ role_path }}/tasks/systemd-based.yml"
+  when:
+    - not data_portal_scheduler_skip | default(false) | bool

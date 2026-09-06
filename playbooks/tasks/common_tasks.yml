@@ -1,0 +1,102 @@
+---
+- name: Locate required binaries
+  ansible.builtin.include_tasks: >-
+    {{ freva_deployment_root }}/playbooks/tasks/paths.yml
+
+- name: Select the service administrator
+  ansible.builtin.set_fact:
+    admin_user: >-
+      {{
+        admin_user | trim
+        if (admin_user is defined
+            and admin_user | length > 0
+            and ansible_become | default(false)
+            and ansible_become_user | default('root') == 'root')
+        else ansible_user | trim
+      }}
+
+- name: Read the administrator UID
+  ansible.builtin.command:
+    argv:
+      - id
+      - -u
+      - "{{ admin_user }}"
+  register: uid_result
+  changed_when: false
+
+- name: Read the administrator GID
+  ansible.builtin.command:
+    argv:
+      - id
+      - -g
+      - "{{ admin_user }}"
+  register: gid_result
+  changed_when: false
+
+- name: Read the administrator group
+  ansible.builtin.command:
+    argv:
+      - id
+      - -gn
+      - "{{ admin_user }}"
+  register: admin_group_result
+  changed_when: false
+
+- name: Set facts
+  ansible.builtin.set_fact:
+    uid: "{{ uid_result.stdout }}"
+    gid: "{{ gid_result.stdout }}"
+    admin_group: "{{ admin_group_result.stdout }}"
+    env_dir: "{{ base_path }}/{{ project_name }}"
+    env_path: "{{ base_path }}/{{ project_name }}/{{ service }}.env"
+
+- name: Select fixed paths for Quadlet
+  ansible.builtin.include_tasks: >-
+    {{ freva_deployment_root }}/playbooks/tasks/set_deployment_paths.yml
+  when: deployment_method == "quadlet"
+
+- name: Create configurable Conda paths
+  ansible.builtin.file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    mode: "0750"
+  loop:
+    - "{{ base_path }}"
+    - "{{ base_path }}/{{ project_name }}"
+    - "{{ env_dir }}"
+  when: deployment_method == "conda"
+
+- name: Ensure the user systemd directory exists
+  ansible.builtin.file:
+    path: "{{ systemd_unit_dir }}"
+    state: directory
+    mode: "0755"
+  when: systemd_unit_dir is defined
+
+- name: Remove the old Conda Compose directory
+  ansible.builtin.file:
+    path: "{{ old_compose_dir }}"
+    state: absent
+  when:
+    - deployment_method == "conda"
+    - old_compose_dir | default('') | length > 0
+
+- name: Inspect the systemctl path
+  ansible.builtin.stat:
+    path: /usr/bin/systemctl
+  register: systemctl
+
+- name: Inspect the anacron path
+  ansible.builtin.stat:
+    path: /etc/cron.daily
+  register: cron
+
+- name: Remove the old service-config directory
+  ansible.builtin.file:
+    state: absent
+    path: "{{ base_path }}/freva-service-config"
+  when:
+    - deployment_method == "conda"
+    - base_path | default('') | length > 0

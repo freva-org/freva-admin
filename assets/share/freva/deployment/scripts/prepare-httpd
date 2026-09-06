@@ -1,9 +1,0 @@
-#!/bin/bash
-if [ "$GID" ];then
-    groupmod -g $GID www-data
-    usermod -g $GID www-data
-fi
-if [ "$UID" ];then
-    usermod -u $UID www-data
-fi
-httpd-foreground

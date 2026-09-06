@@ -1,0 +1,29 @@
+---
+- name: Running common tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/common_tasks.yml
+
+- name: Decode data-loader cache information
+  ansible.builtin.set_fact:
+    cache_information: "{{ redis_information | b64decode | from_json }}"
+    cache_information_enc: "{{ redis_information }}"
+  when: freva_rest_data_loader
+  no_log: true
+
+- name: Stop the Freva REST service
+  ansible.builtin.systemd:
+    name: "{{ freva_rest_name }}"
+    state: stopped
+    enabled: false
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+  failed_when: false
+
+- name: Removing old services files
+  ansible.builtin.file:
+    state: absent
+    force: true
+    path: "{{ systemd_unit_dir }}/{{ freva_rest_name }}.service"
+
+- name: Run Freva REST deployment tasks
+  ansible.builtin.include_tasks:
+    file: "{{ deployment_file | trim }}"

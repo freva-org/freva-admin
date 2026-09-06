@@ -1,0 +1,11 @@
+institution_logo = ""
+main_color = "Tomato"
+border_color = "#6c2e1f"
+hover_color = "#d0513a"
+homepage_text = "Freva provides efficient access to climate data."
+homepage_heading = "Freva"
+about_us_text = ""
+contacts = ["freva@example.org"]
+institution_name = "Example institution"
+imprint = []
+menu_entries = []

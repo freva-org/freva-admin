@@ -1,0 +1,166 @@
+---
+- name: Getting status of the freva installation
+  ansible.builtin.stat:
+    path: "{{ core_install_dir | regex_replace('^~', ansible_facts.env.HOME) }}/bin/freva"
+  register: freva_path
+
+- name: Get freva conf path
+  ansible.builtin.stat:
+    path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
+  register: eval_path
+
+- name: Creating temp. dir
+  ansible.builtin.tempfile:
+    state: directory
+    prefix: evaluation_system
+  register: tempdir
+
+- name: Setting up core lib
+  block:
+    - name: Downloading micromamba
+      ansible.builtin.include_tasks: >-
+        {{ freva_deployment_root }}/playbooks/tasks/install_micromamba.yml
+      vars:
+        micromamba_destination: "{{ tempdir.path }}"
+    - name: Overriding install fact
+      ansible.builtin.set_fact:
+        conda_cmd: "create"
+      when: not freva_path.stat.exists
+
+    - name: Install Freva dependencies
+      ansible.builtin.shell: >
+        {{ tempdir.path }}/bin/micromamba {{ conda_cmd }}
+        -p {{ core_install_dir }} -c conda-forge --override-channels
+        -y {{ conda_pkgs | join(' ') }}
+    - name: Creating conda dir
+      ansible.builtin.file:
+        path: "{{ core_install_dir }}"
+        mode: "0755"
+        group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit }}"
+        recurse: true
+      when: not freva_path.stat.exists
+
+    - name: Preparing creation of directory structure
+      ansible.builtin.file:
+        path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}"
+        state: directory
+
+    - name: Creating directory structure
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "{{ '2775' if core_admin_group is defined and core_admin_group != '' else '2755' }}"
+        group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit }}"
+      loop:
+        - "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/"
+        - "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/"
+
+    - name: Ensure core directories exist only if missing
+      block:
+        - name: Stat core directories
+          ansible.builtin.stat:
+            path: "{{ item | regex_replace('^~', ansible_facts.env.HOME) }}"
+          loop:
+            - "{{ core_base_dir_location }}"
+            - "{{ core_scheduler_output_dir }}"
+            - "{{ core_preview_path }}"
+          register: core_dir_stats
+
+        - name: Create core directories if they do not exist
+          ansible.builtin.file:
+            path: "{{ item.item | regex_replace('^~', ansible_facts.env.HOME) }}"
+            state: directory
+            mode: "3777"
+          loop: "{{ core_dir_stats.results }}"
+          when: not item.stat.exists
+
+    - name: Cloning the evluation_system reposiotry
+      ansible.builtin.git:
+        repo: "{{ core_git_url }}"
+        dest: "{{ tempdir.path }}/freva"
+        executable: "{{ core_install_dir }}/bin/git"
+
+    - name: Inserting evaluation_system.config file to temp location
+      ansible.builtin.copy:
+        src: "{{ core_dump }}"
+        dest: "{{ tempdir.path }}/freva/evaluation_system.conf"
+
+    - name: Inserting evaluation_system.conf file
+      ansible.builtin.copy:
+        src: "{{ tempdir.path }}/freva/evaluation_system.conf"
+        dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
+        remote_src: true
+        group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit }}"
+        mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
+      when: not eval_path.stat.exists
+
+    - name: Inserting animator plugin
+      when: debug | default(false)
+
+      block:
+        - name: Getting animator plugin
+          ansible.builtin.git:
+            repo: "https://gitlab.dkrz.de/freva/plugins4freva/animator.git"
+            dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/animator"
+            recursive: true
+            executable: "{{ core_install_dir }}/bin/git"
+
+        - name: Uncomment animator plugin block lines
+          ansible.builtin.replace:
+            path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
+            regexp: "{{ item.regexp }}"
+            replace: "{{ item.replace }}"
+          loop:
+            - { regexp: "^#(\\[plugin:animator\\])", replace: "\\1" }
+            - { regexp: "^#(python_path=\\$\\{evaluation_system:root_dir\\}/plugins/animator)", replace: "\\1" }
+            - { regexp: "^#(module=animator)", replace: "\\1" }
+
+        - name: Register plugin core
+          ansible.builtin.stat:
+            path: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/animator/plugin_env"
+          register: plugin_env
+
+        - name: Installing the animator plugin
+          ansible.builtin.command:
+            cmd: make all
+            chdir: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/plugins/animator"
+          when: not plugin_env.stat.exists
+          environment:
+            PATH: "{{ core_install_dir }}/bin:{{ ansible_facts.env.PATH }}"
+
+    - name: Installing additional python packages
+      ansible.builtin.command:
+        cmd: "{{ conda_bin }}/python -m pip install -U {{ item }}"
+        creates: "{{ conda_bin }}/{{ item }}"
+      with_items:
+        - "jupyter-kernel-install"
+        - "metadata-inspector"
+        - "freva-client"
+
+    - name: Installing metadata-crawler
+      ansible.builtin.get_url:
+        url: >-
+          https://freva.gitlab-pages.dkrz.de/metadata-crawler-source/binaries/data-crawler
+        dest: "{{ conda_sbin }}/data-crawler"
+        mode: "0755"
+    - name: Configuring evaluation_system
+      ansible.builtin.command:
+        cmd: "$PYTHON3 deploy.py {{ core_install_dir | regex_replace('^~', ansible_facts.env.HOME) }} -s --no-conda"
+        chdir: "{{ tempdir.path }}/freva"
+      environment:
+        PYTHON3: "{{ ansible_python_interpreter or 'python' }}"
+        EVALUATION_SYSTEM_CONFIG_FILE: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/evaluation_system.conf"
+        PYTHON_VERSION: "{{ core_python_version }}"
+
+    - name: Copying Public key file
+      ansible.builtin.copy:
+        src: "{{ core_keyfile }}"
+        dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/{{ project_name }}.crt"
+        mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
+        group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit }}"
+
+  always:
+    - name: Deleting temporary files
+      ansible.builtin.file:
+        state: absent
+        path: "{{ tempdir.path }}"

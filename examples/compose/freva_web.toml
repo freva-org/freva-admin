@@ -1,0 +1,11 @@
+institution_logo = ""
+main_color = "Tomato"
+border_color = "#6c2e1f"
+hover_color = "#d0513a"
+homepage_text = "Local Freva development deployment"
+homepage_heading = "Freva development"
+about_us_text = ""
+contacts = ["freva@example.org"]
+institution_name = "Development"
+imprint = []
+menu_entries = []

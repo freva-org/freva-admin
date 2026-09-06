@@ -1,0 +1,37 @@
+---
+- name: Find bash binary path
+  ansible.builtin.command: which bash
+  register: bash_env_cmd
+  changed_when: false
+  failed_when: bash_env_cmd.rc != 0
+
+- name: Check path to python3
+  ansible.builtin.command: which python3
+  register: python3_env_cmd
+  changed_when: false
+  failed_when: false
+
+- name: Check path to python
+  ansible.builtin.command: which python
+  register: python_env_cmd
+  changed_when: false
+  failed_when: false
+
+- name: Fail if python is not available
+  ansible.builtin.fail:
+    msg: "No python env was found on server."
+  when: not (python3_env_cmd.rc == 0 or python_env_cmd.rc == 0)
+
+- name: Set command facts
+  ansible.builtin.set_fact:
+    python_bin: >-
+      {{
+        (ansible_python_interpreter | trim)
+        if (ansible_python_interpreter is defined)
+        else (
+          (python3_env_cmd.stdout | trim)
+          if python3_env_cmd.rc == 0
+          else (python_env_cmd.stdout | trim)
+        )
+      }}
+    bash_cmd: "{{ bash_env_cmd.stdout | trim }}"

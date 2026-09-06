@@ -1,0 +1,128 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "freva.fullname" . }}-rest
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rest
+spec:
+  selector:
+    {{- include "freva.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: rest
+  ports:
+    - name: http
+      port: {{ .Values.rest.port }}
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "freva.fullname" . }}-rest
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: rest
+spec:
+  replicas: {{ .Values.rest.replicas }}
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: rest
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: rest
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: rest
+          image: {{ include "freva.image" .Values.images.rest }}
+          imagePullPolicy: {{ .Values.images.rest.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.rest.port }}
+          env:
+            - name: API_SOLR_CORE
+              value: {{ .Values.solr.core | quote }}
+            - name: API_PORT
+              value: {{ .Values.rest.port | quote }}
+            - name: API_PROXY
+              value: {{ .Values.rest.proxyUrl | quote }}
+            - name: API_OIDC_CLIENT_ID
+              value: {{ .Values.rest.oidc.clientId | quote }}
+            - name: API_OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: OIDC_CLIENT_SECRET
+            - name: API_OIDC_DISCOVERY_URL
+              value: {{ .Values.rest.oidc.discoveryUrl | quote }}
+            - name: API_OIDC_TOKEN_CLAIMS
+              value: {{ join "," .Values.rest.oidc.tokenClaims | quote }}
+            - name: API_ADMIN_CLAIMS
+              value: {{ join "," .Values.rest.oidc.adminClaims | quote }}
+            - name: API_OIDC_TRUSTED_ISSUERS
+              value: {{ join "," .Values.rest.oidc.trustedIssuers | quote }}
+            - name: API_OIDC_SYSTEMUSER_CLAIM
+              value: {{ .Values.rest.oidc.systemUserClaim | quote }}
+            - name: API_OIDC_SCOPES
+              value: {{ .Values.rest.oidc.scopes | quote }}
+            - name: API_REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_USERNAME
+            - name: API_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_PASSWORD
+            - name: API_REDIS_HOST
+              value: redis://{{ include "freva.fullname" . }}-redis:{{ .Values.redis.port }}
+            - name: API_SOLR_HOST
+              value: {{ include "freva.fullname" . }}-solr:{{ .Values.solr.port }}
+            - name: API_MONGO_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MONGO_APP_USER
+            - name: API_MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: MONGO_APP_PASSWORD
+            - name: API_MONGO_HOST
+              value: {{ include "freva.fullname" . }}-mongodb:{{ .Values.mongodb.port }}
+            - name: API_MONGO_DB
+              value: {{ .Values.mongodb.database | quote }}
+            - name: API_SERVICES
+              value: {{ join "," .Values.rest.services | quote }}
+            - name: API_LOGDIR
+              value: /tmp/logs
+            - name: COLUMNS
+              value: "140"
+            {{- with .Values.rest.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          readinessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.rest.resources | nindent 12 }}
+          volumeMounts:
+            - name: logs
+              mountPath: /tmp/logs
+            {{- with .Values.rest.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: logs
+          emptyDir: {}
+        {{- with .Values.rest.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}

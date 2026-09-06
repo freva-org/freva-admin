@@ -1,0 +1,38 @@
+---
+- name: Render the local Freva Compose bundle
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    compose_output: "{{ playbook_dir }}/../build/compose.yml"
+  tasks:
+    - name: Validate the development Compose configuration
+      ansible.builtin.assert:
+        that:
+          - compose is defined
+          - compose.project_name | length > 0
+          - compose.images | length >= 9
+          - compose.secrets.admin_password | length > 0
+          - compose.secrets.database_password | length > 0
+          - compose.secrets.redis_password | length > 0
+          - compose.secrets.mongodb_password | length > 0
+        fail_msg: >-
+          Pass the development settings with
+          -e @examples/compose/vars.yml.
+
+    - name: Create the Compose output directory
+      ansible.builtin.file:
+        path: "{{ compose_output | dirname }}"
+        state: directory
+        mode: "0750"
+
+    - name: Render the development Compose bundle
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/service-compose.yml.j2"
+        dest: "{{ compose_output }}"
+        mode: "0600"
+      no_log: true
+
+    - name: Report the Compose output path
+      ansible.builtin.debug:
+        msg: "Rendered {{ compose_output }}"

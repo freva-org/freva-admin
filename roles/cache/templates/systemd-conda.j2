@@ -1,0 +1,30 @@
+[Unit]
+Description=Freva cache service
+After=network.target
+{% if not ansible_become %}
+ConditionHost={{ ansible_hostname }}
+{% endif %}
+
+[Service]
+Type=simple
+PermissionsStartOnly=true
+NoNewPrivileges=true
+KillSignal=SIGTERM
+ExecStart={{ bash_cmd }} -c "{{ conda_path }}/bin/start-freva-service -s redis"
+{% if (ansible_become == true and ansible_become_user == 'root') or ansible_user == 'root' %}
+ProtectHome=true
+ProtectSystem=full
+User={{ uid }}
+Group={{ gid }}
+{% endif %}
+ReadWritePaths={{ conda_path }}
+StandardOutput=journal
+StandardError=journal
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=5
+EnvironmentFile=-{{ env_path }}
+UMask=007
+
+[Install]
+WantedBy=multi-user.target

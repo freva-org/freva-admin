@@ -1,0 +1,22 @@
+---
+- name: Running common tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/common_tasks.yml
+
+- name: Stopping the services
+  ansible.builtin.systemd:
+    name: "{{ search_server_name }}"
+    state: stopped
+    enabled: false
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+  failed_when: false
+
+- name: Removing old services files
+  ansible.builtin.file:
+    state: absent
+    force: true
+    path: "{{ systemd_unit_dir }}/{{ search_server_name }}.service"
+
+- name: Run search service deployment tasks
+  ansible.builtin.include_tasks:
+    file: "{{ deployment_file | trim }}"

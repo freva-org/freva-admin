@@ -1,0 +1,13 @@
+{{- if and .Values.web.enabled (not .Values.web.config.existingConfigMap) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "freva.webConfigMapName" . }}
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+data:
+  evaluation_system.conf: |-
+    {{- tpl .Values.web.config.evaluationSystem . | nindent 4 }}
+  freva_web.toml: |-
+    {{- tpl .Values.web.config.frevaWeb . | nindent 4 }}
+{{- end }}

@@ -1,0 +1,64 @@
+{{- if .Values.dataLoader.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "freva.fullname" . }}-data-loader
+  labels:
+    {{- include "freva.labels" . | nindent 4 }}
+    app.kubernetes.io/component: data-loader
+spec:
+  replicas: {{ .Values.dataLoader.replicas }}
+  selector:
+    matchLabels:
+      {{- include "freva.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: data-loader
+  template:
+    metadata:
+      labels:
+        {{- include "freva.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: data-loader
+    spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- include "freva.podSettings" . | nindent 6 }}
+      containers:
+        - name: data-loader
+          image: {{ include "freva.image" .Values.images.dataLoader }}
+          imagePullPolicy: {{ .Values.images.dataLoader.pullPolicy }}
+          {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          command: ["data-loader-worker"]
+          env:
+            - name: API_REDIS_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_USERNAME
+            - name: API_REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "freva.secretName" . }}
+                  key: REDIS_PASSWORD
+            - name: API_REDIS_HOST
+              value: redis://{{ include "freva.fullname" . }}-redis:{{ .Values.redis.port }}
+            - name: API_LOGDIR
+              value: /tmp/logs
+            - name: API_LOGLEVEL
+              value: {{ .Values.dataLoader.logLevel | quote }}
+            {{- with .Values.dataLoader.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          resources:
+            {{- toYaml .Values.dataLoader.resources | nindent 12 }}
+          volumeMounts:
+            - name: logs
+              mountPath: /tmp/logs
+            {{- with .Values.dataLoader.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+      volumes:
+        - name: logs
+          emptyDir: {}
+        {{- with .Values.dataLoader.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+{{- end }}

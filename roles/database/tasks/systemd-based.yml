@@ -1,0 +1,16 @@
+---
+- name: Running common tasks
+  ansible.builtin.include_tasks: >-
+    {{ role_path }}/../../playbooks/tasks/common_tasks.yml
+
+- name: Stopping the services
+  ansible.builtin.systemd:
+    name: "{{ db_name }}"
+    state: stopped
+    enabled: false
+    scope: "{{ 'system' if ansible_become is true else 'user' }}"
+  failed_when: false
+
+- name: Run database deployment tasks
+  ansible.builtin.include_tasks:
+    file: "{{ deployment_file | trim }}"

@@ -1,0 +1,53 @@
+---
+- name: Select the micromamba platform
+  ansible.builtin.set_fact:
+    micromamba_platform: >-
+      {{
+        {
+          'amd64': '64',
+          'x86_64': '64',
+          'aarch64': 'aarch64',
+          'ppc64le': 'ppc64le'
+        }.get(ansible_facts.architecture | lower, '')
+      }}
+
+- name: Require a supported micromamba platform
+  ansible.builtin.assert:
+    that:
+      - micromamba_platform | length > 0
+    fail_msg: >-
+      No micromamba download is configured for
+      {{ ansible_facts.system }} {{ ansible_facts.architecture }}.
+
+- name: Create the micromamba binary directory
+  ansible.builtin.file:
+    path: "{{ micromamba_destination }}/bin"
+    state: directory
+    mode: "0755"
+
+- name: Download the micromamba archive
+  ansible.builtin.get_url:
+    url: >-
+      {{
+        freva_micromamba_url
+        | default(
+            'https://micro.mamba.pm/api/micromamba/linux-'
+            + micromamba_platform
+            + '/latest'
+          )
+      }}
+    dest: "{{ micromamba_destination }}/micromamba.tar.bz2"
+    mode: "0600"
+
+- name: Extract the micromamba executable
+  ansible.builtin.unarchive:
+    src: "{{ micromamba_destination }}/micromamba.tar.bz2"
+    dest: "{{ micromamba_destination }}"
+    include:
+      - bin/micromamba
+    remote_src: true
+
+- name: Remove the micromamba archive
+  ansible.builtin.file:
+    path: "{{ micromamba_destination }}/micromamba.tar.bz2"
+    state: absent
