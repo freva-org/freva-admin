@@ -1,0 +1,11 @@
+[Unit]
+Description=Build the Kerberos-enabled Semaphore UI image
+
+[Build]
+ImageTag=localhost/semaphore-kerberos:v2.18.30
+File=/etc/semaphore/Containerfile
+SetWorkingDirectory=/etc/semaphore
+Pull=newer
+
+[Service]
+TimeoutStartSec=900

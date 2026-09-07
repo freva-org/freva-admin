@@ -1,0 +1,9 @@
+Host *
+    StrictHostKeyChecking yes
+    UserKnownHostsFile /home/semaphore/.ssh/known_hosts
+
+# Replace this pattern with the FQDN pattern used by the service VMs.
+Host *.vm.example.org
+    GSSAPIAuthentication yes
+    GSSAPIDelegateCredentials no
+    PreferredAuthentications gssapi-with-mic

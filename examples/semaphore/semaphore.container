@@ -1,0 +1,28 @@
+[Unit]
+Description=Semaphore UI
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=semaphore.build
+ContainerName=semaphore
+EnvironmentFile=/etc/semaphore/semaphore.env
+Volume=/var/lib/semaphore:/var/lib/semaphore:Z
+Volume=/etc/semaphore/secrets:/run/secrets:ro,Z
+PublishPort=127.0.0.1:3000:3000
+User=1001
+Group=0
+NoNewPrivileges=true
+DropCapability=all
+LogDriver=journald
+
+[Service]
+ExecStartPre=/usr/bin/install -d -o 1001 -g 0 -m 0750 /var/lib/semaphore
+ExecStartPre=/usr/bin/test -s /etc/semaphore/secrets/admin-password
+ExecStartPre=/usr/bin/test -s /etc/semaphore/secrets/access-key-encryption
+Restart=always
+RestartSec=10
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

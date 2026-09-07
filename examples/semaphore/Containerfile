@@ -1,0 +1,11 @@
+ARG SEMAPHORE_IMAGE=docker.io/semaphoreui/semaphore:v2.18.30
+FROM ${SEMAPHORE_IMAGE}
+
+USER root
+
+# The upstream image contains the default Alpine OpenSSH client. Replace it
+# with the GSSAPI-enabled build and add the Kerberos user tools.
+RUN apk del openssh-client-default \
+    && apk add --no-cache krb5 openssh-client-krb5
+
+USER 1001
