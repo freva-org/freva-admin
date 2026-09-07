@@ -50,7 +50,6 @@
 - name: Deploy Vault
   hosts: vault
   tags:
-    - db
     - vault
   become: "{{ vault_ansible_become_user is defined and vault_ansible_become_user != '' }}"
   become_user: "{{ vault_ansible_become_user | default('root') }}"
@@ -60,6 +59,7 @@
 - name: Setup cache server
   hosts: redis
   tags:
+    - freva-rest-stack
     - freva_rest
     - cache
   become: "{{ redis_ansible_become_user is defined and redis_ansible_become_user != '' }}"
@@ -70,6 +70,7 @@
 - name: Setup data-loader scheduler
   hosts: data_portal_scheduler
   tags:
+    - freva-rest-stack
     - freva_rest
     - data-loader
   vars:
@@ -84,6 +85,7 @@
 - name: Setup mongodb server
   hosts: mongodb_server
   tags:
+    - freva-rest-stack
     - freva_rest
     - mongodb
   become: "{{ mongodb_server_ansible_become_user is defined and mongodb_server_ansible_become_user != '' }}"
@@ -94,6 +96,7 @@
 - name: Setup search backend
   hosts: search_server
   tags:
+    - freva-rest-stack
     - freva_rest
     - search-server
   become: "{{ search_server_ansible_become_user is defined and search_server_ansible_become_user != '' }}"
@@ -104,6 +107,7 @@
 - name: Deploy Freva Rest API
   hosts: freva_rest
   tags:
+    - freva-rest-stack
     - freva_rest
     - freva-rest
   become: "{{ freva_rest_ansible_become_user is defined and freva_rest_ansible_become_user != '' }}"
@@ -129,18 +133,3 @@
   become_user: "{{ web_ansible_become_user | default('root') }}"
   roles:
     - web
-
-- name: Restarting the web service
-  hosts: web
-  tags:
-    - db
-    - freva_rest
-    - freva-rest
-  tasks:
-    - name: Restarting web container via systemd
-      ansible.builtin.systemd:
-        name: "{{ web_name }}"
-        state: restarted
-        scope: "{{ 'system' if ansible_become is true else 'user' }}"
-      failed_when: false
-      when: deployment_method in ["conda", "quadlet"]

@@ -62,3 +62,34 @@ Read-only host checks still run during a dry run. This includes locating
 Podman, checking its cgroup version, resolving user IDs, and detecting SELinux.
 Service restarts and post-start health checks are skipped because their units
 and containers do not exist until the reported changes are applied.
+
+## Deploy selected components
+
+Omit `--tags` for the initial installation or whenever the complete deployment
+should be reconciled. For an update to selected components, pass one or more
+comma-separated tags:
+
+```console
+ansible-playbook -i inventories/my-site/hosts.yml \
+  playbooks/deploy.yml --ask-vault-pass --tags web
+ansible-playbook -i inventories/my-site/hosts.yml \
+  playbooks/deploy.yml --ask-vault-pass --tags cache,mongodb,freva-rest
+```
+
+| Tag | Selected component |
+| --- | --- |
+| `core` | Freva core library |
+| `db` | MySQL database |
+| `vault` | Vault service |
+| `cache` | Redis cache |
+| `data-loader` | Optional data-loader scheduler |
+| `mongodb` | MongoDB service |
+| `search-server` | Solr search service |
+| `freva-rest` | Freva REST API only |
+| `freva-rest-stack` | Cache, data loader, MongoDB, Solr, and REST API |
+| `pre-web` | Web configuration preparation only |
+| `web` | Web preparation and web service |
+
+The deprecated `freva_rest` tag remains an alias for `freva-rest-stack` so
+existing institution automation continues to work. Inventory validation uses
+the special `always` tag and therefore runs for every selection.
