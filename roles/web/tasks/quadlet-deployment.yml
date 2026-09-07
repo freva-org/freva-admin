@@ -23,8 +23,8 @@
     web_scheduler_output_path: >-
       {{ core_scheduler_output_dir
          | regex_replace('^~', ansible_facts.env.HOME) }}
-    web_app_ports: >-
-      {{ [] if web_reverse_proxy | bool else ['8000:8000'] }}
+    web_app_ports:
+      - "{{ web_bind_address }}:{{ web_port }}:8000"
 
 - name: Define the web application Quadlets
   ansible.builtin.set_fact:
@@ -83,50 +83,6 @@
           - "{{ service_state_dir }}/logs:/data/logs:z"
   no_log: true
 
-- name: Add the web reverse proxy Quadlet
-  ansible.builtin.set_fact:
-    web_quadlet_containers: >-
-      {{ web_quadlet_containers + [{
-        'name': web_proxy_name,
-        'description': 'Freva nginx reverse proxy',
-        'image': 'ghcr.io/freva-org/freva-nginx:' + (proxy_version or 'latest'),
-        'user': '0:0',
-        'requires': [web_name],
-        'environment': {
-          'SERVER_ROOT': '/srv/static',
-          'VAULT_HOST': web_vault_host | replace('http://', '') + ':5002',
-          'FREVA_REST_HOST': web_freva_rest_host | replace('http://', ''),
-          'EVALUATION_SYSTEM_CONFIG_FILE': core_root_dir | regex_replace('^~', ansible_facts.env.HOME) + '/freva/evaluation_system.conf',
-          'CHATBOT_HOST': web_chatbot_host | replace('http://', ''),
-          'WEB_SERVER_NAME': web_name,
-          'WEB_SERVER_PORT': '8000',
-          'WEB_HOST_ALIASES': web_aliases | join(','),
-          'SERVER_CERT': web_cert_content,
-          'SERVER_KEY': web_key_content,
-          'REST_PROXY_HOST_NAME': web_chatbot_rest_api_url,
-          'FILL_COLOR': web_main_color,
-          'PROXY_DNS': web_nameservers | default('8.8.8.8'),
-          'PROXY_USER': 'nobody' if quadlet_rootful else 'root',
-          'PROJECT_NAME': project_name,
-          'PORT_HTTPSD': web_port_httpsd,
-          'WEB_HOST': web_project_website | replace('http://', '') | replace('https://', '') | replace('www.', '')
-        },
-        'local_environment': {
-          'FREVA_MAINTENANCE_MODE': '0'
-        },
-        'network': web_name,
-        'network_aliases': [web_proxy_name],
-        'dns': (web_nameservers | default('8.8.8.8')).split(),
-        'ports': [web_port_httpd + ':' + web_port_httpd, web_port_httpsd + ':' + web_port_httpsd],
-        'volumes': [
-          service_state_dir + '/static:/srv/static:z',
-          service_state_dir + '/logs:/data/logs:z',
-          (core_preview_path | regex_replace('^~', ansible_facts.env.HOME)) + ':/srv/static/preview:ro'
-        ]
-      }] }}
-  when: web_reverse_proxy | bool
-  no_log: true
-
 - name: Deploy the web Quadlets
   ansible.builtin.include_tasks: >-
     {{ role_path }}/../../playbooks/tasks/deploy_quadlets.yml
@@ -134,8 +90,8 @@
     quadlet_state_directories: "{{ web_quadlet_state_directories }}"
     quadlet_networks: "{{ web_quadlet_networks }}"
     quadlet_containers: "{{ web_quadlet_containers }}"
-    quadlet_obsolete_container_names: >-
-      {{ [] if web_reverse_proxy | bool else [web_proxy_name] }}
+    quadlet_obsolete_container_names:
+      - "{{ web_obsolete_proxy_name }}"
 
 - name: Wait for web startup
   ansible.builtin.pause:

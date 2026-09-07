@@ -1,28 +1,15 @@
 # Kubernetes with Helm
 
 The Helm chart under `charts/freva` replaces the generated Kubernetes Jinja
-manifests. It contains reusable workloads, services, PVC declarations, and an
-optional ingress. It does not contain a cluster credential or institution
-secret.
+manifests. It contains reusable workloads, Services, and PVC declarations. It
+does not contain an Ingress, Gateway, TLS material, cluster credential, or
+institution secret.
 
 Create a site values file in the institution repository:
 
 ```yaml
 secrets:
   existingSecret: freva-production-secrets
-
-ingress:
-  enabled: true
-  className: nginx
-  hosts:
-    - host: freva.example.org
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: freva-production-tls
-      hosts:
-        - freva.example.org
 
 dataLoader:
   extraVolumes:
@@ -49,8 +36,10 @@ helm upgrade --install freva charts/freva \
 ```
 
 NCAR can migrate the current generated manifests by moving its storage,
-ingress, resource, and security settings into an NCAR-owned values file. The
-generic chart should remain here so fixes are shared with other installations.
+resource, and security settings into an NCAR-owned values file. Its Ingress or
+Gateway, certificate management, and any static-file proxy should live in the
+NCAR repository. The generic chart should remain here so fixes are shared with
+other installations.
 
 Production deployments should set `secrets.existingSecret`. Chart-managed
 secret values are intended only for disposable test clusters.

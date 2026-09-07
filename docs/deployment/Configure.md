@@ -34,7 +34,7 @@ belong to the site configuration and should be rotated explicitly.
 | `search_server` | Solr index service |
 | `freva_rest` | REST API |
 | `data_portal_scheduler` | Optional data-loader scheduler |
-| `web` | Django web service and reverse proxy |
+| `web` | Django web service and its Redis cache |
 
 Remove a host from a group to omit that component. Also adjust dependent host
 names and feature flags, such as `freva_rest_data_loader`.
@@ -49,5 +49,6 @@ ansible-playbook -i inventories/my-site/hosts.yml \
   playbooks/deploy.yml --ask-vault-pass --check --diff
 ```
 
-Review image tags, storage paths, ports, certificates, and the reported changes
-before removing `--check`.
+Review image tags, storage paths, ports, and the reported changes before
+removing `--check`. Configure public routing and TLS separately as described in
+the institution-managed reverse proxy guide.

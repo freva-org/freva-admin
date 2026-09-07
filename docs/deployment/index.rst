@@ -15,6 +15,7 @@ Compose is retained only for local integration and release-candidate testing.
    Installation
    Configure
    Quadlet
+   ReverseProxy
    Kubernetes
    Compose
    Config

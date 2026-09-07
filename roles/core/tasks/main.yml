@@ -158,6 +158,7 @@
         dest: "{{ core_root_dir | regex_replace('^~', ansible_facts.env.HOME) }}/freva/{{ project_name }}.crt"
         mode: "{{ '2664' if core_admin_group is defined and core_admin_group != '' else '2644' }}"
         group: "{{ core_admin_group if core_admin_group is defined and core_admin_group != '' else omit }}"
+      when: core_keyfile | length > 0
 
   always:
     - name: Deleting temporary files

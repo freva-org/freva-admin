@@ -18,6 +18,8 @@ v2609.0.0
 * Replace the Python deployment CLI, TUI, and custom TOML schema with native
   Ansible inventories and playbooks.
 * Add a reusable Helm chart for Kubernetes deployments.
+* Leave reverse proxies, public routing, and TLS material to institution-owned
+  infrastructure and document the required routes.
 
 
 

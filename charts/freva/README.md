@@ -3,6 +3,10 @@
 This chart is the supported Kubernetes deployment interface. Keep cluster
 credentials, site-specific values, and secrets in the institution repository.
 The public chart contains only reusable workloads and defaults.
+It exposes the Django web service on port 8000 and the REST API on port 7777.
+An institution-owned Ingress or Gateway must provide public routing and TLS.
+If the web image does not serve collected static files itself, add a site-owned
+static-file workload with access to the web PVC.
 
 Create a namespace and an externally managed Secret, then install the chart:
 

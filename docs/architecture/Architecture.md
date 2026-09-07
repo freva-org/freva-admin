@@ -69,10 +69,9 @@ content via a network based file system, such as nfs, or a cluster file
 system such as gpfs to the web ui machine.
 
 :::{note}
-The web ui contains of three different parts: a django web
-application that runs the web sites code, a redis server acting
-as database cache and a nginx httpd reverse proxy server forwarding
-client requests to the django web application.
+The web UI consists of a Django application and a Redis database cache. An
+institution-managed reverse proxy forwards client requests to Django and the
+REST API.
 :::
 
 ## Setups

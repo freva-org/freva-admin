@@ -11,7 +11,7 @@
         that:
           - compose is defined
           - compose.project_name | length > 0
-          - compose.images | length >= 9
+          - compose.images | length >= 8
           - compose.secrets.admin_password | length > 0
           - compose.secrets.database_password | length > 0
           - compose.secrets.redis_password | length > 0

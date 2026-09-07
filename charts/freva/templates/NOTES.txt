@@ -14,13 +14,7 @@ It must contain these keys:
   OIDC_CLIENT_SECRET
 {{- end }}
 
-{{- if .Values.ingress.enabled }}
-Configured web hosts:
-{{- range .Values.ingress.hosts }}
-  https://{{ .host }}
-{{- end }}
-{{- else }}
-Ingress is disabled. Use port-forwarding for a temporary local connection:
+The chart does not install a reverse proxy, Ingress, Gateway, or TLS material.
+Connect it to institution-managed routing. For a temporary local connection:
 
-  kubectl -n {{ .Release.Namespace }} port-forward service/{{ include "freva.fullname" . }}-web 8080:8080
-{{- end }}
+  kubectl -n {{ .Release.Namespace }} port-forward service/{{ include "freva.fullname" . }}-web 8000:8000

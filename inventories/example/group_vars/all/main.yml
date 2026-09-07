@@ -20,7 +20,6 @@ mongodb_server_version: "latest"
 solr_version: "latest"
 freva_rest_version: "2607.1.0"
 web_version: "2609.1.0"
-proxy_version: "latest"
 
 # Set an empty become user for a rootless user deployment. Do not use become
 # to switch to a non-root service account. Log in as that account instead.
@@ -43,7 +42,6 @@ core_scheduler_output_dir: "/var/lib/freva/{{ project_name }}/work/share/local"
 core_preview_path: "/var/lib/freva/{{ project_name }}/work/share/preview"
 core_dump: "{{ inventory_dir }}/files/evaluation_system.conf"
 core_config_toml_file: "{{ inventory_dir }}/files/freva_web.toml"
-core_keyfile: "{{ inventory_dir }}/files/tls.crt.example"
 
 db_host: freva.example.org
 db_port: 3306
@@ -103,27 +101,18 @@ freva_rest_oidc_scopes: profile email
 freva_rest_wipe: false
 freva_rest_data_path: /var/lib/freva
 
-web_project_website: https://freva.example.org
 web_allowed_hosts:
   - freva.example.org
-web_aliases:
-  - www.freva.example.org
 web_csrf_trusted_origins:
   - https://freva.example.org
 web_scheduler_host:
   - localhost
 web_freva_bin: /opt/freva/bin
 web_freva_rest_host: freva.example.org:7777
-web_vault_host: freva.example.org
 web_chatbot_host: localhost
-web_chatbot_rest_api_url: https://freva.example.org
-web_main_color: Tomato
-web_reverse_proxy: true
+web_bind_address: 127.0.0.1
+web_port: 8000
 web_oidc_url: "{{ freva_rest_oidc_url }}"
 web_oidc_client: "{{ freva_rest_oidc_client }}"
 web_data_path: /var/lib/freva
 web_wipe: false
-
-# Files are read on the Ansible controller and passed to the reverse proxy.
-web_cert_content: "{{ lookup('file', inventory_dir + '/files/tls.crt.example') | b64encode }}"
-web_key_content: "{{ lookup('file', inventory_dir + '/files/tls.key.example') | b64encode }}"

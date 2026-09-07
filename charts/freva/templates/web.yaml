@@ -12,8 +12,8 @@ spec:
     app.kubernetes.io/component: web
   ports:
     - name: http
-      port: 8080
-      targetPort: proxy
+      port: 8000
+      targetPort: web
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -38,51 +38,13 @@ spec:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- include "freva.podSettings" . | nindent 6 }}
       containers:
-        - name: proxy
-          image: {{ include "freva.image" .Values.images.proxy }}
-          imagePullPolicy: {{ .Values.images.proxy.pullPolicy }}
-          {{- include "freva.containerSecurityContext" . | nindent 10 }}
-          ports:
-            - name: proxy
-              containerPort: 8080
-          env:
-            - name: SERVER_ROOT
-              value: /srv/static
-            - name: VAULT_HOST
-              value: {{ include "freva.fullname" . }}-vault:{{ .Values.vault.port }}
-            - name: FREVA_REST_HOST
-              value: {{ include "freva.fullname" . }}-rest:{{ .Values.rest.port }}
-            - name: CHATBOT_HOST
-              value: {{ .Values.web.chatbotHost | quote }}
-            - name: WEB_SERVER_NAME
-              value: 127.0.0.1
-            - name: WEB_SERVER_PORT
-              value: "8000"
-            - name: REST_PROXY_HOST_NAME
-              value: {{ .Values.web.externalUrl | quote }}
-            - name: FILL_COLOR
-              value: {{ .Values.web.mainColor | quote }}
-            - name: PROXY_USER
-              value: nobody
-            - name: PROJECT_NAME
-              value: {{ .Release.Name | quote }}
-            - name: PORT_HTTPD
-              value: "8080"
-            - name: PORT_HTTPSD
-              value: "8443"
-            - name: NO_HTTP_CERT
-              value: "1"
-            - name: WEB_HOST
-              value: {{ first .Values.web.allowedHosts | quote }}
-          resources:
-            {{- toYaml .Values.web.proxyResources | nindent 12 }}
-          volumeMounts:
-            - name: static
-              mountPath: /srv/static
         - name: web
           image: {{ include "freva.image" .Values.images.web }}
           imagePullPolicy: {{ .Values.images.web.pullPolicy }}
           {{- include "freva.containerSecurityContext" . | nindent 10 }}
+          ports:
+            - name: web
+              containerPort: 8000
           env:
             - name: EVALUATION_SYSTEM_CONFIG_FILE
               value: /data/config/evaluation_system.conf

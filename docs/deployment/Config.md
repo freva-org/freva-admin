@@ -8,7 +8,7 @@ file. Configuration ownership follows the target tool:
 | Hosts | Ansible inventory | cluster context | localhost |
 | Service values | group and host variables | Helm values | Compose values YAML |
 | Secrets | Ansible Vault | external Secret | disposable test values |
-| TLS | inventory-managed files | TLS Secret | local proxy settings |
+| Public routing and TLS | institution proxy | institution Ingress or Gateway | outside the bundle |
 | Storage | `/var/lib/freva` and inventory overrides | PVC values | named volumes |
 | Local overrides | env and Quadlet drop-ins | site values and overlays | extra values file |
 

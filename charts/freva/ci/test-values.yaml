@@ -19,15 +19,3 @@ nodeSelector:
 tolerations:
   - key: freva
     operator: Exists
-
-ingress:
-  enabled: true
-  hosts:
-    - host: freva.example.org
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: freva-example-tls
-      hosts:
-        - freva.example.org

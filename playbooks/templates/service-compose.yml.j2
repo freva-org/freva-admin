@@ -203,38 +203,8 @@ services:
         condition: service_healthy
       freva-rest-server:
         condition: service_healthy
-{% if not compose.web.reverse_proxy %}
     ports:
       - {{ (compose.ports.web | string + ':8000') | to_json }}
-{% endif %}
-
-{% if compose.web.reverse_proxy %}
-  web-reverse-proxy:
-    image: {{ compose.images.proxy | to_json }}
-    environment:
-      SERVER_ROOT: /srv/static
-      VAULT_HOST: vault-server:5002
-      FREVA_REST_HOST: freva-rest-server:7777
-      CHATBOT_HOST: {{ compose.web.chatbot_host | to_json }}
-      WEB_SERVER_NAME: web-app
-      WEB_SERVER_PORT: "8000"
-      REST_PROXY_HOST_NAME: {{ compose.external_url | to_json }}
-      FILL_COLOR: {{ compose.web.main_color | to_json }}
-      PROXY_USER: nobody
-      PROJECT_NAME: {{ compose.project_name | to_json }}
-      PORT_HTTPD: "8080"
-      PORT_HTTPSD: "8443"
-      NO_HTTP_CERT: "1"
-      WEB_HOST: {{ compose.web.external_host | to_json }}
-    ports:
-      - {{ (compose.ports.http | string + ':8080') | to_json }}
-      - {{ (compose.ports.https | string + ':8443') | to_json }}
-    volumes:
-      - web-static:/srv/static:z
-      - proxy-logs:/data/logs:z
-    depends_on:
-      - web-app
-{% endif %}
 {% endif %}
 
 volumes:
@@ -251,7 +221,4 @@ volumes:
 {% if compose.web.enabled %}
   web-static:
   web-logs:
-{% if compose.web.reverse_proxy %}
-  proxy-logs:
-{% endif %}
 {% endif %}

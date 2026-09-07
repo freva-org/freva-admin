@@ -3,7 +3,7 @@
 # production. Override image tags from CI with Ansible extra variables.
 compose:
   project_name: freva-dev
-  external_url: http://localhost:8080
+  external_url: http://localhost:8000
   images:
     database: ghcr.io/freva-org/freva-mysql:9.3.0
     vault: ghcr.io/freva-org/freva-vault:2505.0.3
@@ -13,7 +13,6 @@ compose:
     rest: ghcr.io/freva-org/freva-rest-api:2607.1.0
     data_loader: ghcr.io/freva-org/freva-data-loader:2607.1.0
     web: ghcr.io/freva-org/freva-web:2609.1.0
-    proxy: ghcr.io/freva-org/freva-nginx:latest
   secrets:
     admin_password: development-only
     database_password: development-only
@@ -45,10 +44,8 @@ compose:
       - zarr-stream
   web:
     enabled: true
-    reverse_proxy: true
     evaluation_config: "{{ playbook_dir }}/../examples/compose/evaluation_system.conf"
     web_config: "{{ playbook_dir }}/../examples/compose/freva_web.toml"
-    external_host: localhost
     allowed_hosts:
       - localhost
       - 127.0.0.1
@@ -57,7 +54,6 @@ compose:
     scheduler_hosts:
       - localhost
     chatbot_host: localhost
-    main_color: Tomato
   data_loader_volumes: []
   sss_pipes: false
   ports:
@@ -68,5 +64,3 @@ compose:
     solr: 8983
     rest: 7777
     web: 8000
-    http: 8080
-    https: 8443

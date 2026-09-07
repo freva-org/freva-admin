@@ -23,10 +23,15 @@ integration and release-candidate testing.
 - `playbooks/compose.yml` renders the development Compose bundle locally.
 - `docs/` contains the administrator and migration guides.
 
-An institution should keep its real inventory, encrypted secrets, certificates,
-host names, and storage settings in a separate repository. For example, NCAR
-can keep only its chart values and Kubernetes Secret integration in the NCAR
-repository while consuming the chart from this repository.
+The host roles and Helm chart do not deploy a reverse proxy or TLS material.
+See the [reverse proxy guide](docs/deployment/ReverseProxy.md) for the required
+web, API, compatibility, and static-file routes.
+
+An institution should keep its real inventory, encrypted secrets, host names,
+storage settings, public routing, and certificate management in a separate
+repository. For example, NCAR can keep its chart values, Kubernetes Secret,
+Gateway, and certificate integration in the NCAR repository while consuming
+the chart from this repository.
 
 ## Host quick start
 
@@ -39,8 +44,8 @@ cp inventories/my-site/group_vars/all/secrets.yml.example \
 ansible-vault encrypt inventories/my-site/group_vars/all/secrets.yml
 ```
 
-Replace the documentation host, certificate placeholders, image tags, and site
-settings. Inspect the effective inventory before deploying:
+Replace the documentation host, image tags, and site settings. Inspect the
+effective inventory before deploying:
 
 ```console
 ansible-inventory -i inventories/my-site/hosts.yml --graph
@@ -87,9 +92,9 @@ helm upgrade --install freva charts/freva \
 ```
 
 The chart supports existing PVCs and arbitrary extra volumes and mounts for
-institution storage. This allows the public chart to stay generic while the
-site repository owns storage classes, paths, ingress, credentials, and release
-policy.
+institution storage. It exposes Services but creates no Ingress or Gateway.
+This allows the public chart to stay generic while the site repository owns
+storage classes, paths, routing, TLS, credentials, and release policy.
 
 ## Local Compose renderer
 

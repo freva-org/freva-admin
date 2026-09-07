@@ -13,6 +13,7 @@ base_path: ""
 old_compose_dir: ""
 data_dir: ""
 service: ""
+core_keyfile: ""
 conda_pkgs:
   - python'>={{ core_python_version }}'
   - appdirs

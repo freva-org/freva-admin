@@ -29,5 +29,11 @@ Merge that file through Ansible variable precedence or generate a complete
 values file in CI. The renderer itself performs no registry lookup and starts no
 containers.
 
+The rendered bundle publishes Django on `localhost:8000` and the REST API on
+`localhost:7777`. It intentionally contains no reverse proxy or TLS material.
+Use those ports for service-level integration tests. A complete browser test,
+including static assets and same-origin API routing, should place the
+institution-managed proxy configuration in front of the bundle.
+
 Compose uses named volumes because the bundle is disposable. Production state
 belongs in `/var/lib/freva` through Quadlet or in Kubernetes PVCs through Helm.
