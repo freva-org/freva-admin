@@ -1,0 +1,8 @@
+#!/bin/sh
+
+if [ "$1" = "info" ]; then
+    printf '%s\n' 'v2'
+    exit 0
+fi
+
+exit 1

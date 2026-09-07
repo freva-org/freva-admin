@@ -57,3 +57,6 @@ The Freva core bootstrap is reported but skipped in check mode. It needs files
 created by micromamba and the evaluation-system checkout, which Ansible does
 not create during a dry run. The normal deployment performs the complete
 bootstrap and removes its temporary workspace afterward.
+
+Read-only host checks still run during a dry run. This includes locating
+Podman, checking its cgroup version, resolving user IDs, and detecting SELinux.

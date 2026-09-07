@@ -44,6 +44,7 @@
   retries: 30
   delay: 5
   until: search_server_solr_ping.status == 200
+  when: not ansible_check_mode
 
 - name: Check the Solr container health
   ansible.builtin.command:
@@ -55,3 +56,4 @@
       - -s
       - "{{ search_server_service }}"
   changed_when: false
+  when: not ansible_check_mode

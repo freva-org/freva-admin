@@ -14,3 +14,17 @@
         {{ playbook_dir }}/../../playbooks/tasks/install_micromamba.yml
       vars:
         micromamba_destination: /var/lib/freva/check-mode/micromamba
+
+- name: Verify Quadlet runtime discovery supports check mode
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    ansible_become: false
+    ansible_become_user: root
+    deployment_config_root: /etc/freva/check-mode
+    quadlet_rootful: true
+  tasks:
+    - name: Run the Quadlet runtime discovery tasks
+      ansible.builtin.include_tasks: >-
+        {{ playbook_dir }}/../../playbooks/tasks/get_quadlet_runtime.yml

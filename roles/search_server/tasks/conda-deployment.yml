@@ -51,7 +51,9 @@
   retries: 30
   delay: 5
   until: result.status == 200
-  when: search_server_service == 'solr'
+  when:
+    - not ansible_check_mode
+    - search_server_service == 'solr'
 
 - name: Performing healthchecks
   ansible.builtin.shell: >
@@ -59,3 +61,4 @@
     -s {{ search_server_service }}
   environment:
     PATH: "{{ conda_path }}/bin:{{ ansible_facts.env.PATH }}"
+  when: not ansible_check_mode

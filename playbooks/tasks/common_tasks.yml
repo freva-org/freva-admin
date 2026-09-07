@@ -23,6 +23,7 @@
       - "{{ admin_user }}"
   register: uid_result
   changed_when: false
+  check_mode: false
 
 - name: Read the administrator GID
   ansible.builtin.command:
@@ -32,6 +33,7 @@
       - "{{ admin_user }}"
   register: gid_result
   changed_when: false
+  check_mode: false
 
 - name: Read the administrator group
   ansible.builtin.command:
@@ -41,6 +43,7 @@
       - "{{ admin_user }}"
   register: admin_group_result
   changed_when: false
+  check_mode: false
 
 - name: Set facts
   ansible.builtin.set_fact:

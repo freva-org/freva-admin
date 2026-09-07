@@ -20,6 +20,7 @@
   register: quadlet_legacy_path_stats
   changed_when: false
   failed_when: false
+  check_mode: false
 
 - name: Select an existing legacy state directory
   ansible.builtin.set_fact:
@@ -44,6 +45,7 @@
   register: quadlet_legacy_volume
   changed_when: false
   failed_when: false
+  check_mode: false
   when: quadlet_state_item.legacy_volume | default('') | length > 0
 
 - name: Copy legacy bind-mounted state into the fixed path

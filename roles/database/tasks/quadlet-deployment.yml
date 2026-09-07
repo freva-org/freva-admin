@@ -54,6 +54,7 @@
     2>/dev/null || echo mysql
   register: database_upgrade_marker
   changed_when: false
+  check_mode: false
 
 - name: Migrate an existing MariaDB volume to MySQL
   when: "'mariadb' in database_upgrade_marker.stdout | lower"

@@ -96,15 +96,18 @@
 - name: Wait for web startup
   ansible.builtin.pause:
     seconds: 30
+  when: not ansible_check_mode
 
 - name: Read web service state
   ansible.builtin.systemd:
     name: "{{ web_name }}.service"
     scope: "{{ quadlet_systemd_scope }}"
   register: web_service_status
+  when: not ansible_check_mode
 
 - name: Require an active web service
   ansible.builtin.assert:
     that:
       - web_service_status.status.ActiveState == 'active'
     fail_msg: "{{ web_name }}.service is not active"
+  when: not ansible_check_mode

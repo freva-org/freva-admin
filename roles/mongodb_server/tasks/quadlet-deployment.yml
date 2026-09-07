@@ -41,6 +41,7 @@
 - name: Wait for MongoDB startup
   ansible.builtin.pause:
     seconds: 15
+  when: not ansible_check_mode
 
 - name: Check MongoDB health
   ansible.builtin.command:
@@ -52,3 +53,4 @@
       - -s
       - mongo
   changed_when: false
+  when: not ansible_check_mode

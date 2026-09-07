@@ -50,6 +50,7 @@
   register: quadlet_selinux_status
   changed_when: false
   failed_when: false
+  check_mode: false
   when: quadlet_rootful
 
 - name: Locate SELinux file-context tools
@@ -57,6 +58,7 @@
   register: quadlet_semanage_path
   changed_when: false
   failed_when: false
+  check_mode: false
   when:
     - quadlet_rootful
     - quadlet_selinux_status.stdout | default('Disabled') in ['Enforcing', 'Permissive']
