@@ -1,0 +1,16 @@
+---
+- name: Verify the core role supports check mode
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    core_install_dir: /opt/freva
+    core_root_dir: /var/lib/freva/check-mode/core
+  roles:
+    - role: core
+  post_tasks:
+    - name: Verify the shared micromamba tasks support check mode
+      ansible.builtin.include_tasks: >-
+        {{ playbook_dir }}/../../playbooks/tasks/install_micromamba.yml
+      vars:
+        micromamba_destination: /var/lib/freva/check-mode/micromamba

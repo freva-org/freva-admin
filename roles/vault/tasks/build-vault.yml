@@ -51,3 +51,4 @@
       ansible.builtin.file:
         path: "{{ vault_tempdir.path }}"
         state: absent
+      when: vault_tempdir.path is defined

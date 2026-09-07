@@ -68,11 +68,13 @@
       ansible.builtin.shell: |
         chmod -R u+rwX "{{ oci_tmp.path }}"
       failed_when: false
+      when: oci_tmp.path is defined
 
     - name: Remove temp OCI directory
       ansible.builtin.file:
         path: "{{ oci_tmp.path }}"
         state: absent
+      when: oci_tmp.path is defined
 
 - name: Prep keycloak
   ansible.builtin.shell:

@@ -5,7 +5,8 @@ check: ansible compose helm vault docs
 
 ansible:
 	ansible-playbook -i inventories/example/hosts.yml playbooks/deploy.yml --syntax-check
-	ansible-lint playbooks roles
+	ansible-playbook -i localhost, tests/ansible/check-mode-core.yml --check
+	ansible-lint playbooks roles tests/ansible
 	ansible-galaxy collection build . --force --output-path build
 
 compose:

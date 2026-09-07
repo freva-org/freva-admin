@@ -52,3 +52,8 @@ ansible-playbook -i inventories/my-site/hosts.yml \
 Review image tags, storage paths, ports, and the reported changes before
 removing `--check`. Configure public routing and TLS separately as described in
 the institution-managed reverse proxy guide.
+
+The Freva core bootstrap is reported but skipped in check mode. It needs files
+created by micromamba and the evaluation-system checkout, which Ansible does
+not create during a dry run. The normal deployment performs the complete
+bootstrap and removes its temporary workspace afterward.

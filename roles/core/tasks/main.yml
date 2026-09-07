@@ -14,8 +14,17 @@
     state: directory
     prefix: evaluation_system
   register: tempdir
+  when: not ansible_check_mode
+
+- name: Explain the core bootstrap check-mode limitation
+  ansible.builtin.debug:
+    msg: >-
+      Skipping the Freva core bootstrap in check mode because it depends on
+      files produced by micromamba and the evaluation-system checkout.
+  when: ansible_check_mode
 
 - name: Setting up core lib
+  when: not ansible_check_mode
   block:
     - name: Downloading micromamba
       ansible.builtin.include_tasks: >-
@@ -165,3 +174,4 @@
       ansible.builtin.file:
         state: absent
         path: "{{ tempdir.path }}"
+      when: tempdir.path is defined

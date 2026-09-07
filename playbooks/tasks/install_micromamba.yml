@@ -24,6 +24,7 @@
     path: "{{ micromamba_destination }}/bin"
     state: directory
     mode: "0755"
+  when: not ansible_check_mode
 
 - name: Download the micromamba archive
   ansible.builtin.get_url:
@@ -38,6 +39,7 @@
       }}
     dest: "{{ micromamba_destination }}/micromamba.tar.bz2"
     mode: "0600"
+  when: not ansible_check_mode
 
 - name: Extract the micromamba executable
   ansible.builtin.unarchive:
@@ -46,8 +48,10 @@
     include:
       - bin/micromamba
     remote_src: true
+  when: not ansible_check_mode
 
 - name: Remove the micromamba archive
   ansible.builtin.file:
     path: "{{ micromamba_destination }}/micromamba.tar.bz2"
     state: absent
+  when: not ansible_check_mode

@@ -5,7 +5,9 @@
 
 - name: Setting up dev keycloak
   ansible.builtin.include_tasks: "{{ role_path }}/tasks/keycloak-install.yml"
-  when: debug | default(false)
+  when:
+    - not ansible_check_mode
+    - debug | default(false)
 
 - name: Write SSL cert and key to files
   ansible.builtin.copy:

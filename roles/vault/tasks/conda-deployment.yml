@@ -21,7 +21,9 @@
 
 - name: Build vault service
   ansible.builtin.include_tasks: "{{ role_path }}/tasks/build-vault.yml"
-  when: conda_packages | select('search', '^vault([><=].*)?$') | list | length == 0
+  when:
+    - not ansible_check_mode
+    - conda_packages | select('search', '^vault([><=].*)?$') | list | length == 0
 
 - name: Creating vault server directory in conda env
   ansible.builtin.file:
