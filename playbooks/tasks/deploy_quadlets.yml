@@ -48,10 +48,10 @@
 
 - name: Create operator-owned Quadlet drop-in directories
   ansible.builtin.file:
-    path: "{{ quadlet_unit_dir }}/{{ item.name }}.container.d"
+    path: "{{ quadlet_unit_dir }}/{{ item }}.container.d"
     state: directory
     mode: "0755"
-  loop: "{{ quadlet_containers }}"
+  loop: "{{ quadlet_containers | map(attribute='name') | list }}"
 
 - name: Create operator-owned network drop-in directories
   ansible.builtin.file:
@@ -108,18 +108,23 @@
 - name: Render Quadlet containers
   ansible.builtin.template:
     src: "{{ freva_deployment_root }}/playbooks/templates/freva.container.j2"
-    dest: "{{ quadlet_unit_dir }}/{{ item.name }}.container"
+    dest: "{{ quadlet_unit_dir }}/{{ item }}.container"
     mode: "0644"
-  loop: "{{ quadlet_containers }}"
+  loop: "{{ quadlet_containers | map(attribute='name') | list }}"
+  vars:
+    quadlet_container: >-
+      {{ quadlet_containers | selectattr('name', 'equalto', item) | first }}
 
 - name: Reload systemd to generate Quadlet services
   ansible.builtin.systemd:
     daemon_reload: true
     scope: "{{ quadlet_systemd_scope }}"
+  when: not ansible_check_mode
 
 - name: Restart Quadlet services
   ansible.builtin.systemd:
-    name: "{{ item.name }}.service"
+    name: "{{ item }}.service"
     state: restarted
     scope: "{{ quadlet_systemd_scope }}"
-  loop: "{{ quadlet_containers }}"
+  loop: "{{ quadlet_containers | map(attribute='name') | list }}"
+  when: not ansible_check_mode

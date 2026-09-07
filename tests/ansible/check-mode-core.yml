@@ -28,3 +28,30 @@
     - name: Run the Quadlet runtime discovery tasks
       ansible.builtin.include_tasks: >-
         {{ playbook_dir }}/../../playbooks/tasks/get_quadlet_runtime.yml
+
+- name: Verify Quadlet deployment supports check mode
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  vars:
+    ansible_become: false
+    ansible_become_user: root
+    deployment_config_root: /etc/freva/check-mode
+    freva_deployment_root: "{{ playbook_dir }}/../.."
+    quadlet_containers:
+      - name: freva-check-mode
+        description: Check-mode regression service
+        image: example.invalid/freva/check-mode:latest
+        environment:
+          CHECK_MODE_VALUE: configured
+    quadlet_networks: []
+    quadlet_obsolete_container_names: []
+    quadlet_rootful: true
+    quadlet_skip_state_preparation: true
+    service_config_dir: /etc/freva/check-mode/config
+    uid: "0"
+    gid: "0"
+  tasks:
+    - name: Run the shared Quadlet deployment tasks
+      ansible.builtin.include_tasks: >-
+        {{ playbook_dir }}/../../playbooks/tasks/deploy_quadlets.yml

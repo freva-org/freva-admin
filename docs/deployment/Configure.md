@@ -60,3 +60,5 @@ bootstrap and removes its temporary workspace afterward.
 
 Read-only host checks still run during a dry run. This includes locating
 Podman, checking its cgroup version, resolving user IDs, and detecting SELinux.
+Service restarts and post-start health checks are skipped because their units
+and containers do not exist until the reported changes are applied.
